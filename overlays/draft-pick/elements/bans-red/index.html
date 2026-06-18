@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="../../../shared/css/common.css">
+    <style>
+        .bans-container {
+            display: flex;
+            gap: 20px;
+        }
+        .hero-ban {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body>
+    <div class="bans-container">
+        <img class="hero-ban" src="../../../assets/Pban.png">
+        <img class="hero-ban" src="../../../assets/Pban.png">
+        <img class="hero-ban" src="../../../assets/Pban.png">
+        <img class="hero-ban" src="../../../assets/Pban.png">
+        <img class="hero-ban" src="../../../assets/Pban.png">
+    </div>
+
+    <script src="../../../shared/js/socket.js"></script>
+    <script>
+        const banImages = document.querySelectorAll('.hero-ban');
+        window.addEventListener('mlbb_live_data', (e) => {
+            const payload = e.detail;
+            const bans = payload.bans.teamB || [];
+            banImages.forEach((img, i) => {
+                const dataIdx = 4 - i;
+                img.src = bans[dataIdx] ? `../../../assets/heroes-icon/${bans[dataIdx]}.png` : '../../../assets/Pban.png';
+            });
+        });
+    </script>
+</body>
+</html>

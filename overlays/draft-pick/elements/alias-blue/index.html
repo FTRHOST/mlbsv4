@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="../../../shared/css/common.css">
+    <style>
+        .alias-container {
+            display: flex;
+            gap: 0;
+        }
+        .alias-item {
+            width: 163px;
+            height: 28px;
+            position: relative;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .bg-phase-draft-title2 {
+            background: linear-gradient(89.95deg, rgba(0, 0, 0, 0) 0%, rgba(255, 138, 0, 1) 51.96%, rgba(0, 0, 0, 0) 100%);
+            width: 100%;
+            height: 100%;
+            position: absolute;
+        }
+        .nama-player {
+            color: #ffffff;
+            text-align: center;
+            font-size: 16px;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="alias-container">
+        <div id="alias-slot-1" class="alias-item"><div class="bg-phase-draft-title2"></div><div class="nama-player"></div></div>
+        <div id="alias-slot-2" class="alias-item"><div class="bg-phase-draft-title2"></div><div class="nama-player"></div></div>
+        <div id="alias-slot-3" class="alias-item"><div class="bg-phase-draft-title2"></div><div class="nama-player"></div></div>
+        <div id="alias-slot-4" class="alias-item"><div class="bg-phase-draft-title2"></div><div class="nama-player"></div></div>
+        <div id="alias-slot-5" class="alias-item"><div class="bg-phase-draft-title2"></div><div class="nama-player"></div></div>
+    </div>
+
+    <script src="../../../shared/js/socket.js"></script>
+    <script>
+        let playerSlotMap = {};
+        window.addEventListener('mlbb_live_data', (e) => {
+            const payload = e.detail;
+            if (payload.gameState === 8 || payload.gameState === 0) {
+                playerSlotMap = {};
+                document.querySelectorAll('.alias-item').forEach(el => el.style.visibility = 'hidden');
+            }
+
+            const activePlayers = payload.players.filter(p => p.camp === 1 && p.uid !== "0");
+            activePlayers.forEach(p => {
+                if (!playerSlotMap[p.uid]) {
+                    const occupiedSlots = Object.values(playerSlotMap).map(m => m.slot);
+                    let assignedSlot = [1, 2, 3, 4, 5].find(s => !occupiedSlots.includes(s));
+                    if (assignedSlot) playerSlotMap[p.uid] = { slot: assignedSlot };
+                }
+                const mapping = playerSlotMap[p.uid];
+                if (!mapping) return;
+
+                const item = document.getElementById(`alias-slot-${mapping.slot}`);
+                if (item) {
+                    if (p.hasAlias) {
+                        item.style.visibility = 'visible';
+                        item.style.opacity = '1';
+                        item.querySelector('.nama-player').innerText = p.alias;
+                        adjustFontSize(item.querySelector('.nama-player'));
+                    } else {
+                        item.style.visibility = 'hidden';
+                        item.style.opacity = '0';
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

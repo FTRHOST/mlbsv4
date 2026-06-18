@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="../../../shared/css/common.css">
+    <style>
+        .stat-val { 
+            color: #ef4444; 
+            font-size: 28px; 
+            font-weight: bold; 
+            text-shadow: 2px 2px 4px black;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+    </style>
+</head>
+<body>
+    <div id="val" class="stat-val">+0.00 k</div>
+
+    <script src="../../../shared/js/socket.js"></script>
+    <script>
+        const formatGold = (gold) => (gold / 1000).toFixed(2) + ' k';
+        const valEl = document.getElementById('val');
+
+        window.addEventListener('mlbb_live_data', (e) => {
+            const stats = e.detail.matchData;
+            if (!stats) return;
+
+            const diff = stats.teamB.gold - stats.teamA.gold;
+            if (diff > 500) {
+                valEl.style.opacity = 1;
+                valEl.innerText = "+" + formatGold(diff);
+            } else {
+                valEl.style.opacity = 0;
+            }
+        });
+    </script>
+</body>
+</html>

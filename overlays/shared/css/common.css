@@ -1,0 +1,34 @@
+/* shared/css/common.css */
+@import url('https://fonts.googleapis.com/css2?family=Lilita+One&display=swap');
+
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    overflow: hidden;
+    font-family: 'Lilita One', sans-serif;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+*, *::before, *::after {
+    box-sizing: inherit;
+}
+
+.dot {
+    width: 14px;
+    height: 14px;
+    border: 2px solid white;
+    border-radius: 50%;
+    display: inline-block;
+    transition: background-color 0.4s;
+}
+
+.dot.won {
+    background-color: white;
+    box-shadow: 0 0 10px white;
+}

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="../../../shared/css/common.css">
+    <style>
+        .main-info-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            text-align: center;
+        }
+        .match-title {
+            color: #fce98a;
+            font-family: 'Koulen', sans-serif;
+            font-size: 80px;
+            text-transform: uppercase;
+            text-shadow: 4px 4px 8px black;
+        }
+        .row-info {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+        }
+        .info-box {
+            position: relative;
+            width: 356px;
+            height: 53px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .info-bg { position: absolute; width: 100%; height: 100%; }
+        .info-text { position: relative; color: white; font-size: 32px; z-index: 1; }
+    </style>
+</head>
+<body>
+    <div class="main-info-container">
+        <div id="match-vs" class="match-title">TEAM NAME VS TEAM NAME</div>
+        <div class="row-info">
+            <div class="info-box">
+                <img class="info-bg" src="../../../assets/component/rectangle-380.svg">
+                <div class="info-text">SESAAT LAGI</div>
+            </div>
+            <div class="info-box">
+                <img class="info-bg" src="../../../assets/component/rectangle-381.svg">
+                <div id="round-name" class="info-text">PENYISIHAN</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../../shared/js/socket.js"></script>
+    <script>
+        const matchEl = document.getElementById('match-vs');
+        const roundEl = document.getElementById('round-name');
+        let currentDB = null;
+
+        window.addEventListener('mlbb_live_data', (e) => {
+            if (!currentDB) return;
+            const livePayload = e.detail;
+            const scheduled = currentDB.schedule[0];
+            if (!scheduled) { matchEl.innerText = "TBA VS TBA"; return; }
+
+            let bName = currentDB.teams[scheduled.blueCapUID] || "BLUE TEAM";
+            let rName = currentDB.teams[scheduled.redCapUID] || "RED TEAM";
+
+            if (livePayload && (livePayload.gameState === 3 || livePayload.gameState === 8)) {
+                const tournament = livePayload.tournament;
+                if (tournament && tournament.blue.name !== "NO TEAM" && tournament.red.name !== "NO TEAM") {
+                    bName = tournament.blue.name;
+                    rName = tournament.red.name;
+                }
+            }
+            matchEl.innerText = `${bName} VS ${rName}`;
+        });
+
+        // Listen for internal socket events
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsInternal = new WebSocket(`${protocol}//${window.location.host}`);
+        wsInternal.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.type === "db_update") currentDB = data.payload;
+            if (data.type === "next_match_update") roundEl.innerText = data.payload.round || "PENYISIHAN";
+        };
+    </script>
+</body>
+</html>

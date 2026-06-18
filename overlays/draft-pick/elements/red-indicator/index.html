@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="../../../shared/css/common.css">
+    <style>
+        .indicator-red-ban-pick {
+            width: 1065px;
+            height: 1080px;
+            background: url('../../../assets/component/indicator-red.png') no-repeat center;
+            background-size: cover;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s;
+        }
+        .active { opacity: 1; visibility: visible; }
+    </style>
+</head>
+<body>
+    <div id="ind" class="indicator-red-ban-pick"></div>
+    <script src="../../../shared/js/socket.js"></script>
+    <script>
+        const el = document.getElementById('ind');
+        window.addEventListener('mlbb_live_data', (e) => {
+            const p = e.detail;
+            const allLocked = p.players.length === 10 && p.players.every(p => p.isLocked);
+            el.classList.remove('active');
+            if (allLocked || p.draftPhase.includes("RED") || p.draftPhase === "BANNING") el.classList.add('active');
+        });
+    </script>
+</body>
+</html>

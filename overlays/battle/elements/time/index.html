@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="../../../shared/css/common.css">
+    <style>
+        .game-time {
+            color: white; /* Sesuaikan warna jika perlu */
+            font-size: 32px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px black;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-time" class="game-time">00:00</div>
+
+    <script src="../../../shared/js/socket.js"></script>
+    <script>
+        const timeEl = document.getElementById('game-time');
+        window.addEventListener('mlbb_live_data', (e) => {
+            const stats = e.detail.matchData;
+            if (stats) timeEl.innerText = stats.timeString || "00:00";
+        });
+    </script>
+</body>
+</html>

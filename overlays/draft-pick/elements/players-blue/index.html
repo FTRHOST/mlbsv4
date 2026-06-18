@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="../../../shared/css/common.css">
+    <style>
+        .players-container {
+            display: flex;
+            gap: 0;
+        }
+        .player-slot {
+            width: 163px;
+            height: 323px;
+            position: relative;
+        }
+        .hero-id {
+            border-radius: 84.5px;
+            width: 61.35%;
+            height: 56.66%;
+            position: absolute;
+            left: 20.85%;
+            top: 17.96%;
+            object-fit: cover;
+        }
+        .background {
+            background: #122027;
+            width: 20.18%;
+            height: 10%;
+            position: absolute;
+            left: 9.19%;
+            top: 71.52%;
+        }
+        .lane {
+            width: 12.71%;
+            position: absolute;
+            left: 12.93%;
+            top: 237.09px;
+            object-fit: cover;
+        }
+        .overlay {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            left: 0;
+            top: 0;
+            object-fit: cover;
+            mix-blend-mode: lighten;
+        }
+        .summon-skill-id {
+            width: 21.47%;
+            position: absolute;
+            left: 71.16%;
+            top: 16px;
+            object-fit: cover;
+        }
+        .name {
+            color: #ffffff;
+            text-align: center;
+            font-size: 16px;
+            position: absolute;
+            left: 17.17%;
+            width: 70.75%;
+            top: 88.24%;
+            height: 6.3%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="players-container">
+        <!-- Slots 1 to 5 -->
+        <div id="slot-1" class="player-slot"><img class="hero-id" src="../../../assets/PheroB.png"><div class="background"></div><img class="lane" src=""><img class="overlay" src="../../../assets/component/overlay5.png"><img class="summon-skill-id" src=""><div class="name"></div></div>
+        <div id="slot-2" class="player-slot"><img class="hero-id" src="../../../assets/PheroB.png"><div class="background"></div><img class="lane" src=""><img class="overlay" src="../../../assets/component/overlay6.png"><img class="summon-skill-id" src=""><div class="name"></div></div>
+        <div id="slot-3" class="player-slot"><img class="hero-id" src="../../../assets/PheroB.png"><div class="background"></div><img class="lane" src=""><img class="overlay" src="../../../assets/component/overlay7.png"><img class="summon-skill-id" src=""><div class="name"></div></div>
+        <div id="slot-4" class="player-slot"><img class="hero-id" src="../../../assets/PheroB.png"><div class="background"></div><img class="lane" src=""><img class="overlay" src="../../../assets/component/overlay8.png"><img class="summon-skill-id" src=""><div class="name"></div></div>
+        <div id="slot-5" class="player-slot"><img class="hero-id" src="../../../assets/PheroB.png"><div class="background"></div><img class="lane" src=""><img class="overlay" src="../../../assets/component/overlay9.png"><img class="summon-skill-id" src=""><div class="name"></div></div>
+    </div>
+
+    <script src="../../../shared/js/socket.js"></script>
+    <script>
+        let playerSlotMap = {};
+        window.addEventListener('mlbb_live_data', (e) => {
+            const payload = e.detail;
+            if (payload.gameState === 8 || payload.gameState === 0) {
+                playerSlotMap = {};
+                document.querySelectorAll('.player-slot').forEach(el => el.style.display = 'none');
+            }
+
+            const activePlayers = payload.players.filter(p => p.camp === 1 && p.uid !== "0");
+            activePlayers.forEach(p => {
+                if (!playerSlotMap[p.uid]) {
+                    const occupiedSlots = Object.values(playerSlotMap).map(m => m.slot);
+                    let assignedSlot = [1, 2, 3, 4, 5].find(s => !occupiedSlots.includes(s));
+                    if (assignedSlot) playerSlotMap[p.uid] = { slot: assignedSlot };
+                }
+                const mapping = playerSlotMap[p.uid];
+                if (!mapping) return;
+
+                const container = document.getElementById(`slot-${mapping.slot}`);
+                if (container) {
+                    container.style.display = 'block';
+                    container.querySelector('.hero-id').src = (p.heroId > 0) ? `../../../assets/heroes/${p.heroId}.png` : '../../../assets/PheroB.png';
+                    container.querySelector('.name').innerText = p.name;
+                    adjustFontSize(container.querySelector('.name'));
+                    
+                    const lImg = container.querySelector('.lane');
+                    lImg.src = `../../../assets/lane/${p.iRoad}.png`;
+                    lImg.style.display = p.iRoad > 0 ? 'block' : 'none';
+
+                    const sImg = container.querySelector('.summon-skill-id');
+                    // Menggunakan assets/spells/ sesuai dengan list direktori
+                    sImg.src = `../../../assets/spells/${p.summonSkillId}.webp`;
+                    sImg.style.display = p.summonSkillId > 0 ? 'block' : 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

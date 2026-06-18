@@ -1,0 +1,2509 @@
+- generic [active] [ref=e1]:
+  - navigation "Fandom top navigation" [ref=e2]:
+    - link "Fandom homepage" [ref=e3] [cursor=pointer]:
+      - /url: https://www.fandom.com/
+      - img [ref=e4]
+    - generic [ref=e7]:
+      - link "Sign In" [ref=e9] [cursor=pointer]:
+        - /url: https://auth.fandom.com/signin?source=mw&redirect=https%3A%2F%2Fmobile-legends.fandom.com%2Fwiki%2FBalmond&metadata=header-signin-button
+      - link "Create a Free Account" [ref=e11] [cursor=pointer]:
+        - /url: https://auth.fandom.com/register?source=mw&redirect=https%3A%2F%2Fmobile-legends.fandom.com%2Fwiki%2FBalmond&metadata=header-registration-button
+  - generic "Community navigation" [ref=e12]:
+    - link "Fandom homepage" [ref=e14] [cursor=pointer]:
+      - /url: https://www.fandom.com/
+      - img [ref=e15]
+    - 'link "Mobile Legends: Bang Bang Wiki" [ref=e17] [cursor=pointer]':
+      - /url: https://mobile-legends.fandom.com/wiki/MLBB_Wiki
+      - 'img "Mobile Legends: Bang Bang Wiki" [ref=e18]'
+    - navigation [ref=e19]:
+      - list [ref=e20]:
+        - listitem [ref=e21]:
+          - generic [ref=e22]:
+            - generic [ref=e23] [cursor=pointer]:
+              - img [ref=e24]
+              - generic [ref=e26]: Explore
+            - img "Expand" [ref=e27]
+        - listitem [ref=e29]:
+          - generic [ref=e30]:
+            - link "MLBB" [ref=e31] [cursor=pointer]:
+              - /url: https://mobile-legends.fandom.com/wiki/Mobile_Legends:_Bang_Bang
+              - generic [ref=e32]: MLBB
+            - img "Expand" [ref=e33]
+        - listitem [ref=e35]:
+          - generic [ref=e36]:
+            - link "Game Modes" [ref=e37] [cursor=pointer]:
+              - /url: https://mobile-legends.fandom.com/wiki/Game_Modes
+              - generic [ref=e38]: Game Modes
+            - img "Expand" [ref=e39]
+        - listitem [ref=e41]:
+          - generic [ref=e42]:
+            - generic [ref=e44] [cursor=pointer]: Shop
+            - img "Expand" [ref=e45]
+        - listitem [ref=e47]:
+          - generic [ref=e48]:
+            - link "Heroes" [ref=e49] [cursor=pointer]:
+              - /url: https://mobile-legends.fandom.com/wiki/Heroes
+              - generic [ref=e50]: Heroes
+            - img "Expand" [ref=e51]
+    - generic [ref=e53]:
+      - link "Discuss" [ref=e54] [cursor=pointer]:
+        - /url: /f
+        - img
+      - link "Switch to Light Theme" [ref=e55] [cursor=pointer]:
+        - /url: "#"
+        - img
+    - link "Sign In" [ref=e58] [cursor=pointer]:
+      - /url: https://auth.fandom.com/signin?source=mw&redirect=https%3A%2F%2Fmobile-legends.fandom.com%2Fwiki%2FBalmond&metadata=header-signin-button
+      - generic [ref=e59]:
+        - img
+        - text: Sign In
+  - generic [ref=e60]:
+    - navigation "Fandom navigation" [ref=e62]:
+      - generic [ref=e63]:
+        - link "Home" [ref=e66] [cursor=pointer]:
+          - /url: https://www.fandom.com/
+          - generic [ref=e67]:
+            - img [ref=e69]
+            - generic [ref=e71]: Home
+        - button "Explore" [ref=e73] [cursor=pointer]:
+          - generic [ref=e74]:
+            - img [ref=e76]
+            - generic [ref=e79]: Explore
+        - link "Saved" [ref=e82] [cursor=pointer]:
+          - /url: https://www.fandom.com/saved
+          - generic [ref=e83]:
+            - img [ref=e85]
+            - generic [ref=e87]: Saved
+        - link "Progress" [ref=e90] [cursor=pointer]:
+          - /url: https://www.fandom.com/progress
+          - generic [ref=e91]:
+            - img [ref=e93]
+            - generic [ref=e95]: Progress
+        - button "History" [ref=e97] [cursor=pointer]:
+          - generic [ref=e98]:
+            - img [ref=e100]
+            - generic [ref=e102]: History
+    - navigation "Fandom navigation" [ref=e104]:
+      - button "More" [ref=e106] [cursor=pointer]:
+        - generic [ref=e107]:
+          - img [ref=e109]
+          - generic [ref=e111]: More
+  - generic [ref=e112]:
+    - generic [ref=e114]:
+      - iframe [ref=e117]:
+        - link [ref=f59e2] [cursor=pointer]:
+          - /url: https://googleads.g.doubleclick.net/pcs/click?xai=AKAOjsuyyg8M2I6bt499ubfHjkAkD76SXMx_ZKSgNSoHOEMjCfPxrtGrZje2IKBzl336vvEz4GSM3ZihgVGJ_amftxkWJJsfFL3EBkNIZgWsRfWFrzqgJlqvJfB1Uwvw4wExjpytoSFV8tgkoo1CXU7Kv6WgW8giRHwlc-pz854z3rQkXy3_ior2s-IpQxbXwgvaCMLqSuRA8dExaJyZ9FhWUKEDKRNRJXPanL7FP4bzT_iOD25SO0LmfY71oY1RBSc3xN90ZaDajaLeE-WGAxvXtr0CRgEA5KbW2hXc-xfloTAEDVE1IOR__d0V_uG_knnl9T_SLIFv0OEfQMywKc2Tiv5k6BHTHlJCeozVuiMfwp-X_doOcHoEw7zJc9ze1q173FpygPgX2r9KrfFQAGi6al3VR7sC-dh4poK_2pD3wkL-rVJJ4Se33QqDijeLTeIfS1WrQpZeT07p5QmDm2L7tL3kn8UOfUDJ3xrnIuc&sai=AMfl-YQr29SU_Zru50Uwy8WOGDBcGyV58BHaIeBkNoJvBg_wFeUI3IXwrE3_xSs2Sd2mmmdd5dCLnzqy511rbraD0sOZijqXDY3PcK4rT-NUFhDFkCOx9lIoI175_7Zk-91RbaPK3eov49-wdC0n1E3s-aASenzm0KW6lnO4-iD6wjf0T2xWYXHor-9HXW5gV8sneqYK6hSitSshjEyO8743ZP6nO0c-v05H3LZn0W4aF7gEgda4LJjVQ-Mox4feXAlwUSEtM1IUiN_pWJckhqa79O6xvSn2GrS9j213fkCAikUTOHzwv0EasNRYpiKogfxyYofC4MFM8Ji_Weroildd1K8X1ha0LJb3cK0q0eRpqm5-KbtCLuNU8AImRWPfu5ykgN15Ohco4O6ynQ&sig=Cg0ArKJSzNA5mDNW_cmN&fbs_aeid=%5Bgw_fbsaeid%5D&adurl=http://fandom.com
+      - generic [ref=e118]: Advertisement
+    - generic [ref=e120]:
+      - link "Skip to content" [ref=e121] [cursor=pointer]:
+        - /url: "#page-header"
+      - banner [ref=e123]:
+        - 'link "Mobile Legends: Bang Bang Wiki" [ref=e124] [cursor=pointer]':
+          - /url: https://mobile-legends.fandom.com/wiki/MLBB_Wiki
+          - 'img "Mobile Legends: Bang Bang Wiki" [ref=e125]'
+        - generic [ref=e126]:
+          - 'link "Mobile Legends: Bang Bang Wiki" [ref=e128] [cursor=pointer]':
+            - /url: https://mobile-legends.fandom.com/wiki/MLBB_Wiki
+          - generic [ref=e129]:
+            - generic [ref=e130]: 2,322
+            - generic [ref=e131]: pages
+          - generic [ref=e132]:
+            - link "Discuss" [ref=e133] [cursor=pointer]:
+              - /url: /f
+              - img
+            - link "Switch to Light Theme" [ref=e134] [cursor=pointer]:
+              - /url: "#"
+              - img
+        - navigation [ref=e135]:
+          - list [ref=e136]:
+            - listitem [ref=e137]:
+              - generic [ref=e138]:
+                - generic [ref=e139] [cursor=pointer]:
+                  - img [ref=e140]
+                  - generic [ref=e142]: Explore
+                - img "Expand" [ref=e143]
+            - listitem [ref=e145]:
+              - generic [ref=e146]:
+                - link "MLBB" [ref=e147] [cursor=pointer]:
+                  - /url: https://mobile-legends.fandom.com/wiki/Mobile_Legends:_Bang_Bang
+                  - generic [ref=e148]: MLBB
+                - img "Expand" [ref=e149]
+            - listitem [ref=e151]:
+              - generic [ref=e152]:
+                - link "Game Modes" [ref=e153] [cursor=pointer]:
+                  - /url: https://mobile-legends.fandom.com/wiki/Game_Modes
+                  - generic [ref=e154]: Game Modes
+                - img "Expand" [ref=e155]
+            - listitem [ref=e157]:
+              - generic [ref=e158]:
+                - generic [ref=e160] [cursor=pointer]: Shop
+                - img "Expand" [ref=e161]
+            - listitem [ref=e163]:
+              - generic [ref=e164]:
+                - link "Heroes" [ref=e165] [cursor=pointer]:
+                  - /url: https://mobile-legends.fandom.com/wiki/Heroes
+                  - generic [ref=e166]: Heroes
+                - img "Expand" [ref=e167]
+      - generic [ref=e169]:
+        - main [ref=e170]:
+          - generic [ref=e172]:
+            - link "View source" [ref=e173] [cursor=pointer]:
+              - /url: /wiki/Balmond?action=edit
+              - img [ref=e174]
+            - link "Sign In to Save" [ref=e176] [cursor=pointer]:
+              - /url: https://auth.fandom.com/signin?redirect=https%3A%2F%2Fmobile-legends.fandom.com%2Fwiki%2FBalmond%3Fcollections%3Dsave&uselang=en&metadata=collections-save-button
+              - img [ref=e177]
+          - generic [ref=e179]:
+            - generic [ref=e182]:
+              - text: "in:"
+              - link "Citations needed" [ref=e183] [cursor=pointer]:
+                - /url: /wiki/Category:Citations_needed
+              - text: ","
+              - link "Heroes" [ref=e184] [cursor=pointer]:
+                - /url: /wiki/Category:Heroes
+              - text: ","
+              - link "Balmond" [ref=e185] [cursor=pointer]:
+                - /url: /wiki/Category:Balmond
+              - text: ","
+              - generic [ref=e186]: and 10 more
+            - generic [ref=e187]:
+              - heading "Balmond" [level=1] [ref=e189]
+              - generic [ref=e190]:
+                - link "Comments" [ref=e191] [cursor=pointer]:
+                  - /url: "#articleComments"
+                  - img
+                - link "Sign In to Save" [ref=e193] [cursor=pointer]:
+                  - /url: https://auth.fandom.com/signin?redirect=https%3A%2F%2Fmobile-legends.fandom.com%2Fwiki%2FBalmond%3Fcollections%3Dsave&uselang=en&metadata=collections-save-button
+                  - img
+                  - generic [ref=e194]: Save
+                - link "View source" [ref=e195] [cursor=pointer]:
+                  - /url: /wiki/Balmond?action=edit
+                  - img
+                  - text: View source
+                - button "Page Tools" [ref=e197]:
+                  - img
+          - generic [ref=e200]:
+            - generic [ref=e202]:
+              - strong [ref=e204]: Main
+              - link "Cosmetics" [ref=e207] [cursor=pointer]:
+                - /url: /wiki/Balmond/Cosmetics
+              - link "Audio" [ref=e210] [cursor=pointer]:
+                - /url: /wiki/Balmond/Audio
+              - link "Mastery Code" [ref=e213] [cursor=pointer]:
+                - /url: /wiki/Balmond/Mastery_Code
+              - link "Patch history" [ref=e216] [cursor=pointer]:
+                - /url: /wiki/Balmond/Patch_history
+              - link "Archives" [ref=e219] [cursor=pointer]:
+                - /url: /wiki/Balmond/History
+              - link "Strategy" [ref=e222] [cursor=pointer]:
+                - /url: /wiki/Balmond/Guide
+            - region [ref=e224]:
+              - heading "Balmond \"Bloody Beast\"" [level=2] [ref=e225]:
+                - generic [ref=e226]:
+                  - text: Balmond
+                  - text: "\"Bloody Beast\""
+              - generic [ref=e227]:
+                - list [ref=e229]:
+                  - listitem [ref=e230] [cursor=pointer]:
+                    - generic [ref=e231]: Portrait
+                  - listitem [ref=e232] [cursor=pointer]:
+                    - generic [ref=e233]: Model
+                - figure [ref=e235]:
+                  - link "Portrait" [ref=e236] [cursor=pointer]:
+                    - /url: https://static.wikia.nocookie.net/mobile-legends/images/c/c4/Hero021-portrait.png/revision/latest?cb=20251110110543
+                    - img "Portrait" [ref=e237]
+              - generic [ref=e238]:
+                - heading "Release date" [level=3] [ref=e239]
+                - generic [ref=e240]: "2016"
+              - generic [ref=e241]:
+                - heading "Role" [level=3] [ref=e242]
+                - generic [ref=e243]:
+                  - link "Fighter Icon" [ref=e245] [cursor=pointer]:
+                    - /url: https://static.wikia.nocookie.net/mobile-legends/images/1/1a/Fighter_Icon.png/revision/latest?cb=20260309134735
+                    - img "Fighter Icon" [ref=e246]
+                  - link "Fighter" [ref=e247] [cursor=pointer]:
+                    - /url: /wiki/Fighter
+              - generic [ref=e248]:
+                - heading "Specialty" [level=3] [ref=e249]
+                - generic [ref=e250]:
+                  - link "Damage" [ref=e251] [cursor=pointer]:
+                    - /url: /wiki/Damage
+                  - text: /
+                  - link "Regen" [ref=e252] [cursor=pointer]:
+                    - /url: /wiki/Regen
+              - generic [ref=e253]:
+                - heading "Lane Recc." [level=3] [ref=e254]
+                - generic [ref=e255]:
+                  - link "Jungling" [ref=e257] [cursor=pointer]:
+                    - /url: https://static.wikia.nocookie.net/mobile-legends/images/0/07/Jungling.png/revision/latest?cb=20241001154047
+                    - img "Jungling" [ref=e258]
+                  - link "Jungle" [ref=e259] [cursor=pointer]:
+                    - /url: /wiki/Jungle
+                  - text: /
+                  - link "EXP Lane" [ref=e261] [cursor=pointer]:
+                    - /url: https://static.wikia.nocookie.net/mobile-legends/images/6/62/EXP_Lane.png/revision/latest?cb=20241001154041
+                    - img "EXP Lane" [ref=e262]
+                  - link "EXP Lane" [ref=e263] [cursor=pointer]:
+                    - /url: /wiki/EXP_Lane
+              - generic [ref=e264]:
+                - heading "Price" [level=3] [ref=e265]
+                - generic [ref=e266]:
+                  - generic [ref=e267]:
+                    - link "6500 Battle Points" [ref=e270] [cursor=pointer]:
+                      - /url: /wiki/Battle_Points
+                      - img "6500 Battle Points" [ref=e271]
+                    - text: "6500"
+                  - text: or
+                  - generic [ref=e272]:
+                    - link "299 Diamonds" [ref=e275] [cursor=pointer]:
+                      - /url: /wiki/Diamond
+                      - img "299 Diamonds" [ref=e276]
+                    - text: "299"
+              - generic [ref=e277]:
+                - heading "Skill resource" [level=3] [ref=e278]
+                - link "None" [ref=e280] [cursor=pointer]:
+                  - /url: /wiki/Resource#Resourceless
+              - generic [ref=e281]:
+                - heading "Damage type" [level=3] [ref=e282]
+                - link "Physical" [ref=e284] [cursor=pointer]:
+                  - /url: /wiki/Physical_Damage
+              - generic [ref=e285]:
+                - heading "Basic attack type" [level=3] [ref=e286]
+                - link "Melee" [ref=e288] [cursor=pointer]:
+                  - /url: /wiki/Range
+              - generic [ref=e289]:
+                - heading "Ratings (1–10)" [level=2] [ref=e290]
+                - generic [ref=e291]:
+                  - heading "Durability" [level=3] [ref=e292]
+                  - generic [ref=e295]: "8"
+                - generic [ref=e296]:
+                  - heading "Offense" [level=3] [ref=e297]
+                  - generic [ref=e300]: "3"
+                - generic [ref=e301]:
+                  - heading "Control effects" [level=3] [ref=e302]
+                  - generic [ref=e305]: "2"
+                - generic [ref=e306]:
+                  - heading "Difficulty" [level=3] [ref=e307]
+                  - generic [ref=e310]: "1"
+              - table "Hero number" [ref=e312]:
+                - caption [ref=e313]: Hero number
+                - rowgroup [ref=e314]:
+                  - 'row "← #1 #2 #3 →" [ref=e315]':
+                    - 'columnheader "← #1" [ref=e316]'
+                    - columnheader "#2" [ref=e317]
+                    - columnheader "#3 →" [ref=e318]
+                - rowgroup [ref=e319]:
+                  - row "Hero011-icon Miya Hero021-icon Balmond Hero031-icon Saber" [ref=e320]:
+                    - cell "Hero011-icon Miya" [ref=e321]:
+                      - link "Hero011-icon" [ref=e324] [cursor=pointer]:
+                        - /url: /wiki/Miya
+                        - img "Hero011-icon" [ref=e325]
+                      - link "Miya" [ref=e326] [cursor=pointer]:
+                        - /url: /wiki/Miya
+                    - cell "Hero021-icon Balmond" [ref=e327]:
+                      - link "Hero021-icon" [ref=e330] [cursor=pointer]:
+                        - /url: https://static.wikia.nocookie.net/mobile-legends/images/9/93/Hero021-icon.png/revision/latest?cb=20251110110542
+                        - img "Hero021-icon" [ref=e331]
+                      - text: Balmond
+                    - cell "Hero031-icon Saber" [ref=e332]:
+                      - link "Hero031-icon" [ref=e335] [cursor=pointer]:
+                        - /url: /wiki/Saber
+                        - img "Hero031-icon" [ref=e336]
+                      - link "Saber" [ref=e337] [cursor=pointer]:
+                        - /url: /wiki/Saber
+              - generic [ref=e338]:
+                - heading "Hero spotlight" [level=2] [ref=e339]
+                - figure [ref=e340]:
+                  - link "Hero Spotlight - Balmond - Mobile Legends- Bang Bang" [ref=e341] [cursor=pointer]:
+                    - /url: https://mobile-legends.fandom.com/wiki/File:Hero_Spotlight_-_Balmond_-_Mobile_Legends-_Bang_Bang
+                    - img "Hero Spotlight - Balmond - Mobile Legends- Bang Bang" [ref=e342]
+                    - img [ref=e344]
+              - generic [ref=e352]:
+                - heading "Website" [level=2] [ref=e353]
+                - list [ref=e356]:
+                  - listitem [ref=e357]:
+                    - text: "MLBB hero page:"
+                    - text: →
+                    - link "www.mobilelegends.com" [ref=e358] [cursor=pointer]:
+                      - /url: https://www.mobilelegends.com/hero/detail?heroid=2
+                    - text: →
+                    - link "m.mobilelegends.com" [ref=e359] [cursor=pointer]:
+                      - /url: https://m.mobilelegends.com/hero/detail?heroid=2
+                    - text: →
+                    - link "new.mobilelegends.com" [ref=e360] [cursor=pointer]:
+                      - /url: https://new.mobilelegends.com/hero/detail?heroid=2
+                  - listitem [ref=e361]:
+                    - link "MLBB China hero page" [ref=e362] [cursor=pointer]:
+                      - /url: https://moba.moonton.com/hero/2
+            - table [ref=e363]:
+              - rowgroup [ref=e364]:
+                - row "“ Leader of the orc legion. ”" [ref=e365]:
+                  - cell "“" [ref=e366]
+                  - cell "Leader of the orc legion." [ref=e367]
+                  - cell "”" [ref=e368]
+                - 'row "— Mobile Legends: Bang Bang" [ref=e369]':
+                  - cell [ref=e370]
+                  - 'cell "— Mobile Legends: Bang Bang" [ref=e371]':
+                    - generic [ref=e373]: "— Mobile Legends: Bang Bang"
+            - paragraph [ref=e374]:
+              - text: Balmond, the Bloody Beast, is a
+              - link "hero" [ref=e375] [cursor=pointer]:
+                - /url: /wiki/Hero
+              - text: in
+              - 'link "Mobile Legends: Bang Bang" [ref=e377] [cursor=pointer]':
+                - /url: /wiki/Mobile_Legends:_Bang_Bang
+              - text: .
+            - navigation "Contents" [ref=e378]:
+              - button "hide" [ref=e379]
+              - generic [ref=e380]:
+                - heading "Contents" [level=2] [ref=e381]
+                - generic [ref=e382]:
+                  - text: "["
+                  - generic [ref=e383] [cursor=pointer]: hide
+                  - text: "]"
+              - list [ref=e384]:
+                - listitem [ref=e385]:
+                  - link "1. Story" [ref=e386] [cursor=pointer]:
+                    - /url: "#Story"
+                    - generic [ref=e387]: "1."
+                    - generic [ref=e388]: Story
+                  - list [ref=e389]:
+                    - listitem [ref=e390]:
+                      - link "1.1. Lore" [ref=e391] [cursor=pointer]:
+                        - /url: "#Lore"
+                        - generic [ref=e392]: 1.1.
+                        - generic [ref=e393]: Lore
+                - listitem [ref=e394]:
+                  - link "2. Abilities" [ref=e395] [cursor=pointer]:
+                    - /url: "#Abilities"
+                    - generic [ref=e396]: "2."
+                    - generic [ref=e397]: Abilities
+                  - list [ref=e398]:
+                    - listitem [ref=e399]:
+                      - link "2.1. Passive" [ref=e400] [cursor=pointer]:
+                        - /url: "#Passive"
+                        - generic [ref=e401]: 2.1.
+                        - generic [ref=e402]: Passive
+                    - listitem [ref=e403]:
+                      - link "2.2. Skill 1" [ref=e404] [cursor=pointer]:
+                        - /url: "#Skill_1"
+                        - generic [ref=e405]: 2.2.
+                        - generic [ref=e406]: Skill 1
+                    - listitem [ref=e407]:
+                      - link "2.3. Skill 2" [ref=e408] [cursor=pointer]:
+                        - /url: "#Skill_2"
+                        - generic [ref=e409]: 2.3.
+                        - generic [ref=e410]: Skill 2
+                    - listitem [ref=e411]:
+                      - link "2.4. Ultimate" [ref=e412] [cursor=pointer]:
+                        - /url: "#Ultimate"
+                        - generic [ref=e413]: 2.4.
+                        - generic [ref=e414]: Ultimate
+                - listitem [ref=e415]:
+                  - link "3. Gallery" [ref=e416] [cursor=pointer]:
+                    - /url: "#Gallery"
+                    - generic [ref=e417]: "3."
+                    - generic [ref=e418]: Gallery
+                  - list [ref=e419]:
+                    - listitem [ref=e420]:
+                      - link "3.1. Artwork" [ref=e421] [cursor=pointer]:
+                        - /url: "#Artwork"
+                        - generic [ref=e422]: 3.1.
+                        - generic [ref=e423]: Artwork
+                    - listitem [ref=e424]:
+                      - link "3.2. Avatar icons" [ref=e425] [cursor=pointer]:
+                        - /url: "#Avatar_icons"
+                        - generic [ref=e426]: 3.2.
+                        - generic [ref=e427]: Avatar icons
+                    - listitem [ref=e428]:
+                      - link "3.3. Painted avatar icons" [ref=e429] [cursor=pointer]:
+                        - /url: "#Painted_avatar_icons"
+                        - generic [ref=e430]: 3.3.
+                        - generic [ref=e431]: Painted avatar icons
+                    - listitem [ref=e432]:
+                      - link "3.4. Battle emotes" [ref=e433] [cursor=pointer]:
+                        - /url: "#Battle_emotes"
+                        - generic [ref=e434]: 3.4.
+                        - generic [ref=e435]: Battle emotes
+                - listitem [ref=e436]:
+                  - link "4. Trivia" [ref=e437] [cursor=pointer]:
+                    - /url: "#Trivia"
+                    - generic [ref=e438]: "4."
+                    - generic [ref=e439]: Trivia
+                - listitem [ref=e440]:
+                  - link "5. References" [ref=e441] [cursor=pointer]:
+                    - /url: "#References"
+                    - generic [ref=e442]: "5."
+                    - generic [ref=e443]: References
+            - table [ref=e445]:
+              - rowgroup [ref=e446]:
+                - row "Hero stats [edit]" [ref=e447]:
+                  - cell "Hero stats [edit]" [ref=e448]:
+                    - generic [ref=e449]:
+                      - text: Hero stats
+                      - generic [ref=e450]:
+                        - text: "["
+                        - link "edit" [ref=e451] [cursor=pointer]:
+                          - /url: https://mobile-legends.fandom.com/wiki/Module:Hero/data?action=edit
+                        - text: "]"
+                - row "Attribute Base stats" [ref=e452]:
+                  - columnheader "Attribute" [ref=e453]
+                  - columnheader "Base stats" [ref=e454]
+                - row "Level 1 Level 15 Growth" [ref=e455]:
+                  - columnheader "Level 1" [ref=e456]
+                  - columnheader "Level 15" [ref=e457]
+                  - columnheader "Growth" [ref=e458]
+                - row "HP 2558 6212 261" [ref=e459]:
+                  - cell "HP" [ref=e460]:
+                    - link "HP" [ref=e461] [cursor=pointer]:
+                      - /url: /wiki/HP
+                  - cell "2558" [ref=e462]
+                  - cell "6212" [ref=e463]
+                  - cell "261" [ref=e464]
+                - row "HP Regen 9.4 17.8 0.6" [ref=e465]:
+                  - cell "HP Regen" [ref=e466]:
+                    - link "HP Regen" [ref=e467] [cursor=pointer]:
+                      - /url: /wiki/HP_regen_(attribute)
+                  - cell "9.4" [ref=e468]
+                  - cell "17.8" [ref=e469]
+                  - cell "0.6" [ref=e470]
+                - row "Mana 0" [ref=e471]:
+                  - cell "Mana" [ref=e472]:
+                    - link "Mana" [ref=e473] [cursor=pointer]:
+                      - /url: /wiki/Mana
+                  - cell "0" [ref=e474]
+                - row "Mana Regen 0" [ref=e475]:
+                  - cell "Mana Regen" [ref=e476]:
+                    - link "Mana Regen" [ref=e477] [cursor=pointer]:
+                      - /url: /wiki/Mana_Regen
+                  - cell "0" [ref=e478]
+                - row "Physical Attack 119 237 8.43" [ref=e479]:
+                  - cell "Physical Attack" [ref=e480]:
+                    - link "Physical Attack" [ref=e481] [cursor=pointer]:
+                      - /url: /wiki/Physical_Attack
+                  - cell "119" [ref=e482]
+                  - cell "237" [ref=e483]
+                  - cell "8.43" [ref=e484]
+                - row "Magic Power 0" [ref=e485]:
+                  - cell "Magic Power" [ref=e486]:
+                    - link "Magic Power" [ref=e487] [cursor=pointer]:
+                      - /url: /wiki/Magic_Power
+                  - cell "0" [ref=e488]
+                - row "Physical Defense (Physical Damage Reduced) 25 (17.2%) 90 (42.9%) 4.6429" [ref=e489]:
+                  - cell "Physical Defense (Physical Damage Reduced)" [ref=e490]:
+                    - link "Physical Defense" [ref=e491] [cursor=pointer]:
+                      - /url: /wiki/Physical_Defense
+                    - text: (Physical Damage Reduced)
+                  - cell "25 (17.2%)" [ref=e492]
+                  - cell "90 (42.9%)" [ref=e493]
+                  - cell "4.6429" [ref=e494]
+                - row "Magic Defense (Magic Damage Reduced) 15 (11.1%) 50 (29.4%) 2.5" [ref=e495]:
+                  - cell "Magic Defense (Magic Damage Reduced)" [ref=e496]:
+                    - link "Magic Defense" [ref=e497] [cursor=pointer]:
+                      - /url: /wiki/Magic_Defense
+                    - text: (Magic Damage Reduced)
+                  - cell "15 (11.1%)" [ref=e498]
+                  - cell "50 (29.4%)" [ref=e499]
+                  - cell "2.5" [ref=e500]
+                - row "Attack Speed 1.06 1.34 0.02" [ref=e501]:
+                  - cell "Attack Speed" [ref=e502]:
+                    - link "Attack Speed" [ref=e503] [cursor=pointer]:
+                      - /url: /wiki/Attack_Speed
+                  - cell "1.06" [ref=e504]
+                  - cell "1.34" [ref=e505]
+                  - cell "0.02" [ref=e506]
+                - row "Attack Speed Ratio 100%" [ref=e507]:
+                  - cell "Attack Speed Ratio" [ref=e508]:
+                    - link "Attack Speed Ratio" [ref=e509] [cursor=pointer]:
+                      - /url: /wiki/Attack_Speed_Ratio
+                  - cell "100%" [ref=e510]
+                - row "Critical Damage 200%" [ref=e511]:
+                  - cell "Critical Damage" [ref=e512]:
+                    - link "Critical Damage" [ref=e513] [cursor=pointer]:
+                      - /url: /wiki/Critical_Damage
+                  - cell "200%" [ref=e514]
+                - row "Movement Speed 260" [ref=e515]:
+                  - cell "Movement Speed" [ref=e516]:
+                    - link "Movement Speed" [ref=e517] [cursor=pointer]:
+                      - /url: /wiki/Movement_Speed
+                  - cell "260" [ref=e518]
+                - row "Basic Attack range 1.8" [ref=e519]:
+                  - cell "Basic Attack range" [ref=e520]:
+                    - text: Basic
+                    - link "Attack range" [ref=e521] [cursor=pointer]:
+                      - /url: /wiki/Attack_range
+                  - cell "1.8" [ref=e522]
+            - heading "Story" [level=2] [ref=e524]
+            - region [ref=e525]:
+              - heading "Balmond" [level=2] [ref=e526]
+              - figure [ref=e527]:
+                - link "Balmond teaser" [ref=e528] [cursor=pointer]:
+                  - /url: https://static.wikia.nocookie.net/mobile-legends/images/7/7a/Balmond_teaser.jpg/revision/latest?cb=20220621110838
+                  - img "Balmond teaser" [ref=e529]
+              - heading "In-story information" [level=2] [ref=e530]
+              - generic [ref=e531]:
+                - heading "Alias" [level=3] [ref=e532]
+                - list [ref=e534]:
+                  - listitem [ref=e535]: Bloody Beast
+                  - listitem [ref=e536]: Berserker (former)
+              - generic [ref=e537]:
+                - heading "Chinese Name" [level=3] [ref=e538]
+                - generic [ref=e539]: 巴蒙 (bāméng)
+              - generic [ref=e540]:
+                - heading "Internal name" [level=3] [ref=e541]
+                - generic [ref=e542]:
+                  - code [ref=e543]: fuwang
+                  - text: (斧王, “axe”)
+              - generic [ref=e544]:
+                - heading "Birthday" [level=3] [ref=e545]
+                - generic [ref=e546]:
+                  - text: November 21 (Scorpio)
+                  - superscript [ref=e547]:
+                    - link "[1]" [ref=e548] [cursor=pointer]:
+                      - /url: "#cite_note-BalmondCNGameProfile-1"
+              - generic [ref=e549]:
+                - heading "Born" [level=3] [ref=e550]
+                - generic [ref=e551]:
+                  - text: Stormeye Wasteland,
+                  - link "The Barren Lands" [ref=e552] [cursor=pointer]:
+                    - /url: /wiki/The_Barren_Lands
+              - generic [ref=e553]:
+                - heading "Age" [level=3] [ref=e554]
+                - generic [ref=e555]:
+                  - text: "33"
+                  - superscript [ref=e556]:
+                    - link "[2]" [ref=e557] [cursor=pointer]:
+                      - /url: "#cite_note-BalmondGGACProfile-2"
+              - generic [ref=e558]:
+                - heading "Gender" [level=3] [ref=e559]
+                - generic [ref=e560]: Male
+              - generic [ref=e561]:
+                - heading "Species" [level=3] [ref=e562]
+                - generic [ref=e563]: Orc
+              - generic [ref=e564]:
+                - heading "Occupation" [level=3] [ref=e565]
+                - generic [ref=e566]: Leader of Orc Legion
+              - generic [ref=e567]:
+                - heading "Affiliation" [level=3] [ref=e568]
+                - list [ref=e570]:
+                  - listitem [ref=e571]: Orc Legion
+                  - listitem [ref=e572]:
+                    - link "The Abyss" [ref=e573] [cursor=pointer]:
+                      - /url: /wiki/The_Abyss
+              - generic [ref=e574]:
+                - heading "Weapons" [level=3] [ref=e575]
+                - generic [ref=e576]:
+                  - text: Wasteland Howler (a massive axe wielded by his right hand)
+                  - superscript [ref=e577]:
+                    - link "[2]" [ref=e578] [cursor=pointer]:
+                      - /url: "#cite_note-BalmondGGACProfile-2"
+              - generic [ref=e579]:
+                - heading "Abilities" [level=3] [ref=e580]
+                - list [ref=e582]:
+                  - listitem [ref=e583]:
+                    - link "Bloodthirst" [ref=e584] [cursor=pointer]:
+                      - /url: "#Passive"
+                  - listitem [ref=e585]:
+                    - text: "Primal Vitality: The innate gift of the Orcs"
+                    - superscript [ref=e586]:
+                      - link "[2]" [ref=e587] [cursor=pointer]:
+                        - /url: "#cite_note-BalmondGGACProfile-2"
+              - generic [ref=e588]:
+                - heading "Battles fought" [level=3] [ref=e589]
+                - generic [ref=e590]: Invasion of Moonlit Forest
+              - generic [ref=e591]:
+                - heading "Website" [level=3] [ref=e592]
+                - list [ref=e594]:
+                  - listitem [ref=e595]:
+                    - link "Legends of Dawn hero page" [ref=e596] [cursor=pointer]:
+                      - /url: https://play.mobilelegends.com/lore/hero/Balmond
+                  - listitem [ref=e597]:
+                    - link "Balmond Mastery Code" [ref=e598] [cursor=pointer]:
+                      - /url: /wiki/Balmond/Mastery_Code
+              - generic [ref=e599]:
+                - heading "Personal profile" [level=2] [ref=e600]
+                - generic [ref=e601]:
+                  - heading "Height" [level=3] [ref=e602]
+                  - generic [ref=e603]:
+                    - text: 195 cm
+                    - superscript [ref=e604]:
+                      - link "[2]" [ref=e605] [cursor=pointer]:
+                        - /url: "#cite_note-BalmondGGACProfile-2"
+                - generic [ref=e606]:
+                  - heading "Weight" [level=3] [ref=e607]
+                  - generic [ref=e608]:
+                    - text: 135 kg
+                    - superscript [ref=e609]:
+                      - link "[2]" [ref=e610] [cursor=pointer]:
+                        - /url: "#cite_note-BalmondGGACProfile-2"
+                - generic [ref=e611]:
+                  - heading "Traits" [level=3] [ref=e612]
+                  - generic [ref=e613]:
+                    - text: Feral, Ferocious, Stoic & Persistent, Ambitious
+                    - superscript [ref=e614]:
+                      - link "[2]" [ref=e615] [cursor=pointer]:
+                        - /url: "#cite_note-BalmondGGACProfile-2"
+              - generic [ref=e616]:
+                - heading "Relationships" [level=2] [ref=e617]
+                - list [ref=e620]:
+                  - listitem [ref=e621]: Unnamed father
+                  - listitem [ref=e622]:
+                    - generic [ref=e623]:
+                      - generic "Alice" [ref=e626]:
+                        - img "Alice" [ref=e627]
+                      - link "Alice" [ref=e629] [cursor=pointer]:
+                        - /url: /wiki/Alice
+                    - text: (mutually exploit)
+                  - listitem [ref=e630]:
+                    - generic [ref=e631]:
+                      - generic "Thamuz" [ref=e634]:
+                        - img "Thamuz" [ref=e635]
+                      - link "Thamuz" [ref=e637] [cursor=pointer]:
+                        - /url: /wiki/Thamuz
+                    - text: (rival)
+                  - listitem [ref=e638]:
+                    - generic [ref=e639]:
+                      - generic "Alucard" [ref=e642]:
+                        - img "Alucard" [ref=e643]
+                      - link "Alucard" [ref=e645] [cursor=pointer]:
+                        - /url: /wiki/Alucard
+                    - text: ","
+                    - generic [ref=e646]:
+                      - generic "Harith" [ref=e649]:
+                        - img "Harith" [ref=e650]
+                      - link "Harith" [ref=e652] [cursor=pointer]:
+                        - /url: /wiki/Harith
+                    - text: ","
+                    - generic [ref=e653]:
+                      - generic "Estes" [ref=e656]:
+                        - img "Estes" [ref=e657]
+                      - link "Estes" [ref=e659] [cursor=pointer]:
+                        - /url: /wiki/Estes
+                    - text: ","
+                    - generic [ref=e660]:
+                      - generic "Miya" [ref=e663]:
+                        - img "Miya" [ref=e664]
+                      - link "Miya" [ref=e666] [cursor=pointer]:
+                        - /url: /wiki/Miya
+                    - text: (enemies)
+                  - listitem [ref=e667]:
+                    - generic [ref=e668]:
+                      - generic "Dyrroth" [ref=e671]:
+                        - img "Dyrroth" [ref=e672]
+                      - link "Dyrroth" [ref=e674] [cursor=pointer]:
+                        - /url: /wiki/Dyrroth
+                    - text: (conqueror/defeater)
+              - generic [ref=e675]:
+                - heading "Voiced by" [level=2] [ref=e676]:
+                  - link "Voiced by" [ref=e677] [cursor=pointer]:
+                    - /url: /wiki/List_of_voice_actors
+                - generic [ref=e678]:
+                  - heading "English" [level=3] [ref=e679]
+                  - generic [ref=e680]:
+                    - text: Con Eyre (2017–2021)
+                    - superscript [ref=e681]:
+                      - link "[3]" [ref=e682] [cursor=pointer]:
+                        - /url: "#cite_note-coneyre-3"
+                    - paragraph [ref=e683]:
+                      - link "Patrick Seitz" [ref=e684] [cursor=pointer]:
+                        - /url: https://en.wikipedia.org/wiki/Patrick_Seitz
+                      - text: (2021-present)
+                      - superscript [ref=e685]:
+                        - link "[4]" [ref=e686] [cursor=pointer]:
+                          - /url: "#cite_note-Imdb_page-4"
+                - generic [ref=e687]:
+                  - heading "Japanese" [level=3] [ref=e688]
+                  - generic [ref=e689]:
+                    - link "Sanpei Yuuki (三瓶 雄樹)" [ref=e690] [cursor=pointer]:
+                      - /url: https://www.imdb.com/find?q=nm9846051
+                    - superscript [ref=e691]:
+                      - link "[5]" [ref=e692] [cursor=pointer]:
+                        - /url: "#cite_note-In-game_credit-5"
+                - generic [ref=e693]:
+                  - heading "Indonesian" [level=3] [ref=e694]
+                  - generic [ref=e695]:
+                    - text: Edy Rachmat
+                    - superscript [ref=e696]: "[citation needed]"
+                - generic [ref=e697]:
+                  - heading "Arabic" [level=3] [ref=e698]
+                  - generic [ref=e699]:
+                    - text: Khaled El Shershaby
+                    - superscript [ref=e700]: "[citation needed]"
+                - generic [ref=e701]:
+                  - heading "Portuguese" [level=3] [ref=e702]
+                  - generic [ref=e703]:
+                    - text: Fransisco Junior
+                    - superscript [ref=e704]: "[citation needed]"
+                - generic [ref=e705]:
+                  - heading "Russian" [level=3] [ref=e706]
+                  - generic [ref=e707]:
+                    - text: Dakhnenko Maksim
+                    - superscript [ref=e708]: "[citation needed]"
+                - generic [ref=e709]:
+                  - heading "Turkish" [level=3] [ref=e710]
+                  - generic [ref=e711]:
+                    - text: Kadir Özübek
+                    - superscript [ref=e712]: "[citation needed]"
+                - generic [ref=e713]:
+                  - heading "Spanish" [level=3] [ref=e714]
+                  - generic [ref=e715]:
+                    - text: Carlos Segundo
+                    - superscript [ref=e716]: "[citation needed]"
+                - generic [ref=e717]:
+                  - heading "Chinese" [level=3] [ref=e718]
+                  - generic [ref=e719]:
+                    - text: Sheng Feng (图特哈蒙)
+                    - superscript [ref=e720]: "[citation needed]"
+            - table [ref=e721]:
+              - rowgroup [ref=e722]:
+                - row "“ Leader of the Orc Legion ”" [ref=e723]:
+                  - cell "“" [ref=e724]
+                  - cell "Leader of the Orc Legion" [ref=e725]
+                  - cell "”" [ref=e726]
+            - paragraph [ref=e727]:
+              - text: Balmond is the leader of the Orcs, leading the Orc army against the invasion of the Demons. During a battle, he consumed the blood of a Blood Demon and went into a rage. This aroused
+              - link "Alice" [ref=e728] [cursor=pointer]:
+                - /url: /wiki/Alice
+              - text: "'s interest, so she signed a contract with Balmond on the condition of returning the Stormeye Wasteland. Balmond, and his Orc army have since fought for the Demons."
+            - heading "Lore" [level=3] [ref=e729]
+            - paragraph [ref=e730]:
+              - text: The Orcs are a race with a long history and perhaps the most common of those in the
+              - link "Land of Dawn" [ref=e731] [cursor=pointer]:
+                - /url: /wiki/Land_of_Dawn
+              - text: . Throughout the mists of time, they have served under Lord of Abyss as they fought throughout the fierce of Endless War; and also engaged mankind in savage battle during the Golden Era. A series of successive defeats left the once strong United Demi-humans divided instead into Orcs, Minotaurs, and Centaurs, among other peoples. It also left them bereft of their home, forced into exile, and the southern lands where they eked out a meagre [
+              - link "sic" [ref=e733] [cursor=pointer]:
+                - /url: https://en.wikipedia.org/wiki/sic
+              - text: "] existence."
+            - paragraph [ref=e734]:
+              - text: Despite all this, it seemed fate had not yet finished toying with this ancient race. As the
+              - link "Abyss" [ref=e735] [cursor=pointer]:
+                - /url: /wiki/Abyss
+              - text: encroach once more powerful demons emerged again from the south presenting a perilous threat to their declining Orc populations. Under the demons' oppression the Orcs were made to split into several small clans scattered throughout the vast expanse of the roaring wilderness, exploited to the utmost.
+            - paragraph [ref=e736]: Balmond was born in a traditional orc tribe within the Roaring Wilderness, and from a young age his father had always taught him all kinds of combat skills. Along with this, he would also regale him tiles of the Orcs' former glories; how they once resided in their homeland in the north of Lantis Mountains and their millennia of fierce battles waged against the elves and humans. He hoped that Balmond would, one day, be able to become a true Orc leader and return them to their former glory.
+            - paragraph [ref=e737]: Over twenty years later, Balmond had grown into a mighty Orc under his father's teaching. And during this time, the demons' brutality had instilled Balmond with deep, dark memories, only making him yearn even more for the day when the Orcs could return to power, bringing back their once-formidable kingdom. To this end the young Balmond not only trained relentlessly, but also dedicated himself to studying all kinds of ancient Orc tomes, which gifted him with an astute strategic knowledge.
+            - paragraph [ref=e738]: "But this was when the flames of war were just beginning to kindle. In order to amass the strength required to attack the Empire, the terrible demons invaded the Orc tribes tirelessly, plundering and pillaging their resources causing the Orcs unspeakable suffering. Prior to this the Orcs were powerless to resist the demon forces, and had no choice but to submit to preserve the peace, however short-lived it may be. But this time, Balmond led the warriors of his clan into battle and slayed the demon leader who had come to rob them of their resources, in doing so sparking the Orc rebellion. The Orc race had taken enough of the demons' oppression, and now each tribe lent Balmond their strength: they were no longer scattered clans, instead becoming a truly powerful force to be reckoned with. The rebellion spread throughout the Roaring Wilderness like wildfire."
+            - paragraph [ref=e739]: Under Balmond's command, the fierce Orc warriors successfully fought back the demon armies that came to suppress them, dealing a heavy blow.
+            - paragraph [ref=e740]: This gigantic counterattack launched by the Orcs shocked the demons, enraging Lord Lava, Thamuz. He dispatched numerous terrible troops formed of Blood Demons and Fiends to the Roaring Wilderness, as he would never stand for resistance against his demons within the Wretched Expanse.
+            - paragraph [ref=e741]: Despite the disparity in power, a relentless fight to the death between the Orcs and demons was raged, yet the latter surged like tidal waves and things began to take a turn for the worse for the Orcs. Their power waned by the day, their defensive lines shrinking until they were entirely surrounded.
+            - paragraph [ref=e742]: "To protect his race from extinction, Balmond decided he would fight right to the bitter end, and led an effort to break through their ranks. In this blazing battle the demons again flooded in, their numbers seemingly infinite, and the bodies of Orc warriors were strewn all around as they advanced. Balmond shook with fury: and cast aside his now-blunted battleax as he gripped a demon by the neck to bite at its throat, severing its head with his teeth."
+            - paragraph [ref=e743]: Yet this attack sent copious amounts of demon blood flowing into Balmond's body, which resulted in an incredible transformation. It fueled him as he went utterly berserk, with unimaginable power that he wielded to break through the enemy lines. The Orcs were showered in demon blood, igniting a fearsome battle power within them that shook their demon oppressors to their core. New possibilities had presented themselves, and this caused them to change their plans on wiping out the Orcs.
+            - paragraph [ref=e744]:
+              - text: To this end, the cunning
+              - link "Alice" [ref=e745] [cursor=pointer]:
+                - /url: /wiki/Alice
+              - text: "managed to track down Balmond and present him with an offer: once the Empire had been defeated, the entire Roaring Wilderness would be returned to the Orc peoples in exchange for Balmond's loyalty to the demons. In order to preserve the power of his Orc brethren, Balmond reached an agreement with Alice, and his forces swore loyalty to the Abyss. They would then serve as the demons' vanguard forces as they stormed"
+              - link "Azrya" [ref=e746] [cursor=pointer]:
+                - /url: /wiki/Azrya_Woodlands
+              - text: .
+            - paragraph [ref=e747]: However, even Alice could never have imagined that an even greater plan had been brewing deep in Balmond's mind. First, he would command the demon forces to breach the Moonlit Forest and occupy the elven kingdom, where he would build his strength steadily.
+            - paragraph [ref=e748]: Following that, the union of the Orcs and the revival of their kingdom that they'd yearned for over millennia would finally come to be.
+            - heading "Abilities" [level=2] [ref=e750]
+            - heading "Passive" [level=3] [ref=e751]
+            - table [ref=e752]:
+              - rowgroup [ref=e753]:
+                - row "Bloodthirst Heal Balmond recovers 5% Max HP after killing a Minion or Creep, and 20% Max HP after killing a hero. Skill terms [Expand] Max HP The maximum HP currently can have." [ref=e754]:
+                  - cell [ref=e755]:
+                    - figure [ref=e757]:
+                      - link "Bloodthirst" [ref=e758] [cursor=pointer]:
+                        - /url: https://static.wikia.nocookie.net/mobile-legends/images/3/34/Bloodthirst.png/revision/latest?cb=20220624121727
+                        - img "Bloodthirst" [ref=e759]
+                  - cell "Bloodthirst Heal Balmond recovers 5% Max HP after killing a Minion or Creep, and 20% Max HP after killing a hero. Skill terms [Expand] Max HP The maximum HP currently can have." [ref=e760]:
+                    - generic [ref=e761]: Bloodthirst
+                    - generic [ref=e762]: Heal
+                    - separator [ref=e763]
+                    - text: Balmond recovers 5%
+                    - link "Max HP" [ref=e764] [cursor=pointer]:
+                      - /url: /wiki/Max_HP
+                    - text: after killing a Minion or Creep, and 20%
+                    - link "Max HP" [ref=e765] [cursor=pointer]:
+                      - /url: /wiki/Max_HP
+                    - text: after killing a hero.
+                    - separator [ref=e766]
+                    - text: Skill terms
+                    - generic [ref=e767]:
+                      - text: "[Expand]"
+                      - generic [ref=e768]:
+                        - term [ref=e769]:
+                          - link "Max HP" [ref=e770] [cursor=pointer]:
+                            - /url: /wiki/Max_HP
+                        - definition [ref=e771]: The maximum HP currently can have.
+                - row [ref=e772]:
+                  - cell [ref=e773]
+            - heading "Skill 1" [level=3] [ref=e774]
+            - table [ref=e775]:
+              - rowgroup [ref=e776]:
+                - row "Soul Lock Mobility Slow Balmond charges to the target direction for a set distance or until he hits an enemy hero, dealing 150–275 (+60% Total Physical Attack) Physical Damage to enemies along the way. The enemy hero hit will be knocked back slightly, and will have their Movement Speed reduced by 40% and Physical Defense reduced by 40% for 3 seconds. Skill terms [Expand] Blink Movement ability that can pass through obstacles. Physical Damage Skill Deal Physical DMG to enemies. Triggers Spell Vamp. Movement Speed Movement Speed on the battlefield. Usually Calculated and Actual Movement Speed is equal. But when Movement Speed is below 230 or over 420 both Slowdown and Speedup Effect will decay. Calculated Movement Speed = Basic Movement Speed × (100% + All Speedup Effect% - All Slowdown Effect%)." [ref=e777]:
+                  - cell [ref=e778]:
+                    - figure [ref=e780]:
+                      - link "Soul Lock" [ref=e781] [cursor=pointer]:
+                        - /url: https://static.wikia.nocookie.net/mobile-legends/images/d/dd/Soul_Lock.png/revision/latest?cb=20220624121809
+                        - img "Soul Lock" [ref=e782]
+                  - cell "Soul Lock Mobility Slow Balmond charges to the target direction for a set distance or until he hits an enemy hero, dealing 150–275 (+60% Total Physical Attack) Physical Damage to enemies along the way. The enemy hero hit will be knocked back slightly, and will have their Movement Speed reduced by 40% and Physical Defense reduced by 40% for 3 seconds. Skill terms [Expand] Blink Movement ability that can pass through obstacles. Physical Damage Skill Deal Physical DMG to enemies. Triggers Spell Vamp. Movement Speed Movement Speed on the battlefield. Usually Calculated and Actual Movement Speed is equal. But when Movement Speed is below 230 or over 420 both Slowdown and Speedup Effect will decay. Calculated Movement Speed = Basic Movement Speed × (100% + All Speedup Effect% - All Slowdown Effect%)." [ref=e783]:
+                    - generic [ref=e784]: Soul Lock
+                    - generic [ref=e785]: Mobility Slow
+                    - separator [ref=e786]
+                    - text: Balmond charges to the target direction for a set distance or until he hits an enemy hero, dealing 150–275
+                    - link "(+60% Total Physical Attack)" [ref=e787] [cursor=pointer]:
+                      - /url: /wiki/Physical_Attack
+                    - link "Physical Damage" [ref=e788] [cursor=pointer]:
+                      - /url: /wiki/Physical_Damage
+                    - text: to enemies along the way. The enemy hero hit will be
+                    - link "knocked back" [ref=e789] [cursor=pointer]:
+                      - /url: /wiki/Knocked_back
+                    - text: slightly, and will have their
+                    - link "Movement Speed reduced" [ref=e790] [cursor=pointer]:
+                      - /url: /wiki/Slow
+                    - text: by 40% and
+                    - link "Physical Defense" [ref=e791] [cursor=pointer]:
+                      - /url: /wiki/Physical_Defense
+                    - text: reduced by 40% for 3 seconds.
+                    - separator [ref=e792]
+                    - text: Skill terms
+                    - generic [ref=e793]:
+                      - text: "[Expand]"
+                      - generic [ref=e794]:
+                        - term [ref=e795]:
+                          - link "Blink" [ref=e796] [cursor=pointer]:
+                            - /url: /wiki/Blink
+                        - definition [ref=e797]: Movement ability that can pass through obstacles.
+                        - term [ref=e798]: Physical Damage Skill
+                        - definition [ref=e799]: Deal Physical DMG to enemies. Triggers Spell Vamp.
+                        - term [ref=e800]:
+                          - link "Movement Speed" [ref=e801] [cursor=pointer]:
+                            - /url: /wiki/Movement_Speed
+                        - definition [ref=e802]: Movement Speed on the battlefield. Usually Calculated and Actual Movement Speed is equal. But when Movement Speed is below 230 or over 420 both Slowdown and Speedup Effect will decay. Calculated Movement Speed = Basic Movement Speed × (100% + All Speedup Effect% - All Slowdown Effect%).
+                - row "Level scaling Properties 1 2 3 4 5 6 Cooldown 8.0 7.4 6.8 6.2 5.6 5.0 Base Damage 150 175 200 225 250 275" [ref=e803]:
+                  - cell "Level scaling Properties 1 2 3 4 5 6 Cooldown 8.0 7.4 6.8 6.2 5.6 5.0 Base Damage 150 175 200 225 250 275" [ref=e804]:
+                    - generic [ref=e805]: Level scaling
+                    - table [ref=e806]:
+                      - rowgroup [ref=e807]:
+                        - row "Properties 1 2 3 4 5 6" [ref=e808]:
+                          - columnheader "Properties" [ref=e809]
+                          - columnheader "1" [ref=e810]
+                          - columnheader "2" [ref=e811]
+                          - columnheader "3" [ref=e812]
+                          - columnheader "4" [ref=e813]
+                          - columnheader "5" [ref=e814]
+                          - columnheader "6" [ref=e815]
+                        - row "Cooldown 8.0 7.4 6.8 6.2 5.6 5.0" [ref=e816]:
+                          - cell "Cooldown" [ref=e817]
+                          - cell "8.0" [ref=e818]
+                          - cell "7.4" [ref=e819]
+                          - cell "6.8" [ref=e820]
+                          - cell "6.2" [ref=e821]
+                          - cell "5.6" [ref=e822]
+                          - cell "5.0" [ref=e823]
+                        - row "Base Damage 150 175 200 225 250 275" [ref=e824]:
+                          - cell "Base Damage" [ref=e825]
+                          - cell "150" [ref=e826]
+                          - cell "175" [ref=e827]
+                          - cell "200" [ref=e828]
+                          - cell "225" [ref=e829]
+                          - cell "250" [ref=e830]
+                          - cell "275" [ref=e831]
+            - heading "Skill 2" [level=3] [ref=e832]
+            - table [ref=e833]:
+              - rowgroup [ref=e834]:
+                - row "Cyclone Sweep AOE Buff Balmond gains 15% Movement Speed that decays over time and spins his axe for 3 seconds, dealing 25–100 (+25% Total Physical Attack) (+2% Extra HP) Physical Damage per hit to nearby enemies up to 14 times. Each subsequent hit on the same enemy will deal 8.5% increased damage (up to 68%). The Physical Attack bonus portion of the damage can Crit. Skill terms [Expand] Physical Damage Skill Deal Physical DMG to enemies. Triggers Spell Vamp." [ref=e835]:
+                  - cell [ref=e836]:
+                    - figure [ref=e838]:
+                      - link "Cyclone Sweep" [ref=e839] [cursor=pointer]:
+                        - /url: https://static.wikia.nocookie.net/mobile-legends/images/d/db/Cyclone_Sweep.png/revision/latest?cb=20220624121821
+                        - img "Cyclone Sweep" [ref=e840]
+                  - cell "Cyclone Sweep AOE Buff Balmond gains 15% Movement Speed that decays over time and spins his axe for 3 seconds, dealing 25–100 (+25% Total Physical Attack) (+2% Extra HP) Physical Damage per hit to nearby enemies up to 14 times. Each subsequent hit on the same enemy will deal 8.5% increased damage (up to 68%). The Physical Attack bonus portion of the damage can Crit. Skill terms [Expand] Physical Damage Skill Deal Physical DMG to enemies. Triggers Spell Vamp." [ref=e841]:
+                    - generic [ref=e842]: Cyclone Sweep
+                    - generic [ref=e843]: AOE Buff
+                    - separator [ref=e844]
+                    - text: Balmond gains 15%
+                    - link "Movement Speed" [ref=e845] [cursor=pointer]:
+                      - /url: /wiki/Movement_Speed
+                    - text: that decays over time and spins his axe for 3 seconds, dealing 25–100
+                    - link "(+25% Total Physical Attack)" [ref=e846] [cursor=pointer]:
+                      - /url: /wiki/Physical_Attack
+                    - link "(+2% Extra HP)" [ref=e847] [cursor=pointer]:
+                      - /url: /wiki/Health
+                    - link "Physical Damage" [ref=e848] [cursor=pointer]:
+                      - /url: /wiki/Physical_Damage
+                    - text: per hit to nearby enemies up to 14 times. Each subsequent hit on the same enemy will deal 8.5% increased damage (up to 68%).
+                    - text: The
+                    - link "Physical Attack" [ref=e849] [cursor=pointer]:
+                      - /url: /wiki/Physical_Attack
+                    - text: bonus portion of the damage can
+                    - link "Crit" [ref=e850] [cursor=pointer]:
+                      - /url: /wiki/Crit
+                    - text: .
+                    - separator [ref=e851]
+                    - text: Skill terms
+                    - generic [ref=e852]:
+                      - text: "[Expand]"
+                      - generic [ref=e853]:
+                        - term [ref=e854]: Physical Damage Skill
+                        - definition [ref=e855]: Deal Physical DMG to enemies. Triggers Spell Vamp.
+                - row "Level scaling Properties 1 2 3 4 5 6 Cooldown 6.0 Base Damage 25 40 55 70 85 100 Max Damage 350 560 770 980 1190 1400 Stack scaling Property 1 2 3 4 5 6 7 8 Damage Increase per Subsequent Hit 8.5% Notes Cyclone Sweep can only be cancelled by using his other skills. (added Patch Notes 1.7.82) Cyclone Sweep cannot be interrupted by Crowd Control. (added Patch Notes 1.8.44)" [ref=e856]:
+                  - cell "Level scaling Properties 1 2 3 4 5 6 Cooldown 6.0 Base Damage 25 40 55 70 85 100 Max Damage 350 560 770 980 1190 1400 Stack scaling Property 1 2 3 4 5 6 7 8 Damage Increase per Subsequent Hit 8.5% Notes Cyclone Sweep can only be cancelled by using his other skills. (added Patch Notes 1.7.82) Cyclone Sweep cannot be interrupted by Crowd Control. (added Patch Notes 1.8.44)" [ref=e857]:
+                    - generic [ref=e858]: Level scaling
+                    - table [ref=e859]:
+                      - rowgroup [ref=e860]:
+                        - row "Properties 1 2 3 4 5 6" [ref=e861]:
+                          - columnheader "Properties" [ref=e862]
+                          - columnheader "1" [ref=e863]
+                          - columnheader "2" [ref=e864]
+                          - columnheader "3" [ref=e865]
+                          - columnheader "4" [ref=e866]
+                          - columnheader "5" [ref=e867]
+                          - columnheader "6" [ref=e868]
+                        - row "Cooldown 6.0" [ref=e869]:
+                          - cell "Cooldown" [ref=e870]
+                          - cell "6.0" [ref=e871]
+                        - row "Base Damage 25 40 55 70 85 100" [ref=e872]:
+                          - cell "Base Damage" [ref=e873]
+                          - cell "25" [ref=e874]
+                          - cell "40" [ref=e875]
+                          - cell "55" [ref=e876]
+                          - cell "70" [ref=e877]
+                          - cell "85" [ref=e878]
+                          - cell "100" [ref=e879]
+                        - row "Max Damage 350 560 770 980 1190 1400" [ref=e880]:
+                          - cell "Max Damage" [ref=e881]
+                          - cell "350" [ref=e882]
+                          - cell "560" [ref=e883]
+                          - cell "770" [ref=e884]
+                          - cell "980" [ref=e885]
+                          - cell "1190" [ref=e886]
+                          - cell "1400" [ref=e887]
+                    - generic [ref=e888]: Stack scaling
+                    - table [ref=e889]:
+                      - rowgroup [ref=e890]:
+                        - row "Property 1 2 3 4 5 6 7 8" [ref=e891]:
+                          - columnheader "Property" [ref=e892]
+                          - columnheader "1" [ref=e893]
+                          - columnheader "2" [ref=e894]
+                          - columnheader "3" [ref=e895]
+                          - columnheader "4" [ref=e896]
+                          - columnheader "5" [ref=e897]
+                          - columnheader "6" [ref=e898]
+                          - columnheader "7" [ref=e899]
+                          - columnheader "8" [ref=e900]
+                        - row "Damage Increase per Subsequent Hit 8.5%" [ref=e901]:
+                          - cell "Damage Increase per Subsequent Hit" [ref=e902]
+                          - cell "8.5%" [ref=e903]
+                    - paragraph [ref=e904]: Notes
+                    - list [ref=e905]:
+                      - listitem [ref=e906]: Cyclone Sweep can only be cancelled by using his other skills. (added Patch Notes 1.7.82)
+                      - listitem [ref=e907]:
+                        - text: Cyclone Sweep cannot be interrupted by
+                        - link "Crowd Control" [ref=e908] [cursor=pointer]:
+                          - /url: /wiki/Crowd_Control
+                        - text: . (added Patch Notes 1.8.44)
+            - heading "Ultimate" [level=3] [ref=e910]
+            - table [ref=e911]:
+              - rowgroup [ref=e912]:
+                - row "Lethal Counter Burst Slow Balmond unleashes a huge strike in the target direction (this skill can only be interrupted by Suppression), dealing 150 (+70% Total Physical Attack) (+target's 30%–45% Lost HP) True Damage. This skill only deals up to 1000–2000 damage to non-hero units. Skill terms [Expand] True Damage Skill Deal True Damage to enemies. Triggers Spell Vamp. Lost HP Lost HP = Max HP - Current HP. True Damage If there is no way to reduce damage taken, you can try increasing Max HP." [ref=e913]:
+                  - cell [ref=e914]:
+                    - figure [ref=e916]:
+                      - link "Lethal Counter" [ref=e917] [cursor=pointer]:
+                        - /url: https://static.wikia.nocookie.net/mobile-legends/images/5/50/Lethal_Counter.png/revision/latest?cb=20220624121847
+                        - img "Lethal Counter" [ref=e918]
+                  - cell "Lethal Counter Burst Slow Balmond unleashes a huge strike in the target direction (this skill can only be interrupted by Suppression), dealing 150 (+70% Total Physical Attack) (+target's 30%–45% Lost HP) True Damage. This skill only deals up to 1000–2000 damage to non-hero units. Skill terms [Expand] True Damage Skill Deal True Damage to enemies. Triggers Spell Vamp. Lost HP Lost HP = Max HP - Current HP. True Damage If there is no way to reduce damage taken, you can try increasing Max HP." [ref=e919]:
+                    - generic [ref=e920]: Lethal Counter
+                    - generic [ref=e921]: Burst Slow
+                    - separator [ref=e922]
+                    - text: Balmond unleashes a huge strike in the target direction (this skill can only be interrupted by
+                    - link "Suppression" [ref=e923] [cursor=pointer]:
+                      - /url: /wiki/Suppression
+                    - text: ), dealing 150
+                    - link "(+70% Total Physical Attack)" [ref=e924] [cursor=pointer]:
+                      - /url: /wiki/Physical_Attack
+                    - link "(+target's 30%–45% Lost HP)" [ref=e925] [cursor=pointer]:
+                      - /url: /wiki/Health
+                    - link "True Damage" [ref=e926] [cursor=pointer]:
+                      - /url: /wiki/True_Damage
+                    - text: .
+                    - text: This skill only deals up to 1000–2000 damage to non-hero units.
+                    - separator [ref=e927]
+                    - text: Skill terms
+                    - generic [ref=e928]:
+                      - text: "[Expand]"
+                      - generic [ref=e929]:
+                        - term [ref=e930]: True Damage Skill
+                        - definition [ref=e931]: Deal True Damage to enemies. Triggers Spell Vamp.
+                        - term [ref=e932]: Lost HP
+                        - definition [ref=e933]:
+                          - generic [ref=e934]: Lost HP = Max HP - Current HP.
+                        - generic [ref=e935]:
+                          - term [ref=e936]:
+                            - link "True Damage" [ref=e937] [cursor=pointer]:
+                              - /url: /wiki/True_Damage
+                          - definition [ref=e938]: If there is no way to reduce damage taken, you can try increasing Max HP.
+                - row "Level scaling Properties 1 2 3 Cooldown 34.0 29.0 24.0 Extra Damage 30% 37.5% 45% Non-Hero Unit Damage Cap 1000 1500 2000 Notes Does not show an area of effect pre-animation with Savage Pointguard skin." [ref=e939]:
+                  - cell "Level scaling Properties 1 2 3 Cooldown 34.0 29.0 24.0 Extra Damage 30% 37.5% 45% Non-Hero Unit Damage Cap 1000 1500 2000 Notes Does not show an area of effect pre-animation with Savage Pointguard skin." [ref=e940]:
+                    - generic [ref=e941]: Level scaling
+                    - table [ref=e942]:
+                      - rowgroup [ref=e943]:
+                        - row "Properties 1 2 3" [ref=e944]:
+                          - columnheader "Properties" [ref=e945]
+                          - columnheader "1" [ref=e946]
+                          - columnheader "2" [ref=e947]
+                          - columnheader "3" [ref=e948]
+                        - row "Cooldown 34.0 29.0 24.0" [ref=e949]:
+                          - cell "Cooldown" [ref=e950]
+                          - cell "34.0" [ref=e951]
+                          - cell "29.0" [ref=e952]
+                          - cell "24.0" [ref=e953]
+                        - row "Extra Damage 30% 37.5% 45%" [ref=e954]:
+                          - cell "Extra Damage" [ref=e955]
+                          - cell "30%" [ref=e956]
+                          - cell "37.5%" [ref=e957]
+                          - cell "45%" [ref=e958]
+                        - row "Non-Hero Unit Damage Cap 1000 1500 2000" [ref=e959]:
+                          - cell "Non-Hero Unit Damage Cap" [ref=e960]
+                          - cell "1000" [ref=e961]
+                          - cell "1500" [ref=e962]
+                          - cell "2000" [ref=e963]
+                    - paragraph [ref=e964]: Notes
+                    - list [ref=e965]:
+                      - listitem [ref=e966]: Does not show an area of effect pre-animation with Savage Pointguard skin.
+            - heading "Gallery" [level=2] [ref=e967]
+            - heading "Artwork" [level=3] [ref=e968]
+            - generic [ref=e969]:
+              - generic [ref=e970]:
+                - link "Bloody Beast" [ref=e973] [cursor=pointer]:
+                  - /url: /wiki/File:Balmond_(Bloody_Beast).jpg
+                  - img "Bloody Beast" [ref=e974]
+                - generic [ref=e975]: Bloody Beast
+              - generic [ref=e976]:
+                - link "Power Source" [ref=e979] [cursor=pointer]:
+                  - /url: /wiki/File:Balmond_(Power_Source).jpg
+                  - img "Power Source" [ref=e980]
+                - generic [ref=e981]: Power Source
+              - generic [ref=e982]:
+                - link "Ghoul's Fury" [ref=e985] [cursor=pointer]:
+                  - /url: /wiki/File:Balmond_(Ghoul%27s_Fury).jpg
+                  - img "Ghoul's Fury" [ref=e986]
+                - generic [ref=e987]: Ghoul's Fury
+              - generic [ref=e988]:
+                - link "Savage Hunter" [ref=e991] [cursor=pointer]:
+                  - /url: /wiki/File:Balmond_(Savage_Hunter).jpg
+                  - img "Savage Hunter" [ref=e992]
+                - generic [ref=e993]: Savage Hunter
+              - generic [ref=e994]:
+                - link "God of Mountains" [ref=e997] [cursor=pointer]:
+                  - /url: /wiki/File:Balmond_(God_of_Mountains).jpg
+                  - img "God of Mountains" [ref=e998]
+                - generic [ref=e999]: God of Mountains
+              - generic [ref=e1000]:
+                - link "Savage Pointguard" [ref=e1003] [cursor=pointer]:
+                  - /url: /wiki/File:Balmond_(Savage_Pointguard).jpg
+                  - img "Savage Pointguard" [ref=e1004]
+                - generic [ref=e1005]: Savage Pointguard
+              - generic [ref=e1006]:
+                - link "Bioroid" [ref=e1009] [cursor=pointer]:
+                  - /url: /wiki/File:Balmond_(Bioroid).jpg
+                  - img "Bioroid" [ref=e1010]
+                - generic [ref=e1011]: Bioroid
+              - generic [ref=e1012]:
+                - link "Infernal Warlord" [ref=e1015] [cursor=pointer]:
+                  - /url: /wiki/File:Balmond_(Infernal_Warlord).jpg
+                  - img "Infernal Warlord" [ref=e1016]
+                - generic [ref=e1017]: Infernal Warlord
+              - generic [ref=e1018]:
+                - link "Razor Edge" [ref=e1021] [cursor=pointer]:
+                  - /url: /wiki/File:Balmond_(Razor_Edge).jpg
+                  - img "Razor Edge" [ref=e1022]
+                - generic [ref=e1023]: Razor Edge
+              - generic [ref=e1024]:
+                - link "Ironhide Berserker" [ref=e1027] [cursor=pointer]:
+                  - /url: /wiki/File:Balmond_(Ironhide_Berserker).jpg
+                  - img "Ironhide Berserker" [ref=e1028]
+                - generic [ref=e1029]: Ironhide Berserker
+            - heading "Avatar icons" [level=3] [ref=e1031]
+            - generic [ref=e1032]:
+              - generic [ref=e1033]:
+                - link "Bloody Beast" [ref=e1036] [cursor=pointer]:
+                  - /url: /wiki/File:Hero021-icon.png
+                  - img "Bloody Beast" [ref=e1037]
+                - generic [ref=e1038]: Bloody Beast
+              - generic [ref=e1039]:
+                - link "Power Source" [ref=e1042] [cursor=pointer]:
+                  - /url: /wiki/File:Hero022-icon.png
+                  - img "Power Source" [ref=e1043]
+                - generic [ref=e1044]: Power Source
+              - generic [ref=e1045]:
+                - link "Ghoul's Fury" [ref=e1048] [cursor=pointer]:
+                  - /url: /wiki/File:Hero023-icon.png
+                  - img "Ghoul's Fury" [ref=e1049]
+                - generic [ref=e1050]: Ghoul's Fury
+              - generic [ref=e1051]:
+                - link "Savage Hunter" [ref=e1054] [cursor=pointer]:
+                  - /url: /wiki/File:Hero024-icon.png
+                  - img "Savage Hunter" [ref=e1055]
+                - generic [ref=e1056]: Savage Hunter
+              - generic [ref=e1057]:
+                - link "God of Mountains" [ref=e1060] [cursor=pointer]:
+                  - /url: /wiki/File:Hero025-icon.png
+                  - img "God of Mountains" [ref=e1061]
+                - generic [ref=e1062]: God of Mountains
+              - generic [ref=e1063]:
+                - link "Savage Pointguard" [ref=e1066] [cursor=pointer]:
+                  - /url: /wiki/File:Hero026-icon.png
+                  - img "Savage Pointguard" [ref=e1067]
+                - generic [ref=e1068]: Savage Pointguard
+              - generic [ref=e1069]:
+                - link "Bioroid" [ref=e1072] [cursor=pointer]:
+                  - /url: /wiki/File:Hero027-icon.png
+                  - img "Bioroid" [ref=e1073]
+                - generic [ref=e1074]: Bioroid
+              - generic [ref=e1075]:
+                - link "Infernal Warlord" [ref=e1078] [cursor=pointer]:
+                  - /url: /wiki/File:Hero028-icon.png
+                  - img "Infernal Warlord" [ref=e1079]
+                - generic [ref=e1080]: Infernal Warlord
+              - generic [ref=e1081]:
+                - link "Razor Edge" [ref=e1084] [cursor=pointer]:
+                  - /url: /wiki/File:Hero029-icon.png
+                  - img "Razor Edge" [ref=e1085]
+                - generic [ref=e1086]: Razor Edge
+              - generic [ref=e1087]:
+                - link "Ironhide Berserker" [ref=e1090] [cursor=pointer]:
+                  - /url: /wiki/File:Hero100210-icon.png
+                  - img "Ironhide Berserker" [ref=e1091]
+                - generic [ref=e1092]: Ironhide Berserker
+            - heading "Painted avatar icons" [level=3] [ref=e1093]
+            - generic [ref=e1095]:
+              - link "Brimstone Berserker" [ref=e1098] [cursor=pointer]:
+                - /url: /wiki/File:Hero100210-color01-icon.png
+                - img "Brimstone Berserker" [ref=e1099]
+              - generic [ref=e1100]: Brimstone Berserker
+            - heading "Battle emotes" [level=3] [ref=e1101]
+            - generic [ref=e1102]:
+              - generic [ref=e1103]:
+                - link "Bioroid Here Battle Emote - 04/2022 StarLight Special" [ref=e1106] [cursor=pointer]:
+                  - /url: /wiki/File:Balmond_Bioroid_Here.png
+                  - img "Bioroid Here Battle Emote - 04/2022 StarLight Special" [ref=e1107]
+                - generic [ref=e1108]:
+                  - text: Bioroid Here
+                  - text: Battle Emote - 04/2022
+                  - link "StarLight" [ref=e1109] [cursor=pointer]:
+                    - /url: /wiki/StarLight
+                  - text: Special
+              - generic [ref=e1110]:
+                - link "This is bad Esports Emote. Can be purchased in the Shop." [ref=e1113] [cursor=pointer]:
+                  - /url: /wiki/File:Balmond_This_is_bad.png
+                  - img "This is bad Esports Emote. Can be purchased in the Shop." [ref=e1114]
+                - generic [ref=e1115]:
+                  - text: This is bad
+                  - text: Esports Emote. Can be purchased in the Shop.
+            - heading "Trivia" [level=2] [ref=e1116]
+            - figure "\"Bloodthirst\" skill icon." [ref=e1117]:
+              - link "\"Bloodthirst\" skill icon." [ref=e1118] [cursor=pointer]:
+                - /url: https://static.wikia.nocookie.net/mobile-legends/images/3/34/Bloodthirst.png/revision/latest?cb=20220624121727
+                - img "\"Bloodthirst\" skill icon." [ref=e1119]
+              - paragraph [ref=e1121]: "\"Bloodthirst\" skill icon."
+            - list [ref=e1122]:
+              - listitem [ref=e1123]: The old Balmond design can still be seen in his "Bloodthirst" skill icon.
+              - listitem [ref=e1124]:
+                - text: The previous iteration of Balmond was probably inspired by the character
+                - link "Axe" [ref=e1125] [cursor=pointer]:
+                  - /url: https://dota.fandom.com/wiki/Axe
+                - text: "from Dota: Allstars, which itself is based on"
+                - link "Grommash Hellscream" [ref=e1126] [cursor=pointer]:
+                  - /url: https://wowpedia.fandom.com/wiki/Grommash_Hellscream
+                - text: in his current lore. His current voice actor in 2021,
+                - link "Patrick Seitz" [ref=e1127] [cursor=pointer]:
+                  - /url: https://en.wikipedia.org/wiki/Patrick_Seitz
+                - text: ", is known for his voice acting as"
+                - link "Garrosh Hellscream" [ref=e1128] [cursor=pointer]:
+                  - /url: https://wowpedia.fandom.com/wiki/Garrosh_Hellscream
+                - text: ", Grommash's son."
+              - listitem [ref=e1129]:
+                - text: In his old lore, he went from being
+                - generic [ref=e1130]:
+                  - generic "Alice" [ref=e1133]:
+                    - img "Alice" [ref=e1134]
+                  - link "Alice" [ref=e1136] [cursor=pointer]:
+                    - /url: /wiki/Alice
+                - text: "'s slave to being a mutually exploited ally in the new lore."
+              - listitem [ref=e1137]:
+                - text: Balmond's "Celestial General" (now "God of Mountains") is the skin with the longest release postponement; it was supposed to be released at 2018 but the skin was released on August 2021 for the
+                - link "Grand Collection" [ref=e1138] [cursor=pointer]:
+                  - /url: /wiki/Grand_Collection
+                - text: event.
+              - listitem [ref=e1139]: Balmond is notorious within the community as he can be seen in almost every MLBB Google Ads.
+            - heading "References" [level=2] [ref=e1141]
+            - list [ref=e1143]:
+              - listitem [ref=e1144]:
+                - link "↑" [ref=e1146] [cursor=pointer]:
+                  - /url: "#cite_ref-BalmondCNGameProfile_1-0"
+                - generic [ref=e1147]:
+                  - text: Official profile from MLBB CN
+                  - link "Game Profile CN Balmond.jpg (340 KB)" [ref=e1152] [cursor=pointer]:
+                    - /url: /wiki/File:Game_Profile_CN_Balmond.jpg
+                    - img "Game Profile CN Balmond.jpg (340 KB)" [ref=e1153]
+              - listitem [ref=e1154]:
+                - generic [ref=e1155]:
+                  - text: ↑
+                  - superscript [ref=e1156]:
+                    - link "2.0" [ref=e1157] [cursor=pointer]:
+                      - /url: "#cite_ref-BalmondGGACProfile_2-0"
+                  - superscript [ref=e1158]:
+                    - link "2.1" [ref=e1159] [cursor=pointer]:
+                      - /url: "#cite_ref-BalmondGGACProfile_2-1"
+                  - superscript [ref=e1160]:
+                    - link "2.2" [ref=e1161] [cursor=pointer]:
+                      - /url: "#cite_ref-BalmondGGACProfile_2-2"
+                  - superscript [ref=e1162]:
+                    - link "2.3" [ref=e1163] [cursor=pointer]:
+                      - /url: "#cite_ref-BalmondGGACProfile_2-3"
+                  - superscript [ref=e1164]:
+                    - link "2.4" [ref=e1165] [cursor=pointer]:
+                      - /url: "#cite_ref-BalmondGGACProfile_2-4"
+                  - superscript [ref=e1166]:
+                    - link "2.5" [ref=e1167] [cursor=pointer]:
+                      - /url: "#cite_ref-BalmondGGACProfile_2-5"
+                - generic [ref=e1168]:
+                  - link "Official profile from the MLBB Global Skin Design Contest 2026" [ref=e1169] [cursor=pointer]:
+                    - /url: https://www.ggac.com/contest/mlbb/challenge?lang=en_GB
+                  - link "Profile GGAC Balmond.png (392 KB)" [ref=e1174] [cursor=pointer]:
+                    - /url: /wiki/File:Profile_GGAC_Balmond.png
+                    - img "Profile GGAC Balmond.png (392 KB)" [ref=e1175]
+              - listitem [ref=e1176]:
+                - link "↑" [ref=e1178] [cursor=pointer]:
+                  - /url: "#cite_ref-coneyre_3-0"
+                - generic [ref=e1179]:
+                  - link "Con Eyre Voice Over Actor" [ref=e1180] [cursor=pointer]:
+                    - /url: https://www.coneyre.com/#/mobile-legends/:~:text=Throughout%20the%20Mobile%20Legends%20universe%20I%20voice%20a%20number%20of%20characters%20including%20Balmond%2C%20Saber%2C%20Alpha%2C%20Gord%2C%20Jawhead%2C%20Gusion%2C%20Belerick%2C%20%20Leomord%2C%20Thamuz%2C%20Argus%20and%20Terizla.%20I%20also%20do%20a%20number%20of%20short%20origin%20stories%20on%20certain%20characters.
+                  - text: „Throughout the Mobile Legends universe I voice a number of characters including Balmond, Saber, Alpha, Gord, Jawhead, Gusion, Belerick, Leomord, Thamuz, Argus and Terizla. I also do a number of short origin stories on certain characters.“
+              - listitem [ref=e1181]:
+                - link "↑" [ref=e1183] [cursor=pointer]:
+                  - /url: "#cite_ref-Imdb_page_4-0"
+                - link "https://m.imdb.com/name/nm1365137/" [ref=e1185] [cursor=pointer]:
+                  - /url: https://m.imdb.com/name/nm1365137/
+              - listitem [ref=e1186]:
+                - link "↑" [ref=e1188] [cursor=pointer]:
+                  - /url: "#cite_ref-In-game_credit_5-0"
+                - text: In-game credit
+            - table [ref=e1189]:
+              - rowgroup [ref=e1190]:
+                - row "[Collapse] List of heroes" [ref=e1191]:
+                  - columnheader "[Collapse] List of heroes" [ref=e1192]:
+                    - text: "[Collapse]"
+                    - link "List of heroes" [ref=e1193] [cursor=pointer]:
+                      - /url: /wiki/List_of_heroes
+                - row "Tank Icon Tank Akai Akai • Alice Alice • Atlas Atlas • Barats Barats • Baxia Baxia • Belerick Belerick • Carmilla Carmilla • Chip Chip • Edith Edith • Esmeralda Esmeralda • Franco Franco • Fredrinn Fredrinn • Gatotkaca Gatotkaca • Gloo Gloo • Grock Grock • Hilda Hilda • Hylos Hylos • Johnson Johnson • Khufra Khufra • Lolita Lolita • Masha Masha • Minotaur Minotaur • Terizla Terizla • Tigreal Tigreal • Uranus Uranus" [ref=e1194]:
+                  - cell "Tank Icon Tank" [ref=e1195]:
+                    - link "Tank Icon" [ref=e1197] [cursor=pointer]:
+                      - /url: /wiki/Tank
+                      - img "Tank Icon" [ref=e1198]
+                    - link "Tank" [ref=e1199] [cursor=pointer]:
+                      - /url: /wiki/Tank
+                  - cell "Akai Akai • Alice Alice • Atlas Atlas • Barats Barats • Baxia Baxia • Belerick Belerick • Carmilla Carmilla • Chip Chip • Edith Edith • Esmeralda Esmeralda • Franco Franco • Fredrinn Fredrinn • Gatotkaca Gatotkaca • Gloo Gloo • Grock Grock • Hilda Hilda • Hylos Hylos • Johnson Johnson • Khufra Khufra • Lolita Lolita • Masha Masha • Minotaur Minotaur • Terizla Terizla • Tigreal Tigreal • Uranus Uranus" [ref=e1200]:
+                    - generic [ref=e1201]:
+                      - generic "Akai" [ref=e1204]:
+                        - img "Akai" [ref=e1205]
+                      - link "Akai" [ref=e1207] [cursor=pointer]:
+                        - /url: /wiki/Akai
+                    - text: •
+                    - generic [ref=e1208]:
+                      - generic "Alice" [ref=e1211]:
+                        - img "Alice" [ref=e1212]
+                      - link "Alice" [ref=e1214] [cursor=pointer]:
+                        - /url: /wiki/Alice
+                    - text: •
+                    - generic [ref=e1215]:
+                      - generic "Atlas" [ref=e1218]:
+                        - img "Atlas" [ref=e1219]
+                      - link "Atlas" [ref=e1221] [cursor=pointer]:
+                        - /url: /wiki/Atlas
+                    - text: •
+                    - generic [ref=e1222]:
+                      - generic "Barats" [ref=e1225]:
+                        - img "Barats" [ref=e1226]
+                      - link "Barats" [ref=e1228] [cursor=pointer]:
+                        - /url: /wiki/Barats
+                    - text: •
+                    - generic [ref=e1229]:
+                      - generic "Baxia" [ref=e1232]:
+                        - img "Baxia" [ref=e1233]
+                      - link "Baxia" [ref=e1235] [cursor=pointer]:
+                        - /url: /wiki/Baxia
+                    - text: •
+                    - generic [ref=e1236]:
+                      - generic "Belerick" [ref=e1239]:
+                        - img "Belerick" [ref=e1240]
+                      - link "Belerick" [ref=e1242] [cursor=pointer]:
+                        - /url: /wiki/Belerick
+                    - text: •
+                    - generic [ref=e1243]:
+                      - generic "Carmilla" [ref=e1246]:
+                        - img "Carmilla" [ref=e1247]
+                      - link "Carmilla" [ref=e1249] [cursor=pointer]:
+                        - /url: /wiki/Carmilla
+                    - text: •
+                    - generic [ref=e1250]:
+                      - generic "Chip" [ref=e1253]:
+                        - img "Chip" [ref=e1254]
+                      - link "Chip" [ref=e1256] [cursor=pointer]:
+                        - /url: /wiki/Chip
+                    - text: •
+                    - generic [ref=e1257]:
+                      - generic "Edith" [ref=e1260]:
+                        - img "Edith" [ref=e1261]
+                      - link "Edith" [ref=e1263] [cursor=pointer]:
+                        - /url: /wiki/Edith
+                    - text: •
+                    - generic [ref=e1264]:
+                      - generic "Esmeralda" [ref=e1267]:
+                        - img "Esmeralda" [ref=e1268]
+                      - link "Esmeralda" [ref=e1270] [cursor=pointer]:
+                        - /url: /wiki/Esmeralda
+                    - text: •
+                    - generic [ref=e1271]:
+                      - generic "Franco" [ref=e1274]:
+                        - img "Franco" [ref=e1275]
+                      - link "Franco" [ref=e1277] [cursor=pointer]:
+                        - /url: /wiki/Franco
+                    - text: •
+                    - generic [ref=e1278]:
+                      - generic "Fredrinn" [ref=e1281]:
+                        - img "Fredrinn" [ref=e1282]
+                      - link "Fredrinn" [ref=e1284] [cursor=pointer]:
+                        - /url: /wiki/Fredrinn
+                    - text: •
+                    - generic [ref=e1285]:
+                      - generic "Gatotkaca" [ref=e1288]:
+                        - img "Gatotkaca" [ref=e1289]
+                      - link "Gatotkaca" [ref=e1291] [cursor=pointer]:
+                        - /url: /wiki/Gatotkaca
+                    - text: •
+                    - generic [ref=e1292]:
+                      - generic "Gloo" [ref=e1295]:
+                        - img "Gloo" [ref=e1296]
+                      - link "Gloo" [ref=e1298] [cursor=pointer]:
+                        - /url: /wiki/Gloo
+                    - text: •
+                    - generic [ref=e1299]:
+                      - generic "Grock" [ref=e1302]:
+                        - img "Grock" [ref=e1303]
+                      - link "Grock" [ref=e1305] [cursor=pointer]:
+                        - /url: /wiki/Grock
+                    - text: •
+                    - generic [ref=e1306]:
+                      - generic "Hilda" [ref=e1309]:
+                        - img "Hilda" [ref=e1310]
+                      - link "Hilda" [ref=e1312] [cursor=pointer]:
+                        - /url: /wiki/Hilda
+                    - text: •
+                    - generic [ref=e1313]:
+                      - generic "Hylos" [ref=e1316]:
+                        - img "Hylos" [ref=e1317]
+                      - link "Hylos" [ref=e1319] [cursor=pointer]:
+                        - /url: /wiki/Hylos
+                    - text: •
+                    - generic [ref=e1320]:
+                      - generic "Johnson" [ref=e1323]:
+                        - img "Johnson" [ref=e1324]
+                      - link "Johnson" [ref=e1326] [cursor=pointer]:
+                        - /url: /wiki/Johnson
+                    - text: •
+                    - generic [ref=e1327]:
+                      - generic "Khufra" [ref=e1330]:
+                        - img "Khufra" [ref=e1331]
+                      - link "Khufra" [ref=e1333] [cursor=pointer]:
+                        - /url: /wiki/Khufra
+                    - text: •
+                    - generic [ref=e1334]:
+                      - generic "Lolita" [ref=e1337]:
+                        - img "Lolita" [ref=e1338]
+                      - link "Lolita" [ref=e1340] [cursor=pointer]:
+                        - /url: /wiki/Lolita
+                    - text: •
+                    - generic [ref=e1341]:
+                      - generic "Masha" [ref=e1344]:
+                        - img "Masha" [ref=e1345]
+                      - link "Masha" [ref=e1347] [cursor=pointer]:
+                        - /url: /wiki/Masha
+                    - text: •
+                    - generic [ref=e1348]:
+                      - generic "Minotaur" [ref=e1351]:
+                        - img "Minotaur" [ref=e1352]
+                      - link "Minotaur" [ref=e1354] [cursor=pointer]:
+                        - /url: /wiki/Minotaur
+                    - text: •
+                    - generic [ref=e1355]:
+                      - generic "Terizla" [ref=e1358]:
+                        - img "Terizla" [ref=e1359]
+                      - link "Terizla" [ref=e1361] [cursor=pointer]:
+                        - /url: /wiki/Terizla
+                    - text: •
+                    - generic [ref=e1362]:
+                      - generic "Tigreal" [ref=e1365]:
+                        - img "Tigreal" [ref=e1366]
+                      - link "Tigreal" [ref=e1368] [cursor=pointer]:
+                        - /url: /wiki/Tigreal
+                    - text: •
+                    - generic [ref=e1369]:
+                      - generic "Uranus" [ref=e1372]:
+                        - img "Uranus" [ref=e1373]
+                      - link "Uranus" [ref=e1375] [cursor=pointer]:
+                        - /url: /wiki/Uranus
+                - row "Fighter Icon Fighter Aldous Aldous • Alpha Alpha • Alucard Alucard • Argus Argus • Arlott Arlott • Aulus Aulus • Badang Badang • Balmond Balmond • Bane Bane • Barats Barats • Benedetta Benedetta • Chou Chou • Cici Cici • Dyrroth Dyrroth • Fredrinn Fredrinn • Freya Freya • Gatotkaca Gatotkaca • Grock Grock • Guinevere Guinevere • Hilda Hilda • Jawhead Jawhead • Julian Julian • Kaja Kaja • Kalea Kalea • Khaleed Khaleed • Lapu-Lapu Lapu-Lapu • Leomord Leomord • Lukas Lukas • Martis Martis • Masha Masha • Minsitthar Minsitthar • Paquito Paquito • Phoveus Phoveus • Roger Roger • Ruby Ruby • Silvanna Silvanna • Sora Sora • Sun Sun • Suyou Suyou • Terizla Terizla • Thamuz Thamuz • X.Borg X.Borg • Yin Yin • Yu Zhong Yu Zhong • Zilong Zilong" [ref=e1376]:
+                  - cell "Fighter Icon Fighter" [ref=e1377]:
+                    - link "Fighter Icon" [ref=e1379] [cursor=pointer]:
+                      - /url: /wiki/Fighter
+                      - img "Fighter Icon" [ref=e1380]
+                    - link "Fighter" [ref=e1381] [cursor=pointer]:
+                      - /url: /wiki/Fighter
+                  - cell "Aldous Aldous • Alpha Alpha • Alucard Alucard • Argus Argus • Arlott Arlott • Aulus Aulus • Badang Badang • Balmond Balmond • Bane Bane • Barats Barats • Benedetta Benedetta • Chou Chou • Cici Cici • Dyrroth Dyrroth • Fredrinn Fredrinn • Freya Freya • Gatotkaca Gatotkaca • Grock Grock • Guinevere Guinevere • Hilda Hilda • Jawhead Jawhead • Julian Julian • Kaja Kaja • Kalea Kalea • Khaleed Khaleed • Lapu-Lapu Lapu-Lapu • Leomord Leomord • Lukas Lukas • Martis Martis • Masha Masha • Minsitthar Minsitthar • Paquito Paquito • Phoveus Phoveus • Roger Roger • Ruby Ruby • Silvanna Silvanna • Sora Sora • Sun Sun • Suyou Suyou • Terizla Terizla • Thamuz Thamuz • X.Borg X.Borg • Yin Yin • Yu Zhong Yu Zhong • Zilong Zilong" [ref=e1382]:
+                    - generic [ref=e1383]:
+                      - generic "Aldous" [ref=e1386]:
+                        - img "Aldous" [ref=e1387]
+                      - link "Aldous" [ref=e1389] [cursor=pointer]:
+                        - /url: /wiki/Aldous
+                    - text: •
+                    - generic [ref=e1390]:
+                      - generic "Alpha" [ref=e1393]:
+                        - img "Alpha" [ref=e1394]
+                      - link "Alpha" [ref=e1396] [cursor=pointer]:
+                        - /url: /wiki/Alpha
+                    - text: •
+                    - generic [ref=e1397]:
+                      - generic "Alucard" [ref=e1400]:
+                        - img "Alucard" [ref=e1401]
+                      - link "Alucard" [ref=e1403] [cursor=pointer]:
+                        - /url: /wiki/Alucard
+                    - text: •
+                    - generic [ref=e1404]:
+                      - generic "Argus" [ref=e1407]:
+                        - img "Argus" [ref=e1408]
+                      - link "Argus" [ref=e1410] [cursor=pointer]:
+                        - /url: /wiki/Argus
+                    - text: •
+                    - generic [ref=e1411]:
+                      - generic "Arlott" [ref=e1414]:
+                        - img "Arlott" [ref=e1415]
+                      - link "Arlott" [ref=e1417] [cursor=pointer]:
+                        - /url: /wiki/Arlott
+                    - text: •
+                    - generic [ref=e1418]:
+                      - generic "Aulus" [ref=e1421]:
+                        - img "Aulus" [ref=e1422]
+                      - link "Aulus" [ref=e1424] [cursor=pointer]:
+                        - /url: /wiki/Aulus
+                    - text: •
+                    - generic [ref=e1425]:
+                      - generic "Badang" [ref=e1428]:
+                        - img "Badang" [ref=e1429]
+                      - link "Badang" [ref=e1431] [cursor=pointer]:
+                        - /url: /wiki/Badang
+                    - text: •
+                    - generic [ref=e1432]:
+                      - generic "Balmond" [ref=e1435]:
+                        - img "Balmond" [ref=e1436]
+                      - strong [ref=e1438]: Balmond
+                    - text: •
+                    - generic [ref=e1439]:
+                      - generic "Bane" [ref=e1442]:
+                        - img "Bane" [ref=e1443]
+                      - link "Bane" [ref=e1445] [cursor=pointer]:
+                        - /url: /wiki/Bane
+                    - text: •
+                    - generic [ref=e1446]:
+                      - generic "Barats" [ref=e1449]:
+                        - img "Barats" [ref=e1450]
+                      - link "Barats" [ref=e1452] [cursor=pointer]:
+                        - /url: /wiki/Barats
+                    - text: •
+                    - generic [ref=e1453]:
+                      - generic "Benedetta" [ref=e1456]:
+                        - img "Benedetta" [ref=e1457]
+                      - link "Benedetta" [ref=e1459] [cursor=pointer]:
+                        - /url: /wiki/Benedetta
+                    - text: •
+                    - generic [ref=e1460]:
+                      - generic "Chou" [ref=e1463]:
+                        - img "Chou" [ref=e1464]
+                      - link "Chou" [ref=e1466] [cursor=pointer]:
+                        - /url: /wiki/Chou
+                    - text: •
+                    - generic [ref=e1467]:
+                      - generic "Cici" [ref=e1470]:
+                        - img "Cici" [ref=e1471]
+                      - link "Cici" [ref=e1473] [cursor=pointer]:
+                        - /url: /wiki/Cici
+                    - text: •
+                    - generic [ref=e1474]:
+                      - generic "Dyrroth" [ref=e1477]:
+                        - img "Dyrroth" [ref=e1478]
+                      - link "Dyrroth" [ref=e1480] [cursor=pointer]:
+                        - /url: /wiki/Dyrroth
+                    - text: •
+                    - generic [ref=e1481]:
+                      - generic "Fredrinn" [ref=e1484]:
+                        - img "Fredrinn" [ref=e1485]
+                      - link "Fredrinn" [ref=e1487] [cursor=pointer]:
+                        - /url: /wiki/Fredrinn
+                    - text: •
+                    - generic [ref=e1488]:
+                      - generic "Freya" [ref=e1491]:
+                        - img "Freya" [ref=e1492]
+                      - link "Freya" [ref=e1494] [cursor=pointer]:
+                        - /url: /wiki/Freya
+                    - text: •
+                    - generic [ref=e1495]:
+                      - generic "Gatotkaca" [ref=e1498]:
+                        - img "Gatotkaca" [ref=e1499]
+                      - link "Gatotkaca" [ref=e1501] [cursor=pointer]:
+                        - /url: /wiki/Gatotkaca
+                    - text: •
+                    - generic [ref=e1502]:
+                      - generic "Grock" [ref=e1505]:
+                        - img "Grock" [ref=e1506]
+                      - link "Grock" [ref=e1508] [cursor=pointer]:
+                        - /url: /wiki/Grock
+                    - text: •
+                    - generic [ref=e1509]:
+                      - generic "Guinevere" [ref=e1512]:
+                        - img "Guinevere" [ref=e1513]
+                      - link "Guinevere" [ref=e1515] [cursor=pointer]:
+                        - /url: /wiki/Guinevere
+                    - text: •
+                    - generic [ref=e1516]:
+                      - generic "Hilda" [ref=e1519]:
+                        - img "Hilda" [ref=e1520]
+                      - link "Hilda" [ref=e1522] [cursor=pointer]:
+                        - /url: /wiki/Hilda
+                    - text: •
+                    - generic [ref=e1523]:
+                      - generic "Jawhead" [ref=e1526]:
+                        - img "Jawhead" [ref=e1527]
+                      - link "Jawhead" [ref=e1529] [cursor=pointer]:
+                        - /url: /wiki/Jawhead
+                    - text: •
+                    - generic [ref=e1530]:
+                      - generic "Julian" [ref=e1533]:
+                        - img "Julian" [ref=e1534]
+                      - link "Julian" [ref=e1536] [cursor=pointer]:
+                        - /url: /wiki/Julian
+                    - text: •
+                    - generic [ref=e1537]:
+                      - generic "Kaja" [ref=e1540]:
+                        - img "Kaja" [ref=e1541]
+                      - link "Kaja" [ref=e1543] [cursor=pointer]:
+                        - /url: /wiki/Kaja
+                    - text: •
+                    - generic [ref=e1544]:
+                      - generic "Kalea" [ref=e1547]:
+                        - img "Kalea" [ref=e1548]
+                      - link "Kalea" [ref=e1550] [cursor=pointer]:
+                        - /url: /wiki/Kalea
+                    - text: •
+                    - generic [ref=e1551]:
+                      - generic "Khaleed" [ref=e1554]:
+                        - img "Khaleed" [ref=e1555]
+                      - link "Khaleed" [ref=e1557] [cursor=pointer]:
+                        - /url: /wiki/Khaleed
+                    - text: •
+                    - generic [ref=e1558]:
+                      - generic "Lapu-Lapu" [ref=e1561]:
+                        - img "Lapu-Lapu" [ref=e1562]
+                      - link "Lapu-Lapu" [ref=e1564] [cursor=pointer]:
+                        - /url: /wiki/Lapu-Lapu
+                    - text: •
+                    - generic [ref=e1565]:
+                      - generic "Leomord" [ref=e1568]:
+                        - img "Leomord" [ref=e1569]
+                      - link "Leomord" [ref=e1571] [cursor=pointer]:
+                        - /url: /wiki/Leomord
+                    - text: •
+                    - generic [ref=e1572]:
+                      - generic "Lukas" [ref=e1575]:
+                        - img "Lukas" [ref=e1576]
+                      - link "Lukas" [ref=e1578] [cursor=pointer]:
+                        - /url: /wiki/Lukas
+                    - text: •
+                    - generic [ref=e1579]:
+                      - generic "Martis" [ref=e1582]:
+                        - img "Martis" [ref=e1583]
+                      - link "Martis" [ref=e1585] [cursor=pointer]:
+                        - /url: /wiki/Martis
+                    - text: •
+                    - generic [ref=e1586]:
+                      - generic "Masha" [ref=e1589]:
+                        - img "Masha" [ref=e1590]
+                      - link "Masha" [ref=e1592] [cursor=pointer]:
+                        - /url: /wiki/Masha
+                    - text: •
+                    - generic [ref=e1593]:
+                      - generic "Minsitthar" [ref=e1596]:
+                        - img "Minsitthar" [ref=e1597]
+                      - link "Minsitthar" [ref=e1599] [cursor=pointer]:
+                        - /url: /wiki/Minsitthar
+                    - text: •
+                    - generic [ref=e1600]:
+                      - generic "Paquito" [ref=e1603]:
+                        - img "Paquito" [ref=e1604]
+                      - link "Paquito" [ref=e1606] [cursor=pointer]:
+                        - /url: /wiki/Paquito
+                    - text: •
+                    - generic [ref=e1607]:
+                      - generic "Phoveus" [ref=e1610]:
+                        - img "Phoveus" [ref=e1611]
+                      - link "Phoveus" [ref=e1613] [cursor=pointer]:
+                        - /url: /wiki/Phoveus
+                    - text: •
+                    - generic [ref=e1614]:
+                      - generic "Roger" [ref=e1617]:
+                        - img "Roger" [ref=e1618]
+                      - link "Roger" [ref=e1620] [cursor=pointer]:
+                        - /url: /wiki/Roger
+                    - text: •
+                    - generic [ref=e1621]:
+                      - generic "Ruby" [ref=e1624]:
+                        - img "Ruby" [ref=e1625]
+                      - link "Ruby" [ref=e1627] [cursor=pointer]:
+                        - /url: /wiki/Ruby
+                    - text: •
+                    - generic [ref=e1628]:
+                      - generic "Silvanna" [ref=e1631]:
+                        - img "Silvanna" [ref=e1632]
+                      - link "Silvanna" [ref=e1634] [cursor=pointer]:
+                        - /url: /wiki/Silvanna
+                    - text: •
+                    - generic [ref=e1635]:
+                      - generic "Sora" [ref=e1638]:
+                        - img "Sora" [ref=e1639]
+                      - link "Sora" [ref=e1641] [cursor=pointer]:
+                        - /url: /wiki/Sora
+                    - text: •
+                    - generic [ref=e1642]:
+                      - generic "Sun" [ref=e1645]:
+                        - img "Sun" [ref=e1646]
+                      - link "Sun" [ref=e1648] [cursor=pointer]:
+                        - /url: /wiki/Sun
+                    - text: •
+                    - generic [ref=e1649]:
+                      - generic "Suyou" [ref=e1652]:
+                        - img "Suyou" [ref=e1653]
+                      - link "Suyou" [ref=e1655] [cursor=pointer]:
+                        - /url: /wiki/Suyou
+                    - text: •
+                    - generic [ref=e1656]:
+                      - generic "Terizla" [ref=e1659]:
+                        - img "Terizla" [ref=e1660]
+                      - link "Terizla" [ref=e1662] [cursor=pointer]:
+                        - /url: /wiki/Terizla
+                    - text: •
+                    - generic [ref=e1663]:
+                      - generic "Thamuz" [ref=e1666]:
+                        - img "Thamuz" [ref=e1667]
+                      - link "Thamuz" [ref=e1669] [cursor=pointer]:
+                        - /url: /wiki/Thamuz
+                    - text: •
+                    - generic [ref=e1670]:
+                      - generic "X.Borg" [ref=e1673]:
+                        - img "X.Borg" [ref=e1674]
+                      - link "X.Borg" [ref=e1676] [cursor=pointer]:
+                        - /url: /wiki/X.Borg
+                    - text: •
+                    - generic [ref=e1677]:
+                      - generic "Yin" [ref=e1680]:
+                        - img "Yin" [ref=e1681]
+                      - link "Yin" [ref=e1683] [cursor=pointer]:
+                        - /url: /wiki/Yin
+                    - text: •
+                    - generic [ref=e1684]:
+                      - generic "Yu Zhong" [ref=e1687]:
+                        - img "Yu Zhong" [ref=e1688]
+                      - link "Yu Zhong" [ref=e1690] [cursor=pointer]:
+                        - /url: /wiki/Yu_Zhong
+                    - text: •
+                    - generic [ref=e1691]:
+                      - generic "Zilong" [ref=e1694]:
+                        - img "Zilong" [ref=e1695]
+                      - link "Zilong" [ref=e1697] [cursor=pointer]:
+                        - /url: /wiki/Zilong
+                - row "Assassin Icon Assassin Aamon Aamon • Alucard Alucard • Arlott Arlott • Benedetta Benedetta • Fanny Fanny • Gusion Gusion • Hanzo Hanzo • Harley Harley • Hayabusa Hayabusa • Helcurt Helcurt • Hirara Hirara • Joy Joy • Julian Julian • Kadita Kadita • Karina Karina • Lancelot Lancelot • Lesley Lesley • Ling Ling • Mathilda Mathilda • Natalia Natalia • Nolan Nolan • Paquito Paquito • Saber Saber • Selena Selena • Sora Sora • Suyou Suyou • Yi Sun-shin Yi Sun-shin • Yin Yin • Zilong Zilong" [ref=e1698]:
+                  - cell "Assassin Icon Assassin" [ref=e1699]:
+                    - link "Assassin Icon" [ref=e1701] [cursor=pointer]:
+                      - /url: /wiki/Assassin
+                      - img "Assassin Icon" [ref=e1702]
+                    - link "Assassin" [ref=e1703] [cursor=pointer]:
+                      - /url: /wiki/Assassin
+                  - cell "Aamon Aamon • Alucard Alucard • Arlott Arlott • Benedetta Benedetta • Fanny Fanny • Gusion Gusion • Hanzo Hanzo • Harley Harley • Hayabusa Hayabusa • Helcurt Helcurt • Hirara Hirara • Joy Joy • Julian Julian • Kadita Kadita • Karina Karina • Lancelot Lancelot • Lesley Lesley • Ling Ling • Mathilda Mathilda • Natalia Natalia • Nolan Nolan • Paquito Paquito • Saber Saber • Selena Selena • Sora Sora • Suyou Suyou • Yi Sun-shin Yi Sun-shin • Yin Yin • Zilong Zilong" [ref=e1704]:
+                    - generic [ref=e1705]:
+                      - generic "Aamon" [ref=e1708]:
+                        - img "Aamon" [ref=e1709]
+                      - link "Aamon" [ref=e1711] [cursor=pointer]:
+                        - /url: /wiki/Aamon
+                    - text: •
+                    - generic [ref=e1712]:
+                      - generic "Alucard" [ref=e1715]:
+                        - img "Alucard" [ref=e1716]
+                      - link "Alucard" [ref=e1718] [cursor=pointer]:
+                        - /url: /wiki/Alucard
+                    - text: •
+                    - generic [ref=e1719]:
+                      - generic "Arlott" [ref=e1722]:
+                        - img "Arlott" [ref=e1723]
+                      - link "Arlott" [ref=e1725] [cursor=pointer]:
+                        - /url: /wiki/Arlott
+                    - text: •
+                    - generic [ref=e1726]:
+                      - generic "Benedetta" [ref=e1729]:
+                        - img "Benedetta" [ref=e1730]
+                      - link "Benedetta" [ref=e1732] [cursor=pointer]:
+                        - /url: /wiki/Benedetta
+                    - text: •
+                    - generic [ref=e1733]:
+                      - generic "Fanny" [ref=e1736]:
+                        - img "Fanny" [ref=e1737]
+                      - link "Fanny" [ref=e1739] [cursor=pointer]:
+                        - /url: /wiki/Fanny
+                    - text: •
+                    - generic [ref=e1740]:
+                      - generic "Gusion" [ref=e1743]:
+                        - img "Gusion" [ref=e1744]
+                      - link "Gusion" [ref=e1746] [cursor=pointer]:
+                        - /url: /wiki/Gusion
+                    - text: •
+                    - generic [ref=e1747]:
+                      - generic "Hanzo" [ref=e1750]:
+                        - img "Hanzo" [ref=e1751]
+                      - link "Hanzo" [ref=e1753] [cursor=pointer]:
+                        - /url: /wiki/Hanzo
+                    - text: •
+                    - generic [ref=e1754]:
+                      - generic "Harley" [ref=e1757]:
+                        - img "Harley" [ref=e1758]
+                      - link "Harley" [ref=e1760] [cursor=pointer]:
+                        - /url: /wiki/Harley
+                    - text: •
+                    - generic [ref=e1761]:
+                      - generic "Hayabusa" [ref=e1764]:
+                        - img "Hayabusa" [ref=e1765]
+                      - link "Hayabusa" [ref=e1767] [cursor=pointer]:
+                        - /url: /wiki/Hayabusa
+                    - text: •
+                    - generic [ref=e1768]:
+                      - generic "Helcurt" [ref=e1771]:
+                        - img "Helcurt" [ref=e1772]
+                      - link "Helcurt" [ref=e1774] [cursor=pointer]:
+                        - /url: /wiki/Helcurt
+                    - text: •
+                    - generic [ref=e1775]:
+                      - generic "Hirara" [ref=e1778]:
+                        - img "Hirara" [ref=e1779]
+                      - link "Hirara" [ref=e1781] [cursor=pointer]:
+                        - /url: /wiki/Hirara
+                    - text: •
+                    - generic [ref=e1782]:
+                      - generic "Joy" [ref=e1785]:
+                        - img "Joy" [ref=e1786]
+                      - link "Joy" [ref=e1788] [cursor=pointer]:
+                        - /url: /wiki/Joy
+                    - text: •
+                    - generic [ref=e1789]:
+                      - generic "Julian" [ref=e1792]:
+                        - img "Julian" [ref=e1793]
+                      - link "Julian" [ref=e1795] [cursor=pointer]:
+                        - /url: /wiki/Julian
+                    - text: •
+                    - generic [ref=e1796]:
+                      - generic "Kadita" [ref=e1799]:
+                        - img "Kadita" [ref=e1800]
+                      - link "Kadita" [ref=e1802] [cursor=pointer]:
+                        - /url: /wiki/Kadita
+                    - text: •
+                    - generic [ref=e1803]:
+                      - generic "Karina" [ref=e1806]:
+                        - img "Karina" [ref=e1807]
+                      - link "Karina" [ref=e1809] [cursor=pointer]:
+                        - /url: /wiki/Karina
+                    - text: •
+                    - generic [ref=e1810]:
+                      - generic "Lancelot" [ref=e1813]:
+                        - img "Lancelot" [ref=e1814]
+                      - link "Lancelot" [ref=e1816] [cursor=pointer]:
+                        - /url: /wiki/Lancelot
+                    - text: •
+                    - generic [ref=e1817]:
+                      - generic "Lesley" [ref=e1820]:
+                        - img "Lesley" [ref=e1821]
+                      - link "Lesley" [ref=e1823] [cursor=pointer]:
+                        - /url: /wiki/Lesley
+                    - text: •
+                    - generic [ref=e1824]:
+                      - generic "Ling" [ref=e1827]:
+                        - img "Ling" [ref=e1828]
+                      - link "Ling" [ref=e1830] [cursor=pointer]:
+                        - /url: /wiki/Ling
+                    - text: •
+                    - generic [ref=e1831]:
+                      - generic "Mathilda" [ref=e1834]:
+                        - img "Mathilda" [ref=e1835]
+                      - link "Mathilda" [ref=e1837] [cursor=pointer]:
+                        - /url: /wiki/Mathilda
+                    - text: •
+                    - generic [ref=e1838]:
+                      - generic "Natalia" [ref=e1841]:
+                        - img "Natalia" [ref=e1842]
+                      - link "Natalia" [ref=e1844] [cursor=pointer]:
+                        - /url: /wiki/Natalia
+                    - text: •
+                    - generic [ref=e1845]:
+                      - generic "Nolan" [ref=e1848]:
+                        - img "Nolan" [ref=e1849]
+                      - link "Nolan" [ref=e1851] [cursor=pointer]:
+                        - /url: /wiki/Nolan
+                    - text: •
+                    - generic [ref=e1852]:
+                      - generic "Paquito" [ref=e1855]:
+                        - img "Paquito" [ref=e1856]
+                      - link "Paquito" [ref=e1858] [cursor=pointer]:
+                        - /url: /wiki/Paquito
+                    - text: •
+                    - generic [ref=e1859]:
+                      - generic "Saber" [ref=e1862]:
+                        - img "Saber" [ref=e1863]
+                      - link "Saber" [ref=e1865] [cursor=pointer]:
+                        - /url: /wiki/Saber
+                    - text: •
+                    - generic [ref=e1866]:
+                      - generic "Selena" [ref=e1869]:
+                        - img "Selena" [ref=e1870]
+                      - link "Selena" [ref=e1872] [cursor=pointer]:
+                        - /url: /wiki/Selena
+                    - text: •
+                    - generic [ref=e1873]:
+                      - generic "Sora" [ref=e1876]:
+                        - img "Sora" [ref=e1877]
+                      - link "Sora" [ref=e1879] [cursor=pointer]:
+                        - /url: /wiki/Sora
+                    - text: •
+                    - generic [ref=e1880]:
+                      - generic "Suyou" [ref=e1883]:
+                        - img "Suyou" [ref=e1884]
+                      - link "Suyou" [ref=e1886] [cursor=pointer]:
+                        - /url: /wiki/Suyou
+                    - text: •
+                    - generic [ref=e1887]:
+                      - generic "Yi Sun-shin" [ref=e1890]:
+                        - img "Yi Sun-shin" [ref=e1891]
+                      - link "Yi Sun-shin" [ref=e1893] [cursor=pointer]:
+                        - /url: /wiki/Yi_Sun-shin
+                    - text: •
+                    - generic [ref=e1894]:
+                      - generic "Yin" [ref=e1897]:
+                        - img "Yin" [ref=e1898]
+                      - link "Yin" [ref=e1900] [cursor=pointer]:
+                        - /url: /wiki/Yin
+                    - text: •
+                    - generic [ref=e1901]:
+                      - generic "Zilong" [ref=e1904]:
+                        - img "Zilong" [ref=e1905]
+                      - link "Zilong" [ref=e1907] [cursor=pointer]:
+                        - /url: /wiki/Zilong
+                - row "Mage Icon Mage Alice Alice • Aurora Aurora • Bane Bane • Cecilion Cecilion • Chang'e Chang'e • Cyclops Cyclops • Esmeralda Esmeralda • Eudora Eudora • Faramis Faramis • Gord Gord • Harith Harith • Harley Harley • Kadita Kadita • Kagura Kagura • Kimmy Kimmy • Lunox Lunox • Luo Yi Luo Yi • Lylia Lylia • Nana Nana • Novaria Novaria • Odette Odette • Pharsa Pharsa • Selena Selena • Vale Vale • Valentina Valentina • Valir Valir • Vexana Vexana • Xavier Xavier • Yve Yve • Zetian Zetian • Zhask Zhask • Zhuxin Zhuxin" [ref=e1908]:
+                  - cell "Mage Icon Mage" [ref=e1909]:
+                    - link "Mage Icon" [ref=e1911] [cursor=pointer]:
+                      - /url: /wiki/Mage
+                      - img "Mage Icon" [ref=e1912]
+                    - link "Mage" [ref=e1913] [cursor=pointer]:
+                      - /url: /wiki/Mage
+                  - cell "Alice Alice • Aurora Aurora • Bane Bane • Cecilion Cecilion • Chang'e Chang'e • Cyclops Cyclops • Esmeralda Esmeralda • Eudora Eudora • Faramis Faramis • Gord Gord • Harith Harith • Harley Harley • Kadita Kadita • Kagura Kagura • Kimmy Kimmy • Lunox Lunox • Luo Yi Luo Yi • Lylia Lylia • Nana Nana • Novaria Novaria • Odette Odette • Pharsa Pharsa • Selena Selena • Vale Vale • Valentina Valentina • Valir Valir • Vexana Vexana • Xavier Xavier • Yve Yve • Zetian Zetian • Zhask Zhask • Zhuxin Zhuxin" [ref=e1914]:
+                    - generic [ref=e1915]:
+                      - generic "Alice" [ref=e1918]:
+                        - img "Alice" [ref=e1919]
+                      - link "Alice" [ref=e1921] [cursor=pointer]:
+                        - /url: /wiki/Alice
+                    - text: •
+                    - generic [ref=e1922]:
+                      - generic "Aurora" [ref=e1925]:
+                        - img "Aurora" [ref=e1926]
+                      - link "Aurora" [ref=e1928] [cursor=pointer]:
+                        - /url: /wiki/Aurora
+                    - text: •
+                    - generic [ref=e1929]:
+                      - generic "Bane" [ref=e1932]:
+                        - img "Bane" [ref=e1933]
+                      - link "Bane" [ref=e1935] [cursor=pointer]:
+                        - /url: /wiki/Bane
+                    - text: •
+                    - generic [ref=e1936]:
+                      - generic "Cecilion" [ref=e1939]:
+                        - img "Cecilion" [ref=e1940]
+                      - link "Cecilion" [ref=e1942] [cursor=pointer]:
+                        - /url: /wiki/Cecilion
+                    - text: •
+                    - generic [ref=e1943]:
+                      - generic "Chang'e" [ref=e1946]:
+                        - img "Chang'e" [ref=e1947]
+                      - link "Chang'e" [ref=e1949] [cursor=pointer]:
+                        - /url: /wiki/Chang%27e
+                    - text: •
+                    - generic [ref=e1950]:
+                      - generic "Cyclops" [ref=e1953]:
+                        - img "Cyclops" [ref=e1954]
+                      - link "Cyclops" [ref=e1956] [cursor=pointer]:
+                        - /url: /wiki/Cyclops
+                    - text: •
+                    - generic [ref=e1957]:
+                      - generic "Esmeralda" [ref=e1960]:
+                        - img "Esmeralda" [ref=e1961]
+                      - link "Esmeralda" [ref=e1963] [cursor=pointer]:
+                        - /url: /wiki/Esmeralda
+                    - text: •
+                    - generic [ref=e1964]:
+                      - generic "Eudora" [ref=e1967]:
+                        - img "Eudora" [ref=e1968]
+                      - link "Eudora" [ref=e1970] [cursor=pointer]:
+                        - /url: /wiki/Eudora
+                    - text: •
+                    - generic [ref=e1971]:
+                      - generic "Faramis" [ref=e1974]:
+                        - img "Faramis" [ref=e1975]
+                      - link "Faramis" [ref=e1977] [cursor=pointer]:
+                        - /url: /wiki/Faramis
+                    - text: •
+                    - generic [ref=e1978]:
+                      - generic "Gord" [ref=e1981]:
+                        - img "Gord" [ref=e1982]
+                      - link "Gord" [ref=e1984] [cursor=pointer]:
+                        - /url: /wiki/Gord
+                    - text: •
+                    - generic [ref=e1985]:
+                      - generic "Harith" [ref=e1988]:
+                        - img "Harith" [ref=e1989]
+                      - link "Harith" [ref=e1991] [cursor=pointer]:
+                        - /url: /wiki/Harith
+                    - text: •
+                    - generic [ref=e1992]:
+                      - generic "Harley" [ref=e1995]:
+                        - img "Harley" [ref=e1996]
+                      - link "Harley" [ref=e1998] [cursor=pointer]:
+                        - /url: /wiki/Harley
+                    - text: •
+                    - generic [ref=e1999]:
+                      - generic "Kadita" [ref=e2002]:
+                        - img "Kadita" [ref=e2003]
+                      - link "Kadita" [ref=e2005] [cursor=pointer]:
+                        - /url: /wiki/Kadita
+                    - text: •
+                    - generic [ref=e2006]:
+                      - generic "Kagura" [ref=e2009]:
+                        - img "Kagura" [ref=e2010]
+                      - link "Kagura" [ref=e2012] [cursor=pointer]:
+                        - /url: /wiki/Kagura
+                    - text: •
+                    - generic [ref=e2013]:
+                      - generic "Kimmy" [ref=e2016]:
+                        - img "Kimmy" [ref=e2017]
+                      - link "Kimmy" [ref=e2019] [cursor=pointer]:
+                        - /url: /wiki/Kimmy
+                    - text: •
+                    - generic [ref=e2020]:
+                      - generic "Lunox" [ref=e2023]:
+                        - img "Lunox" [ref=e2024]
+                      - link "Lunox" [ref=e2026] [cursor=pointer]:
+                        - /url: /wiki/Lunox
+                    - text: •
+                    - generic [ref=e2027]:
+                      - generic "Luo Yi" [ref=e2030]:
+                        - img "Luo Yi" [ref=e2031]
+                      - link "Luo Yi" [ref=e2033] [cursor=pointer]:
+                        - /url: /wiki/Luo_Yi
+                    - text: •
+                    - generic [ref=e2034]:
+                      - generic "Lylia" [ref=e2037]:
+                        - img "Lylia" [ref=e2038]
+                      - link "Lylia" [ref=e2040] [cursor=pointer]:
+                        - /url: /wiki/Lylia
+                    - text: •
+                    - generic [ref=e2041]:
+                      - generic "Nana" [ref=e2044]:
+                        - img "Nana" [ref=e2045]
+                      - link "Nana" [ref=e2047] [cursor=pointer]:
+                        - /url: /wiki/Nana
+                    - text: •
+                    - generic [ref=e2048]:
+                      - generic "Novaria" [ref=e2051]:
+                        - img "Novaria" [ref=e2052]
+                      - link "Novaria" [ref=e2054] [cursor=pointer]:
+                        - /url: /wiki/Novaria
+                    - text: •
+                    - generic [ref=e2055]:
+                      - generic "Odette" [ref=e2058]:
+                        - img "Odette" [ref=e2059]
+                      - link "Odette" [ref=e2061] [cursor=pointer]:
+                        - /url: /wiki/Odette
+                    - text: •
+                    - generic [ref=e2062]:
+                      - generic "Pharsa" [ref=e2065]:
+                        - img "Pharsa" [ref=e2066]
+                      - link "Pharsa" [ref=e2068] [cursor=pointer]:
+                        - /url: /wiki/Pharsa
+                    - text: •
+                    - generic [ref=e2069]:
+                      - generic "Selena" [ref=e2072]:
+                        - img "Selena" [ref=e2073]
+                      - link "Selena" [ref=e2075] [cursor=pointer]:
+                        - /url: /wiki/Selena
+                    - text: •
+                    - generic [ref=e2076]:
+                      - generic "Vale" [ref=e2079]:
+                        - img "Vale" [ref=e2080]
+                      - link "Vale" [ref=e2082] [cursor=pointer]:
+                        - /url: /wiki/Vale
+                    - text: •
+                    - generic [ref=e2083]:
+                      - generic "Valentina" [ref=e2086]:
+                        - img "Valentina" [ref=e2087]
+                      - link "Valentina" [ref=e2089] [cursor=pointer]:
+                        - /url: /wiki/Valentina
+                    - text: •
+                    - generic [ref=e2090]:
+                      - generic "Valir" [ref=e2093]:
+                        - img "Valir" [ref=e2094]
+                      - link "Valir" [ref=e2096] [cursor=pointer]:
+                        - /url: /wiki/Valir
+                    - text: •
+                    - generic [ref=e2097]:
+                      - generic "Vexana" [ref=e2100]:
+                        - img "Vexana" [ref=e2101]
+                      - link "Vexana" [ref=e2103] [cursor=pointer]:
+                        - /url: /wiki/Vexana
+                    - text: •
+                    - generic [ref=e2104]:
+                      - generic "Xavier" [ref=e2107]:
+                        - img "Xavier" [ref=e2108]
+                      - link "Xavier" [ref=e2110] [cursor=pointer]:
+                        - /url: /wiki/Xavier
+                    - text: •
+                    - generic [ref=e2111]:
+                      - generic "Yve" [ref=e2114]:
+                        - img "Yve" [ref=e2115]
+                      - link "Yve" [ref=e2117] [cursor=pointer]:
+                        - /url: /wiki/Yve
+                    - text: •
+                    - generic [ref=e2118]:
+                      - generic "Zetian" [ref=e2121]:
+                        - img "Zetian" [ref=e2122]
+                      - link "Zetian" [ref=e2124] [cursor=pointer]:
+                        - /url: /wiki/Zetian
+                    - text: •
+                    - generic [ref=e2125]:
+                      - generic "Zhask" [ref=e2128]:
+                        - img "Zhask" [ref=e2129]
+                      - link "Zhask" [ref=e2131] [cursor=pointer]:
+                        - /url: /wiki/Zhask
+                    - text: •
+                    - generic [ref=e2132]:
+                      - generic "Zhuxin" [ref=e2135]:
+                        - img "Zhuxin" [ref=e2136]
+                      - link "Zhuxin" [ref=e2138] [cursor=pointer]:
+                        - /url: /wiki/Zhuxin
+                - row "Marksman Icon Marksman Beatrix Beatrix • Brody Brody • Bruno Bruno • Claude Claude • Clint Clint • Edith Edith • Granger Granger • Hanabi Hanabi • Irithel Irithel • Ixia Ixia • Karrie Karrie • Kimmy Kimmy • Layla Layla • Lesley Lesley • Melissa Melissa • Miya Miya • Moskov Moskov • Natan Natan • Obsidia Obsidia • Popol and Kupa Popol and Kupa • Roger Roger • Wanwan Wanwan • Yi Sun-shin Yi Sun-shin" [ref=e2139]:
+                  - cell "Marksman Icon Marksman" [ref=e2140]:
+                    - link "Marksman Icon" [ref=e2142] [cursor=pointer]:
+                      - /url: /wiki/Marksman
+                      - img "Marksman Icon" [ref=e2143]
+                    - link "Marksman" [ref=e2144] [cursor=pointer]:
+                      - /url: /wiki/Marksman
+                  - cell "Beatrix Beatrix • Brody Brody • Bruno Bruno • Claude Claude • Clint Clint • Edith Edith • Granger Granger • Hanabi Hanabi • Irithel Irithel • Ixia Ixia • Karrie Karrie • Kimmy Kimmy • Layla Layla • Lesley Lesley • Melissa Melissa • Miya Miya • Moskov Moskov • Natan Natan • Obsidia Obsidia • Popol and Kupa Popol and Kupa • Roger Roger • Wanwan Wanwan • Yi Sun-shin Yi Sun-shin" [ref=e2145]:
+                    - generic [ref=e2146]:
+                      - generic "Beatrix" [ref=e2149]:
+                        - img "Beatrix" [ref=e2150]
+                      - link "Beatrix" [ref=e2152] [cursor=pointer]:
+                        - /url: /wiki/Beatrix
+                    - text: •
+                    - generic [ref=e2153]:
+                      - generic "Brody" [ref=e2156]:
+                        - img "Brody" [ref=e2157]
+                      - link "Brody" [ref=e2159] [cursor=pointer]:
+                        - /url: /wiki/Brody
+                    - text: •
+                    - generic [ref=e2160]:
+                      - generic "Bruno" [ref=e2163]:
+                        - img "Bruno" [ref=e2164]
+                      - link "Bruno" [ref=e2166] [cursor=pointer]:
+                        - /url: /wiki/Bruno
+                    - text: •
+                    - generic [ref=e2167]:
+                      - generic "Claude" [ref=e2170]:
+                        - img "Claude" [ref=e2171]
+                      - link "Claude" [ref=e2173] [cursor=pointer]:
+                        - /url: /wiki/Claude
+                    - text: •
+                    - generic [ref=e2174]:
+                      - generic "Clint" [ref=e2177]:
+                        - img "Clint" [ref=e2178]
+                      - link "Clint" [ref=e2180] [cursor=pointer]:
+                        - /url: /wiki/Clint
+                    - text: •
+                    - generic [ref=e2181]:
+                      - generic "Edith" [ref=e2184]:
+                        - img "Edith" [ref=e2185]
+                      - link "Edith" [ref=e2187] [cursor=pointer]:
+                        - /url: /wiki/Edith
+                    - text: •
+                    - generic [ref=e2188]:
+                      - generic "Granger" [ref=e2191]:
+                        - img "Granger" [ref=e2192]
+                      - link "Granger" [ref=e2194] [cursor=pointer]:
+                        - /url: /wiki/Granger
+                    - text: •
+                    - generic [ref=e2195]:
+                      - generic "Hanabi" [ref=e2198]:
+                        - img "Hanabi" [ref=e2199]
+                      - link "Hanabi" [ref=e2201] [cursor=pointer]:
+                        - /url: /wiki/Hanabi
+                    - text: •
+                    - generic [ref=e2202]:
+                      - generic "Irithel" [ref=e2205]:
+                        - img "Irithel" [ref=e2206]
+                      - link "Irithel" [ref=e2208] [cursor=pointer]:
+                        - /url: /wiki/Irithel
+                    - text: •
+                    - generic [ref=e2209]:
+                      - generic "Ixia" [ref=e2212]:
+                        - img "Ixia" [ref=e2213]
+                      - link "Ixia" [ref=e2215] [cursor=pointer]:
+                        - /url: /wiki/Ixia
+                    - text: •
+                    - generic [ref=e2216]:
+                      - generic "Karrie" [ref=e2219]:
+                        - img "Karrie" [ref=e2220]
+                      - link "Karrie" [ref=e2222] [cursor=pointer]:
+                        - /url: /wiki/Karrie
+                    - text: •
+                    - generic [ref=e2223]:
+                      - generic "Kimmy" [ref=e2226]:
+                        - img "Kimmy" [ref=e2227]
+                      - link "Kimmy" [ref=e2229] [cursor=pointer]:
+                        - /url: /wiki/Kimmy
+                    - text: •
+                    - generic [ref=e2230]:
+                      - generic "Layla" [ref=e2233]:
+                        - img "Layla" [ref=e2234]
+                      - link "Layla" [ref=e2236] [cursor=pointer]:
+                        - /url: /wiki/Layla
+                    - text: •
+                    - generic [ref=e2237]:
+                      - generic "Lesley" [ref=e2240]:
+                        - img "Lesley" [ref=e2241]
+                      - link "Lesley" [ref=e2243] [cursor=pointer]:
+                        - /url: /wiki/Lesley
+                    - text: •
+                    - generic [ref=e2244]:
+                      - generic "Melissa" [ref=e2247]:
+                        - img "Melissa" [ref=e2248]
+                      - link "Melissa" [ref=e2250] [cursor=pointer]:
+                        - /url: /wiki/Melissa
+                    - text: •
+                    - generic [ref=e2251]:
+                      - generic "Miya" [ref=e2254]:
+                        - img "Miya" [ref=e2255]
+                      - link "Miya" [ref=e2257] [cursor=pointer]:
+                        - /url: /wiki/Miya
+                    - text: •
+                    - generic [ref=e2258]:
+                      - generic "Moskov" [ref=e2261]:
+                        - img "Moskov" [ref=e2262]
+                      - link "Moskov" [ref=e2264] [cursor=pointer]:
+                        - /url: /wiki/Moskov
+                    - text: •
+                    - generic [ref=e2265]:
+                      - generic "Natan" [ref=e2268]:
+                        - img "Natan" [ref=e2269]
+                      - link "Natan" [ref=e2271] [cursor=pointer]:
+                        - /url: /wiki/Natan
+                    - text: •
+                    - generic [ref=e2272]:
+                      - generic "Obsidia" [ref=e2275]:
+                        - img "Obsidia" [ref=e2276]
+                      - link "Obsidia" [ref=e2278] [cursor=pointer]:
+                        - /url: /wiki/Obsidia
+                    - text: •
+                    - generic [ref=e2279]:
+                      - generic "Popol and Kupa" [ref=e2282]:
+                        - img "Popol and Kupa" [ref=e2283]
+                      - link "Popol and Kupa" [ref=e2285] [cursor=pointer]:
+                        - /url: /wiki/Popol_and_Kupa
+                    - text: •
+                    - generic [ref=e2286]:
+                      - generic "Roger" [ref=e2289]:
+                        - img "Roger" [ref=e2290]
+                      - link "Roger" [ref=e2292] [cursor=pointer]:
+                        - /url: /wiki/Roger
+                    - text: •
+                    - generic [ref=e2293]:
+                      - generic "Wanwan" [ref=e2296]:
+                        - img "Wanwan" [ref=e2297]
+                      - link "Wanwan" [ref=e2299] [cursor=pointer]:
+                        - /url: /wiki/Wanwan
+                    - text: •
+                    - generic [ref=e2300]:
+                      - generic "Yi Sun-shin" [ref=e2303]:
+                        - img "Yi Sun-shin" [ref=e2304]
+                      - link "Yi Sun-shin" [ref=e2306] [cursor=pointer]:
+                        - /url: /wiki/Yi_Sun-shin
+                - row "Support Icon Support Angela Angela • Carmilla Carmilla • Chip Chip • Diggie Diggie • Estes Estes • Faramis Faramis • Floryn Floryn • Johnson Johnson • Kaja Kaja • Kalea Kalea • Lolita Lolita • Marcel Marcel • Mathilda Mathilda • Minotaur Minotaur • Rafaela Rafaela" [ref=e2307]:
+                  - cell "Support Icon Support" [ref=e2308]:
+                    - link "Support Icon" [ref=e2310] [cursor=pointer]:
+                      - /url: /wiki/Support_(role)
+                      - img "Support Icon" [ref=e2311]
+                    - link "Support" [ref=e2312] [cursor=pointer]:
+                      - /url: /wiki/Support
+                  - cell "Angela Angela • Carmilla Carmilla • Chip Chip • Diggie Diggie • Estes Estes • Faramis Faramis • Floryn Floryn • Johnson Johnson • Kaja Kaja • Kalea Kalea • Lolita Lolita • Marcel Marcel • Mathilda Mathilda • Minotaur Minotaur • Rafaela Rafaela" [ref=e2313]:
+                    - generic [ref=e2314]:
+                      - generic "Angela" [ref=e2317]:
+                        - img "Angela" [ref=e2318]
+                      - link "Angela" [ref=e2320] [cursor=pointer]:
+                        - /url: /wiki/Angela
+                    - text: •
+                    - generic [ref=e2321]:
+                      - generic "Carmilla" [ref=e2324]:
+                        - img "Carmilla" [ref=e2325]
+                      - link "Carmilla" [ref=e2327] [cursor=pointer]:
+                        - /url: /wiki/Carmilla
+                    - text: •
+                    - generic [ref=e2328]:
+                      - generic "Chip" [ref=e2331]:
+                        - img "Chip" [ref=e2332]
+                      - link "Chip" [ref=e2334] [cursor=pointer]:
+                        - /url: /wiki/Chip
+                    - text: •
+                    - generic [ref=e2335]:
+                      - generic "Diggie" [ref=e2338]:
+                        - img "Diggie" [ref=e2339]
+                      - link "Diggie" [ref=e2341] [cursor=pointer]:
+                        - /url: /wiki/Diggie
+                    - text: •
+                    - generic [ref=e2342]:
+                      - generic "Estes" [ref=e2345]:
+                        - img "Estes" [ref=e2346]
+                      - link "Estes" [ref=e2348] [cursor=pointer]:
+                        - /url: /wiki/Estes
+                    - text: •
+                    - generic [ref=e2349]:
+                      - generic "Faramis" [ref=e2352]:
+                        - img "Faramis" [ref=e2353]
+                      - link "Faramis" [ref=e2355] [cursor=pointer]:
+                        - /url: /wiki/Faramis
+                    - text: •
+                    - generic [ref=e2356]:
+                      - generic "Floryn" [ref=e2359]:
+                        - img "Floryn" [ref=e2360]
+                      - link "Floryn" [ref=e2362] [cursor=pointer]:
+                        - /url: /wiki/Floryn
+                    - text: •
+                    - generic [ref=e2363]:
+                      - generic "Johnson" [ref=e2366]:
+                        - img "Johnson" [ref=e2367]
+                      - link "Johnson" [ref=e2369] [cursor=pointer]:
+                        - /url: /wiki/Johnson
+                    - text: •
+                    - generic [ref=e2370]:
+                      - generic "Kaja" [ref=e2373]:
+                        - img "Kaja" [ref=e2374]
+                      - link "Kaja" [ref=e2376] [cursor=pointer]:
+                        - /url: /wiki/Kaja
+                    - text: •
+                    - generic [ref=e2377]:
+                      - generic "Kalea" [ref=e2380]:
+                        - img "Kalea" [ref=e2381]
+                      - link "Kalea" [ref=e2383] [cursor=pointer]:
+                        - /url: /wiki/Kalea
+                    - text: •
+                    - generic [ref=e2384]:
+                      - generic "Lolita" [ref=e2387]:
+                        - img "Lolita" [ref=e2388]
+                      - link "Lolita" [ref=e2390] [cursor=pointer]:
+                        - /url: /wiki/Lolita
+                    - text: •
+                    - generic [ref=e2391]:
+                      - generic "Marcel" [ref=e2394]:
+                        - img "Marcel" [ref=e2395]
+                      - link "Marcel" [ref=e2397] [cursor=pointer]:
+                        - /url: /wiki/Marcel
+                    - text: •
+                    - generic [ref=e2398]:
+                      - generic "Mathilda" [ref=e2401]:
+                        - img "Mathilda" [ref=e2402]
+                      - link "Mathilda" [ref=e2404] [cursor=pointer]:
+                        - /url: /wiki/Mathilda
+                    - text: •
+                    - generic [ref=e2405]:
+                      - generic "Minotaur" [ref=e2408]:
+                        - img "Minotaur" [ref=e2409]
+                      - link "Minotaur" [ref=e2411] [cursor=pointer]:
+                        - /url: /wiki/Minotaur
+                    - text: •
+                    - generic [ref=e2412]:
+                      - generic "Rafaela" [ref=e2415]:
+                        - img "Rafaela" [ref=e2416]
+                      - link "Rafaela" [ref=e2418] [cursor=pointer]:
+                        - /url: /wiki/Rafaela
+          - generic [ref=e2419]:
+            - generic "Toggle Categories" [ref=e2420]:
+              - generic [ref=e2421] [cursor=pointer]:
+                - text: Categories
+                - img [ref=e2422]
+            - generic [ref=e2424]:
+              - text: Community content is available under
+              - link "CC-BY-SA" [ref=e2425] [cursor=pointer]:
+                - /url: https://www.fandom.com/licensing
+              - text: unless otherwise noted.
+            - generic [ref=e2427]:
+              - generic [ref=e2428]: More Fandoms
+              - list [ref=e2430]:
+                - listitem [ref=e2431]:
+                  - link "Fantasy" [ref=e2432] [cursor=pointer]:
+                    - /url: https://www.fandom.com/fancentral/fantasy
+        - complementary [ref=e2433]:
+          - generic [ref=e2434]:
+            - generic [ref=e2436]:
+              - iframe [ref=e2439]:
+                - link [ref=f60e2] [cursor=pointer]:
+                  - /url: https://googleads.g.doubleclick.net/pcs/click?xai=AKAOjsuSlWPk8XnSLhozVlP3pmzM7LjMK-G-fPYnbusfXQi7Wt8g39NH1iCZD9AI-woW_qn1L7ml0QOliNjbGOdDk854LVEPnWE6-HVtTfaX4WPsVv5uGAePXhjhScmL12LW4xdnIDcQbOMw3Xw19wxlDE5ZdKqr4_bcGZBVFKweURXdHXOnigIn3DQoYU9U-y5QtQDORV46SEh42fNqV2N9qiBTFNsv_4DPW6JuVWl0eulfJzXcX8GsGjqNz8XfUo1XHHi81Hopn_VDVk98B6XOT_S9Qy_XHahEB00mxOJiNLHpfwbMB7Ce8UVFB1DJoee4o2FXaZdMCKkYPFMCqHEcknCIYrpCjC4p8SpEdS7rYblILkVCL20MO6iHVyhjGoca-_9iMkaFbtlQ89dtO1gNNg4QBVn_paFm-Y6JoMRmHZHwbkDzcOQ8vFo9quo2pSraMZFD9C7ExEgR_ciILEyn9ltkxtjmWy4&sai=AMfl-YRmqYyTTwiC2nukDQn5gVDli1ZchkvQP825hSa-EqYHvx-qEjAvJc9v_i5UaYBOC_zAx7H9oFuzUeb2gxPst-aC3DfScNV47lvBvZg-bo6Exil9QDNCb2ApqLfqF1mfDJ4I7hT9a1zLz6Dl9c5QicOh2gSnDrCcFauknHAtgchE6M_PGBmt2HVsgcdZwwKqYHe2CA21m5-oHXzCdgGtwQgmzCZVK0tJfImlCTbz5K6_8i7MydlfoGIzfSsqm1g_QTOvy8KmRguwCAfe42HWTgZ4wDSbWMGtjHnWLv9QGg-QkCwWmvXqAFyxgFyJagWMy3bQspHgdWdQtB8mDxmQy7_JlAYPO85NNWcRgDpLpxUoDkYxAgdOyZOPZ_um5cKfsIhvw05T3ZQ1-g&sig=Cg0ArKJSzHFxup-9WgsL&fbs_aeid=%5Bgw_fbsaeid%5D&adurl=http://fandom.com
+              - generic [ref=e2440]: Advertisement
+            - generic [ref=e2441]:
+              - iframe [ref=e2444]:
+                - link [ref=f65e2] [cursor=pointer]:
+                  - /url: https://googleads.g.doubleclick.net/pcs/click?xai=AKAOjssn5goWP7kLoHEro-dNEUymR_VhlArmBMu9DyMH6GkoeVU1VfXQKV-wNxYpdYKtjsKzKKKzWyFrKxmcDW6X1_WCG-6DMMKk40HvmUz3ctDIK4D8Sz_PR3BXbKKvlkMzunerU99883RwV0U1Li7qTlXXr9IfYt7zYJMnpUB1gFCkw5_ycRfPrvhsyLxBFkVsNO6DQF6xd7sdAKtntg_uzZ_TSmgt_Yth_S6ilgDzF9lpwx25AcMQ0BKdQH8UCdM2H79XA-GXkZeyxqirp4hbch_Hi3HczNsf4cAk4iRlkXNZX48H0LYkE2H7gMhiKmkKv8DWh16R92iYA5Yj0jchyAF4lcRrr6xOG5mScuYqTs4Y6HFct3jIRTSojbwbdN3nSG5GclDXEIfrL7INaAq59POVtWOn0twP3rp1SVUG5OVdR2wmdXkNxwfPWRFt__0B_w&sai=AMfl-YQlE6enJkLOO52KLCr_5g_XDwj4K42fR18IEs5nzl02jX_cilvNXFkNn2QpX_Ksz2fFGQvWu-TgMDASjhQTH8SOdly4kq_vpx7CDMnqSL4fFa6LI7evnJHaV6Un6tF74isuwkutGTNoiEkh3sewnB6ITfT4Jvv0K4sl-ywsRIjZrpljPUi1P1TGmKGzyk3mYiDTxHHfGG-t080Kd1N7EwtWIMUeyqwg1gIS7FyDWxx7yWUAnitB2tktP1oqDMLP0-nZjF2FosfCkZvWqLhRtTsRWq2r5zJP_ApVk6Jet4XwxjeUgPqb3v13JbLwspQovcDpAWJKU0UlTaHXOn5DOD4ZoNmZ93Y0TmTD6sSSII4IusW0wpf_CRKuxqeJx7tZqEaNT4XOTYxtPg&sig=Cg0ArKJSzCyusKVJZ1iF&fbs_aeid=%5Bgw_fbsaeid%5D&adurl=http://fandom.com
+              - generic [ref=e2445]: Advertisement
+      - generic [ref=e2446]:
+        - iframe [ref=e2449]:
+          - link [ref=f66e2] [cursor=pointer]:
+            - /url: https://googleads.g.doubleclick.net/pcs/click?xai=AKAOjst0vs4ZXertpWjaWeVzMUC7OkHU_ch8hcf-q2HGGmfffbFTbMHRLDlFd3JQqfyDP0XeIVGWwk8nm3ByYeTNqCKSG_dZCcDn80HWT9D_-SloqokoN1XJfrVZsn2aHIo5Qf5pHZBby0vyHMNaJwhlCbnCCilmQiJr27Tph2OYuFQQupwni-I2JHBIum936dU5RRjrymfr8CBj6X38BEeXBV6VhLLwSluC2wPCqgiAk1jDBPaWvqg9ogtDc3RON2iNbyBfTwMjWMQN1Cdg4_kqxBZFhqAxKNBOIKsLjs6GLn_7nvIaaTpyCTJb9qj-_zUHa9gz2dKNQUTYHs_ph8jWFXPf8Jy33cTvyW8q11GVBtWudAHQM3IkAJSo6G5gK-DA3PRM_-Nccc3HuEhTuu9e34b8IQ8ve3KazfTlCIAcLAaFLyAGokVxMdcxiameqLAAvF7zrEpX2ZJZ0A&sai=AMfl-YSQcJ71h0Fmfu6Q1nVOOAkkzAlneqB6S2I-jBb4jQS6SkggfTAMrQDqBA5MPu342z-iRVXVNaS_nM6oEexN80sWfoayneK1MP4xAVcopLhy4XTnHFBuTXAe2FGIVTjGdB5oEjksU-gIsHUp6d18FcRjpkdN1cNL-KCLzBuC7mbBPN7zAMGdGa3npNdVRXO7QkQRl_IBOUVhW3OWweNIFJBql3pU3Wxp5vBhfey_Gj1RNeKWMOpsZ1TK8aBla6heVom_cfbyUXe3PFlutm5zfhDCaSil-5U7GtvdjBhVI4F6pozqyJLlTvUpXS7Vzt5I36aRvIfw7CaAqMfiImJXD2h_lgH9E9ilOnQFHoBAXvSQD4Ux2aatAK_m00fV-QF6Ml_Lc_9xKz8cQQ&sig=Cg0ArKJSzOTiPURknhS7&fbs_aeid=%5Bgw_fbsaeid%5D&adurl=http://fandom.com
+        - generic [ref=e2450]: Advertisement
+    - contentinfo [ref=e2451]:
+      - generic [ref=e2452]:
+        - generic [ref=e2453]:
+          - heading "Fandom homepage" [level=2] [ref=e2454]:
+            - link "Fandom homepage" [ref=e2455] [cursor=pointer]:
+              - /url: https://www.fandom.com/
+              - img "Fandom logo" [ref=e2456]
+          - generic [ref=e2457]:
+            - heading "Explore properties" [level=3] [ref=e2458]
+            - list [ref=e2459]:
+              - listitem [ref=e2460]:
+                - link "Fandom" [ref=e2461] [cursor=pointer]:
+                  - /url: https://www.fandom.com/
+              - listitem [ref=e2462]:
+                - link "Fanatical" [ref=e2463] [cursor=pointer]:
+                  - /url: https://www.fanatical.com/
+              - listitem [ref=e2464]:
+                - link "GameSpot" [ref=e2465] [cursor=pointer]:
+                  - /url: https://www.gamespot.com/
+              - listitem [ref=e2466]:
+                - link "Metacritic" [ref=e2467] [cursor=pointer]:
+                  - /url: https://www.metacritic.com/
+              - listitem [ref=e2468]:
+                - link "TV Guide" [ref=e2469] [cursor=pointer]:
+                  - /url: https://www.tvguide.com/
+              - listitem [ref=e2470]:
+                - link "Honest Entertainment" [ref=e2471] [cursor=pointer]:
+                  - /url: https://www.youtube.com/user/screenjunkies
+          - generic [ref=e2472]:
+            - heading "Follow Us" [level=3] [ref=e2473]
+            - list [ref=e2474]:
+              - listitem [ref=e2475]:
+                - link "Follow Fandom on Facebook" [ref=e2476] [cursor=pointer]:
+                  - /url: https://www.facebook.com/getfandom
+                  - img [ref=e2477]
+              - listitem [ref=e2479]:
+                - link "Follow Fandom on Twitter" [ref=e2480] [cursor=pointer]:
+                  - /url: https://twitter.com/getfandom
+                  - img [ref=e2481]
+              - listitem [ref=e2483]:
+                - link "Follow Fandom on Youtube" [ref=e2484] [cursor=pointer]:
+                  - /url: https://www.youtube.com/fandomentertainment
+                  - img [ref=e2485]
+              - listitem [ref=e2487]:
+                - link "Follow Fandom on Instagram" [ref=e2488] [cursor=pointer]:
+                  - /url: https://www.instagram.com/getfandom/
+                  - img [ref=e2489]
+              - listitem [ref=e2491]:
+                - link "Follow Fandom on LinkedIn" [ref=e2492] [cursor=pointer]:
+                  - /url: https://www.linkedin.com/company/157252
+                  - img [ref=e2493]
+        - generic [ref=e2496]:
+          - heading "Overview" [level=3] [ref=e2497]
+          - list [ref=e2498]:
+            - listitem [ref=e2499]:
+              - link "What is Fandom?" [ref=e2500] [cursor=pointer]:
+                - /url: https://www.fandom.com/what-is-fandom
+            - listitem [ref=e2501]:
+              - link "Essentials" [ref=e2502] [cursor=pointer]:
+                - /url: https://www.fandom.com/essentials
+            - listitem [ref=e2503]:
+              - link "About" [ref=e2504] [cursor=pointer]:
+                - /url: https://www.fandom.com/about
+            - listitem [ref=e2505]:
+              - link "Careers" [ref=e2506] [cursor=pointer]:
+                - /url: https://www.fandom.com/careers
+            - listitem [ref=e2507]:
+              - link "Press" [ref=e2508] [cursor=pointer]:
+                - /url: https://www.fandom.com/press
+            - listitem [ref=e2509]:
+              - link "Contact" [ref=e2510] [cursor=pointer]:
+                - /url: https://www.fandom.com/about#contact
+            - listitem [ref=e2511]:
+              - link "Terms of Use" [ref=e2512] [cursor=pointer]:
+                - /url: https://www.fandom.com/terms-of-use
+            - listitem [ref=e2513]:
+              - link "Privacy Policy" [ref=e2514] [cursor=pointer]:
+                - /url: https://www.fandom.com/privacy-policy
+            - listitem [ref=e2515]:
+              - link "Digital Services Act" [ref=e2516] [cursor=pointer]:
+                - /url: https://www.fandom.com/digital-services-act
+            - listitem [ref=e2517]:
+              - link "Global Sitemap" [ref=e2518] [cursor=pointer]:
+                - /url: //community.fandom.com/Sitemap
+            - listitem [ref=e2519]:
+              - link "Local Sitemap" [ref=e2520] [cursor=pointer]:
+                - /url: /wiki/Local_Sitemap
+            - listitem [ref=e2521]:
+              - button "Cookies Settings" [ref=e2522]
+        - generic [ref=e2523]:
+          - generic [ref=e2524]:
+            - heading "Community" [level=3] [ref=e2525]
+            - list [ref=e2526]:
+              - listitem [ref=e2527]:
+                - link "Community Central" [ref=e2528] [cursor=pointer]:
+                  - /url: //community.fandom.com/wiki/Community_Central
+              - listitem [ref=e2529]:
+                - link "Support" [ref=e2530] [cursor=pointer]:
+                  - /url: https://fandom.zendesk.com/
+              - listitem [ref=e2531]:
+                - link "Help" [ref=e2532] [cursor=pointer]:
+                  - /url: //community.fandom.com/wiki/Help:Contents
+          - generic [ref=e2533]:
+            - heading "Advertise" [level=3] [ref=e2534]
+            - list [ref=e2535]:
+              - listitem [ref=e2536]:
+                - link "Media Kit" [ref=e2537] [cursor=pointer]:
+                  - /url: https://about.fandom.com/mediakit
+              - listitem [ref=e2538]:
+                - link "Contact" [ref=e2539] [cursor=pointer]:
+                  - /url: https://about.fandom.com/mediakit#contact
+        - generic [ref=e2540]:
+          - generic [ref=e2541]:
+            - heading "Fandom Apps" [level=3] [ref=e2542]
+            - text: Take your favorite fandoms with you and never miss a beat.
+          - generic [ref=e2543]:
+            - img "Fandom App logo" [ref=e2544]
+            - list [ref=e2545]:
+              - listitem [ref=e2546]:
+                - link "Fandom's Apple Store" [ref=e2547] [cursor=pointer]:
+                  - /url: https://apps.apple.com/us/app/fandom-videos-news-reviews/id1230063803
+                  - img "Store icon" [ref=e2548]
+              - listitem [ref=e2549]:
+                - link "Fandom's Google Play" [ref=e2550] [cursor=pointer]:
+                  - /url: https://play.google.com/store/apps/details?id=com.fandom.app&referrer=utm_source%3Dwikia%26utm_medium%3Dglobalfooter
+                  - img "Store icon" [ref=e2551]
+      - generic [ref=e2552]:
+        - generic [ref=e2553]: "Mobile Legends: Bang Bang Wiki is a Fandom Games Community."
+        - button "View Mobile Site" [ref=e2555]
+  - generic: Cookies Settings

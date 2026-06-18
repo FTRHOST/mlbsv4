@@ -1,0 +1,19 @@
+{
+  "name": "mlbsv4-api",
+  "version": "1.0.0",
+  "description": "Tournament 3rd-party tool",
+  "main": "index.js",
+  "scripts": {
+    "wait-and-hook": "while [ -z $(adb shell ps -A | grep ':UnityKillsMe' | awk '{print $2}') ]; do sleep 1; done; PID=$(adb shell ps -A | grep ':UnityKillsMe' | awk '{print $2}'); echo 'PID Found: ' $PID; frida -U -p $PID -l dist/agent.js",
+    "watch": "frida-compile src/index.js -o dist/agent.js -w",
+    "build": "mkdir -p dist && frida-compile src/index.js -o dist/agent.js -c",
+    "start-host": "node host.js"
+  },
+  "author": "petwir",
+  "license": "ISC",
+  "dependencies": {
+    "firebase-admin": "^13.10.0",
+    "frida": "^17.12.0",
+    "frida-il2cpp-bridge": "^0.13.1"
+  }
+}

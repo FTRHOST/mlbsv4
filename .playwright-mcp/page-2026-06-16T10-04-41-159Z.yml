@@ -1,0 +1,2648 @@
+- generic [active] [ref=e1]:
+  - navigation "Fandom top navigation" [ref=e2]:
+    - link "Fandom homepage" [ref=e3] [cursor=pointer]:
+      - /url: https://www.fandom.com/
+      - img [ref=e4]
+    - generic [ref=e7]:
+      - link "Sign In" [ref=e9] [cursor=pointer]:
+        - /url: https://auth.fandom.com/signin?source=mw&redirect=https%3A%2F%2Fmobile-legends.fandom.com%2Fwiki%2FMiya&metadata=header-signin-button
+      - link "Create a Free Account" [ref=e11] [cursor=pointer]:
+        - /url: https://auth.fandom.com/register?source=mw&redirect=https%3A%2F%2Fmobile-legends.fandom.com%2Fwiki%2FMiya&metadata=header-registration-button
+  - generic "Community navigation" [ref=e12]:
+    - link "Fandom homepage" [ref=e14] [cursor=pointer]:
+      - /url: https://www.fandom.com/
+      - img [ref=e15]
+    - 'link "Mobile Legends: Bang Bang Wiki" [ref=e17] [cursor=pointer]':
+      - /url: https://mobile-legends.fandom.com/wiki/MLBB_Wiki
+      - 'img "Mobile Legends: Bang Bang Wiki" [ref=e18]'
+    - navigation [ref=e19]:
+      - list [ref=e20]:
+        - listitem [ref=e21]:
+          - generic [ref=e22]:
+            - generic [ref=e23] [cursor=pointer]:
+              - img [ref=e24]
+              - generic [ref=e26]: Explore
+            - img "Expand" [ref=e27]
+        - listitem [ref=e29]:
+          - generic [ref=e30]:
+            - link "MLBB" [ref=e31] [cursor=pointer]:
+              - /url: https://mobile-legends.fandom.com/wiki/Mobile_Legends:_Bang_Bang
+              - generic [ref=e32]: MLBB
+            - img "Expand" [ref=e33]
+        - listitem [ref=e35]:
+          - generic [ref=e36]:
+            - link "Game Modes" [ref=e37] [cursor=pointer]:
+              - /url: https://mobile-legends.fandom.com/wiki/Game_Modes
+              - generic [ref=e38]: Game Modes
+            - img "Expand" [ref=e39]
+        - listitem [ref=e41]:
+          - generic [ref=e42]:
+            - generic [ref=e44] [cursor=pointer]: Shop
+            - img "Expand" [ref=e45]
+        - listitem [ref=e47]:
+          - generic [ref=e48]:
+            - link "Heroes" [ref=e49] [cursor=pointer]:
+              - /url: https://mobile-legends.fandom.com/wiki/Heroes
+              - generic [ref=e50]: Heroes
+            - img "Expand" [ref=e51]
+    - generic [ref=e53]:
+      - link "Discuss" [ref=e54] [cursor=pointer]:
+        - /url: /f
+        - img
+      - link "Switch to Light Theme" [ref=e55] [cursor=pointer]:
+        - /url: "#"
+        - img
+    - link "Sign In" [ref=e58] [cursor=pointer]:
+      - /url: https://auth.fandom.com/signin?source=mw&redirect=https%3A%2F%2Fmobile-legends.fandom.com%2Fwiki%2FMiya&metadata=header-signin-button
+      - generic [ref=e59]:
+        - img
+        - text: Sign In
+  - generic [ref=e60]:
+    - navigation "Fandom navigation" [ref=e62]:
+      - generic [ref=e63]:
+        - link "Home" [ref=e66] [cursor=pointer]:
+          - /url: https://www.fandom.com/
+          - generic [ref=e67]:
+            - img [ref=e69]
+            - generic [ref=e71]: Home
+        - button "Explore" [ref=e73] [cursor=pointer]:
+          - generic [ref=e74]:
+            - img [ref=e76]
+            - generic [ref=e79]: Explore
+        - link "Saved" [ref=e82] [cursor=pointer]:
+          - /url: https://www.fandom.com/saved
+          - generic [ref=e83]:
+            - img [ref=e85]
+            - generic [ref=e87]: Saved
+        - link "Progress" [ref=e90] [cursor=pointer]:
+          - /url: https://www.fandom.com/progress
+          - generic [ref=e91]:
+            - img [ref=e93]
+            - generic [ref=e95]: Progress
+        - button "History" [ref=e97] [cursor=pointer]:
+          - generic [ref=e98]:
+            - img [ref=e100]
+            - generic [ref=e102]: History
+    - navigation "Fandom navigation" [ref=e104]:
+      - button "More" [ref=e106] [cursor=pointer]:
+        - generic [ref=e107]:
+          - img [ref=e109]
+          - generic [ref=e111]: More
+  - generic [ref=e112]:
+    - generic [ref=e114]:
+      - iframe [ref=e117]:
+        - link [ref=f109e2] [cursor=pointer]:
+          - /url: https://googleads.g.doubleclick.net/pcs/click?xai=AKAOjsvq4vnJSNkOh0OJE55wg3te482y1HFmvTjmCv7-sJfApDHScYLqq-KumpCHd29jLAhlj1Eb804lYqU2CMyuTD8Sv5RsLMV6JAJL7s1ZvDZSqCDUjpxq47JUxP-8d_AFBjzMW_0RCMTWxdnxnwq8Xw6-GlApLsl9mIjX7VSNI89cCf7xmmuP_W5_Ph9f4Ktm-P33JHjMp0ZfHgbgRoT31SEfuSJiYWwqVVBdItpOSpkLIDsPr-QuXyGV8iOr1oqGHYk3knRrKJ3F3Lz1oAcR2c1qkKLoMMOOY71IRveyb0wUnqQdH9Ihfq5oZ-KGHMSZopK8xQpqPt59nJNk-HheYd9Z2RZ21ROdu3UVuMUQBE-X06rpE74TNmkR-LCcOsVLBAiKTT_QIvfBw-wcAmfiXfw-V6v2lnCK4ShVCWP6qF7Fn2_Jn4u4WhDUVycl9urldBAkKd0EbHpCWqBPH7rj5UnOUjHGRfI3OqlOHGM&sai=AMfl-YSxPkAi3WdXnMTspZxyPRxc_AA2vXYXbJiGVzsLE4fS9WHdbaZqcP7ZX_8_GS6qrpPL45LSaU80C6e8ogRMhYUSsQuipnb7ZVOFqiXtw4eR7QX-E7CaQiQGB3aMgyhzgCwgBBk0kGiwJG-qEmlzLNM5ABHCtvITv-AfQEeEGLZVY7J2QF0Mpqm9D0Iv8q7roGBHbkY8Ga5ccn0JRJAjpaYaRAyrTOnyq6TRpeYNvrEPKJLyiG2ABLt52jgx281ATMhzCax0wfwZRfq2Lci7JZAc4aGItjMjATsMco7Ptf4T1pFUNik4QOJyGN5Xcf2IyDHFt9LxFDVjDjzLm_fUN81T52mLmz3rEAmCWPGLugUK5x2PxG5qKfVtrZWFayEXJFCkhjpWeL3dvA&sig=Cg0ArKJSzDRxPoB_0r-j&fbs_aeid=%5Bgw_fbsaeid%5D&adurl=http://fandom.com
+      - generic [ref=e118]: Advertisement
+    - generic [ref=e120]:
+      - link "Skip to content" [ref=e121] [cursor=pointer]:
+        - /url: "#page-header"
+      - banner [ref=e123]:
+        - 'link "Mobile Legends: Bang Bang Wiki" [ref=e124] [cursor=pointer]':
+          - /url: https://mobile-legends.fandom.com/wiki/MLBB_Wiki
+          - 'img "Mobile Legends: Bang Bang Wiki" [ref=e125]'
+        - generic [ref=e126]:
+          - 'link "Mobile Legends: Bang Bang Wiki" [ref=e128] [cursor=pointer]':
+            - /url: https://mobile-legends.fandom.com/wiki/MLBB_Wiki
+          - generic [ref=e129]:
+            - generic [ref=e130]: 2,322
+            - generic [ref=e131]: pages
+          - generic [ref=e132]:
+            - link "Discuss" [ref=e133] [cursor=pointer]:
+              - /url: /f
+              - img
+            - link "Switch to Light Theme" [ref=e134] [cursor=pointer]:
+              - /url: "#"
+              - img
+        - navigation [ref=e135]:
+          - list [ref=e136]:
+            - listitem [ref=e137]:
+              - generic [ref=e138]:
+                - generic [ref=e139] [cursor=pointer]:
+                  - img [ref=e140]
+                  - generic [ref=e142]: Explore
+                - img "Expand" [ref=e143]
+            - listitem [ref=e145]:
+              - generic [ref=e146]:
+                - link "MLBB" [ref=e147] [cursor=pointer]:
+                  - /url: https://mobile-legends.fandom.com/wiki/Mobile_Legends:_Bang_Bang
+                  - generic [ref=e148]: MLBB
+                - img "Expand" [ref=e149]
+            - listitem [ref=e151]:
+              - generic [ref=e152]:
+                - link "Game Modes" [ref=e153] [cursor=pointer]:
+                  - /url: https://mobile-legends.fandom.com/wiki/Game_Modes
+                  - generic [ref=e154]: Game Modes
+                - img "Expand" [ref=e155]
+            - listitem [ref=e157]:
+              - generic [ref=e158]:
+                - generic [ref=e160] [cursor=pointer]: Shop
+                - img "Expand" [ref=e161]
+            - listitem [ref=e163]:
+              - generic [ref=e164]:
+                - link "Heroes" [ref=e165] [cursor=pointer]:
+                  - /url: https://mobile-legends.fandom.com/wiki/Heroes
+                  - generic [ref=e166]: Heroes
+                - img "Expand" [ref=e167]
+      - generic [ref=e169]:
+        - main [ref=e170]:
+          - generic [ref=e172]:
+            - link "View source" [ref=e173] [cursor=pointer]:
+              - /url: /wiki/Miya?action=edit
+              - img [ref=e174]
+            - link "Sign In to Save" [ref=e176] [cursor=pointer]:
+              - /url: https://auth.fandom.com/signin?redirect=https%3A%2F%2Fmobile-legends.fandom.com%2Fwiki%2FMiya%3Fcollections%3Dsave&uselang=en&metadata=collections-save-button
+              - img [ref=e177]
+          - generic [ref=e179]:
+            - generic [ref=e182]:
+              - text: "in:"
+              - link "Citations needed" [ref=e183] [cursor=pointer]:
+                - /url: /wiki/Category:Citations_needed
+              - text: ","
+              - link "Heroes" [ref=e184] [cursor=pointer]:
+                - /url: /wiki/Category:Heroes
+              - text: ","
+              - link "Miya" [ref=e185] [cursor=pointer]:
+                - /url: /wiki/Category:Miya
+              - text: ","
+              - generic [ref=e186]: and 10 more
+            - generic [ref=e187]:
+              - heading "Miya" [level=1] [ref=e189]
+              - generic [ref=e190]:
+                - link "Comments" [ref=e191] [cursor=pointer]:
+                  - /url: "#articleComments"
+                  - img
+                - link "Sign In to Save" [ref=e193] [cursor=pointer]:
+                  - /url: https://auth.fandom.com/signin?redirect=https%3A%2F%2Fmobile-legends.fandom.com%2Fwiki%2FMiya%3Fcollections%3Dsave&uselang=en&metadata=collections-save-button
+                  - img
+                  - generic [ref=e194]: Save
+                - link "View source" [ref=e195] [cursor=pointer]:
+                  - /url: /wiki/Miya?action=edit
+                  - img
+                  - text: View source
+                - button "Page Tools" [ref=e197]:
+                  - img
+          - generic [ref=e200]:
+            - generic [ref=e202]:
+              - strong [ref=e204]: Main
+              - link "Cosmetics" [ref=e207] [cursor=pointer]:
+                - /url: /wiki/Miya/Cosmetics
+              - link "Audio" [ref=e210] [cursor=pointer]:
+                - /url: /wiki/Miya/Audio
+              - link "Mastery Code" [ref=e213] [cursor=pointer]:
+                - /url: /wiki/Miya/Mastery_Code
+              - link "Patch history" [ref=e216] [cursor=pointer]:
+                - /url: /wiki/Miya/Patch_history
+              - link "Archives" [ref=e219] [cursor=pointer]:
+                - /url: /wiki/Miya/Archives
+              - link "Strategy" [ref=e222] [cursor=pointer]:
+                - /url: /wiki/Miya/Guide
+            - region [ref=e224]:
+              - heading "Miya \"Moonlight Archer\"" [level=2] [ref=e225]:
+                - generic [ref=e226]:
+                  - text: Miya
+                  - text: "\"Moonlight Archer\""
+              - figure [ref=e227]:
+                - link "Hero011-portrait" [ref=e228] [cursor=pointer]:
+                  - /url: https://static.wikia.nocookie.net/mobile-legends/images/8/89/Hero011-portrait.png/revision/latest?cb=20250407160822
+                  - img "Hero011-portrait" [ref=e229]
+              - generic [ref=e230]:
+                - heading "Release date" [level=3] [ref=e231]
+                - generic [ref=e232]: "2016"
+              - generic [ref=e233]:
+                - heading "Role" [level=3] [ref=e234]
+                - generic [ref=e235]:
+                  - link "Marksman Icon" [ref=e237] [cursor=pointer]:
+                    - /url: https://static.wikia.nocookie.net/mobile-legends/images/1/10/Marksman_Icon.png/revision/latest?cb=20260309135447
+                    - img "Marksman Icon" [ref=e238]
+                  - link "Marksman" [ref=e239] [cursor=pointer]:
+                    - /url: /wiki/Marksman
+              - generic [ref=e240]:
+                - heading "Specialty" [level=3] [ref=e241]
+                - generic [ref=e242]:
+                  - link "Finisher" [ref=e243] [cursor=pointer]:
+                    - /url: /wiki/Finisher
+                  - text: /
+                  - link "Damage" [ref=e244] [cursor=pointer]:
+                    - /url: /wiki/Damage
+              - generic [ref=e245]:
+                - heading "Lane Recc." [level=3] [ref=e246]
+                - generic [ref=e247]:
+                  - link "Gold Lane" [ref=e249] [cursor=pointer]:
+                    - /url: https://static.wikia.nocookie.net/mobile-legends/images/9/9f/Gold_Lane.png/revision/latest?cb=20241001154048
+                    - img "Gold Lane" [ref=e250]
+                  - link "Gold Lane" [ref=e251] [cursor=pointer]:
+                    - /url: /wiki/Gold_Lane
+              - generic [ref=e252]:
+                - heading "Price" [level=3] [ref=e253]
+                - generic [ref=e254]:
+                  - generic [ref=e255]:
+                    - link "10800 Battle Points" [ref=e258] [cursor=pointer]:
+                      - /url: /wiki/Battle_Points
+                      - img "10800 Battle Points" [ref=e259]
+                    - text: "10800"
+                  - text: or
+                  - generic [ref=e260]:
+                    - link "399 tickets" [ref=e263] [cursor=pointer]:
+                      - /url: /wiki/Ticket
+                      - img "399 tickets" [ref=e264]
+                    - text: "399"
+              - generic [ref=e265]:
+                - heading "Skill resource" [level=3] [ref=e266]
+                - link "Mana" [ref=e268] [cursor=pointer]:
+                  - /url: /wiki/Mana
+              - generic [ref=e269]:
+                - heading "Damage type" [level=3] [ref=e270]
+                - link "Physical" [ref=e272] [cursor=pointer]:
+                  - /url: /wiki/Physical_Damage
+              - generic [ref=e273]:
+                - heading "Basic attack type" [level=3] [ref=e274]
+                - link "Ranged" [ref=e276] [cursor=pointer]:
+                  - /url: /wiki/Range
+              - generic [ref=e277]:
+                - heading "Ratings (1–10)" [level=2] [ref=e278]
+                - generic [ref=e279]:
+                  - heading "Durability" [level=3] [ref=e280]
+                  - generic [ref=e283]: "1"
+                - generic [ref=e284]:
+                  - heading "Offense" [level=3] [ref=e285]
+                  - generic [ref=e288]: "7"
+                - generic [ref=e289]:
+                  - heading "Control effects" [level=3] [ref=e290]
+                  - generic [ref=e293]: "4"
+                - generic [ref=e294]:
+                  - heading "Difficulty" [level=3] [ref=e295]
+                  - generic [ref=e298]: "1"
+              - table "Hero number" [ref=e300]:
+                - caption [ref=e301]: Hero number
+                - rowgroup [ref=e302]:
+                  - 'row "#1 #2 →" [ref=e303]':
+                    - columnheader "#1" [ref=e304]
+                    - columnheader "#2 →" [ref=e305]
+                - rowgroup [ref=e306]:
+                  - row "Hero011-icon Miya Hero021-icon Balmond" [ref=e307]:
+                    - cell "Hero011-icon Miya" [ref=e308]:
+                      - link "Hero011-icon" [ref=e311] [cursor=pointer]:
+                        - /url: https://static.wikia.nocookie.net/mobile-legends/images/8/8c/Hero011-icon.png/revision/latest?cb=20241021145035
+                        - img "Hero011-icon" [ref=e312]
+                      - text: Miya
+                    - cell "Hero021-icon Balmond" [ref=e313]:
+                      - link "Hero021-icon" [ref=e316] [cursor=pointer]:
+                        - /url: /wiki/Balmond
+                        - img "Hero021-icon" [ref=e317]
+                      - link "Balmond" [ref=e318] [cursor=pointer]:
+                        - /url: /wiki/Balmond
+              - generic [ref=e319]:
+                - heading "Hero spotlight" [level=2] [ref=e320]
+                - figure [ref=e321]:
+                  - link "Hero Spotlight - Miya - Mobile Legends- Bang Bang" [ref=e322] [cursor=pointer]:
+                    - /url: https://mobile-legends.fandom.com/wiki/File:Hero_Spotlight_-_Miya_-_Mobile_Legends-_Bang_Bang
+                    - img "Hero Spotlight - Miya - Mobile Legends- Bang Bang" [ref=e323]
+                    - img [ref=e325]
+              - generic [ref=e333]:
+                - heading "Website" [level=2] [ref=e334]
+                - list [ref=e337]:
+                  - listitem [ref=e338]:
+                    - text: "MLBB hero page:"
+                    - text: →
+                    - link "www.mobilelegends.com" [ref=e339] [cursor=pointer]:
+                      - /url: https://www.mobilelegends.com/hero/detail?heroid=1
+                    - text: →
+                    - link "m.mobilelegends.com" [ref=e340] [cursor=pointer]:
+                      - /url: https://m.mobilelegends.com/hero/detail?heroid=1
+                    - text: →
+                    - link "new.mobilelegends.com" [ref=e341] [cursor=pointer]:
+                      - /url: https://new.mobilelegends.com/hero/detail?heroid=1
+                  - listitem [ref=e342]:
+                    - link "MLBB China hero page" [ref=e343] [cursor=pointer]:
+                      - /url: https://moba.moonton.com/hero/1
+            - table [ref=e344]:
+              - rowgroup [ref=e345]:
+                - row "“ An archer blessed by the Moon God. ”" [ref=e346]:
+                  - cell "“" [ref=e347]
+                  - cell "An archer blessed by the Moon God." [ref=e348]
+                  - cell "”" [ref=e349]
+                - 'row "— Mobile Legends: Bang Bang" [ref=e350]':
+                  - cell [ref=e351]
+                  - 'cell "— Mobile Legends: Bang Bang" [ref=e352]':
+                    - generic [ref=e354]: "— Mobile Legends: Bang Bang"
+            - paragraph [ref=e355]:
+              - text: Miya, the Moonlight Archer, is a
+              - link "hero" [ref=e356] [cursor=pointer]:
+                - /url: /wiki/Hero
+              - text: in
+              - 'link "Mobile Legends: Bang Bang" [ref=e358] [cursor=pointer]':
+                - /url: /wiki/Mobile_Legends:_Bang_Bang
+              - text: .
+            - paragraph [ref=e359]: According to "Sale Time," she is the first hero in the game. She is also the game's official mascot, appearing at the end of every trailer, advertisement, and MLBB app icon.
+            - navigation "Contents" [ref=e360]:
+              - button "hide" [ref=e361]
+              - generic [ref=e362]:
+                - heading "Contents" [level=2] [ref=e363]
+                - generic [ref=e364]:
+                  - text: "["
+                  - generic [ref=e365] [cursor=pointer]: hide
+                  - text: "]"
+              - list [ref=e366]:
+                - listitem [ref=e367]:
+                  - link "1. Story" [ref=e368] [cursor=pointer]:
+                    - /url: "#Story"
+                    - generic [ref=e369]: "1."
+                    - generic [ref=e370]: Story
+                  - list [ref=e371]:
+                    - listitem [ref=e372]:
+                      - link "1.1. Bio" [ref=e373] [cursor=pointer]:
+                        - /url: "#Bio"
+                        - generic [ref=e374]: 1.1.
+                        - generic [ref=e375]: Bio
+                    - listitem [ref=e376]:
+                      - link "1.2. Side story" [ref=e377] [cursor=pointer]:
+                        - /url: "#Side_story"
+                        - generic [ref=e378]: 1.2.
+                        - generic [ref=e379]: Side story
+                - listitem [ref=e380]:
+                  - link "2. Abilities" [ref=e381] [cursor=pointer]:
+                    - /url: "#Abilities"
+                    - generic [ref=e382]: "2."
+                    - generic [ref=e383]: Abilities
+                  - list [ref=e384]:
+                    - listitem [ref=e385]:
+                      - link "2.1. Passive" [ref=e386] [cursor=pointer]:
+                        - /url: "#Passive"
+                        - generic [ref=e387]: 2.1.
+                        - generic [ref=e388]: Passive
+                    - listitem [ref=e389]:
+                      - link "2.2. Skill 1" [ref=e390] [cursor=pointer]:
+                        - /url: "#Skill_1"
+                        - generic [ref=e391]: 2.2.
+                        - generic [ref=e392]: Skill 1
+                    - listitem [ref=e393]:
+                      - link "2.3. Skill 2" [ref=e394] [cursor=pointer]:
+                        - /url: "#Skill_2"
+                        - generic [ref=e395]: 2.3.
+                        - generic [ref=e396]: Skill 2
+                    - listitem [ref=e397]:
+                      - link "2.4. Ultimate" [ref=e398] [cursor=pointer]:
+                        - /url: "#Ultimate"
+                        - generic [ref=e399]: 2.4.
+                        - generic [ref=e400]: Ultimate
+                - listitem [ref=e401]:
+                  - link "3. Gallery" [ref=e402] [cursor=pointer]:
+                    - /url: "#Gallery"
+                    - generic [ref=e403]: "3."
+                    - generic [ref=e404]: Gallery
+                  - list [ref=e405]:
+                    - listitem [ref=e406]:
+                      - link "3.1. Splash art" [ref=e407] [cursor=pointer]:
+                        - /url: "#Splash_art"
+                        - generic [ref=e408]: 3.1.
+                        - generic [ref=e409]: Splash art
+                    - listitem [ref=e410]:
+                      - link "3.2. Painted skins" [ref=e411] [cursor=pointer]:
+                        - /url: "#Painted_skins"
+                        - generic [ref=e412]: 3.2.
+                        - generic [ref=e413]: Painted skins
+                    - listitem [ref=e414]:
+                      - link "3.3. Avatar icons" [ref=e415] [cursor=pointer]:
+                        - /url: "#Avatar_icons"
+                        - generic [ref=e416]: 3.3.
+                        - generic [ref=e417]: Avatar icons
+                    - listitem [ref=e418]:
+                      - link "3.4. Battle emotes" [ref=e419] [cursor=pointer]:
+                        - /url: "#Battle_emotes"
+                        - generic [ref=e420]: 3.4.
+                        - generic [ref=e421]: Battle emotes
+                - listitem [ref=e422]:
+                  - link "4. Videos" [ref=e423] [cursor=pointer]:
+                    - /url: "#Videos"
+                    - generic [ref=e424]: "4."
+                    - generic [ref=e425]: Videos
+                - listitem [ref=e426]:
+                  - link "5. Trivia" [ref=e427] [cursor=pointer]:
+                    - /url: "#Trivia"
+                    - generic [ref=e428]: "5."
+                    - generic [ref=e429]: Trivia
+                - listitem [ref=e430]:
+                  - link "6. References" [ref=e431] [cursor=pointer]:
+                    - /url: "#References"
+                    - generic [ref=e432]: "6."
+                    - generic [ref=e433]: References
+            - table [ref=e435]:
+              - rowgroup [ref=e436]:
+                - row "Hero stats [edit]" [ref=e437]:
+                  - cell "Hero stats [edit]" [ref=e438]:
+                    - generic [ref=e439]:
+                      - text: Hero stats
+                      - generic [ref=e440]:
+                        - text: "["
+                        - link "edit" [ref=e441] [cursor=pointer]:
+                          - /url: https://mobile-legends.fandom.com/wiki/Module:Hero/data?action=edit
+                        - text: "]"
+                - row "Attribute Base stats" [ref=e442]:
+                  - columnheader "Attribute" [ref=e443]
+                  - columnheader "Base stats" [ref=e444]
+                - row "Level 1 Level 15 Growth" [ref=e445]:
+                  - columnheader "Level 1" [ref=e446]
+                  - columnheader "Level 15" [ref=e447]
+                  - columnheader "Growth" [ref=e448]
+                - row "HP 2225 4367 153" [ref=e449]:
+                  - cell "HP" [ref=e450]:
+                    - link "HP" [ref=e451] [cursor=pointer]:
+                      - /url: /wiki/HP
+                  - cell "2225" [ref=e452]
+                  - cell "4367" [ref=e453]
+                  - cell "153" [ref=e454]
+                - row "HP Regen 6.0 9.0 0.2143" [ref=e455]:
+                  - cell "HP Regen" [ref=e456]:
+                    - link "HP Regen" [ref=e457] [cursor=pointer]:
+                      - /url: /wiki/HP_regen_(attribute)
+                  - cell "6.0" [ref=e458]
+                  - cell "9.0" [ref=e459]
+                  - cell "0.2143" [ref=e460]
+                - row "Mana 500 1900 100" [ref=e461]:
+                  - cell "Mana" [ref=e462]:
+                    - link "Mana" [ref=e463] [cursor=pointer]:
+                      - /url: /wiki/Mana
+                  - cell "500" [ref=e464]
+                  - cell "1900" [ref=e465]
+                  - cell "100" [ref=e466]
+                - row "Mana Regen 4 6.8 0.2" [ref=e467]:
+                  - cell "Mana Regen" [ref=e468]:
+                    - link "Mana Regen" [ref=e469] [cursor=pointer]:
+                      - /url: /wiki/Mana_Regen
+                  - cell "4" [ref=e470]
+                  - cell "6.8" [ref=e471]
+                  - cell "0.2" [ref=e472]
+                - row "Physical Attack 115 227 8" [ref=e473]:
+                  - cell "Physical Attack" [ref=e474]:
+                    - link "Physical Attack" [ref=e475] [cursor=pointer]:
+                      - /url: /wiki/Physical_Attack
+                  - cell "115" [ref=e476]
+                  - cell "227" [ref=e477]
+                  - cell "8" [ref=e478]
+                - row "Magic Power 0" [ref=e479]:
+                  - cell "Magic Power" [ref=e480]:
+                    - link "Magic Power" [ref=e481] [cursor=pointer]:
+                      - /url: /wiki/Magic_Power
+                  - cell "0" [ref=e482]
+                - row "Physical Defense (Physical Damage Reduced) 17 (12.4%) 74 (38.1%) 4.0714" [ref=e483]:
+                  - cell "Physical Defense (Physical Damage Reduced)" [ref=e484]:
+                    - link "Physical Defense" [ref=e485] [cursor=pointer]:
+                      - /url: /wiki/Physical_Defense
+                    - text: (Physical Damage Reduced)
+                  - cell "17 (12.4%)" [ref=e486]
+                  - cell "74 (38.1%)" [ref=e487]
+                  - cell "4.0714" [ref=e488]
+                - row "Magic Defense (Magic Damage Reduced) 15 (11.1%) 50 (29.4%) 2.5" [ref=e489]:
+                  - cell "Magic Defense (Magic Damage Reduced)" [ref=e490]:
+                    - link "Magic Defense" [ref=e491] [cursor=pointer]:
+                      - /url: /wiki/Magic_Defense
+                    - text: (Magic Damage Reduced)
+                  - cell "15 (11.1%)" [ref=e492]
+                  - cell "50 (29.4%)" [ref=e493]
+                  - cell "2.5" [ref=e494]
+                - row "Attack Speed 1.06 1.41 0.025" [ref=e495]:
+                  - cell "Attack Speed" [ref=e496]:
+                    - link "Attack Speed" [ref=e497] [cursor=pointer]:
+                      - /url: /wiki/Attack_Speed
+                  - cell "1.06" [ref=e498]
+                  - cell "1.41" [ref=e499]
+                  - cell "0.025" [ref=e500]
+                - row "Attack Speed Ratio 100%" [ref=e501]:
+                  - cell "Attack Speed Ratio" [ref=e502]:
+                    - link "Attack Speed Ratio" [ref=e503] [cursor=pointer]:
+                      - /url: /wiki/Attack_Speed_Ratio
+                  - cell "100%" [ref=e504]
+                - row "Critical Damage 200%" [ref=e505]:
+                  - cell "Critical Damage" [ref=e506]:
+                    - link "Critical Damage" [ref=e507] [cursor=pointer]:
+                      - /url: /wiki/Critical_Damage
+                  - cell "200%" [ref=e508]
+                - row "Movement Speed 240" [ref=e509]:
+                  - cell "Movement Speed" [ref=e510]:
+                    - link "Movement Speed" [ref=e511] [cursor=pointer]:
+                      - /url: /wiki/Movement_Speed
+                  - cell "240" [ref=e512]
+                - row "Basic Attack range 4.8" [ref=e513]:
+                  - cell "Basic Attack range" [ref=e514]:
+                    - text: Basic
+                    - link "Attack range" [ref=e515] [cursor=pointer]:
+                      - /url: /wiki/Attack_range
+                  - cell "4.8" [ref=e516]
+            - heading "Story" [level=2] [ref=e518]
+            - region [ref=e519]:
+              - heading "Miya" [level=2] [ref=e520]
+              - figure [ref=e521]:
+                - link "Miya teaser" [ref=e522] [cursor=pointer]:
+                  - /url: https://static.wikia.nocookie.net/mobile-legends/images/6/6d/Miya_teaser.jpg/revision/latest?cb=20220630155508
+                  - img "Miya teaser" [ref=e523]
+              - heading "In-story information" [level=2] [ref=e524]
+              - generic [ref=e525]:
+                - heading "Alias" [level=3] [ref=e526]
+                - list [ref=e528]:
+                  - listitem [ref=e529]: Moonlight Archer
+                  - listitem [ref=e530]: Priestess of the Moon
+              - generic [ref=e531]:
+                - heading "Chinese Name" [level=3] [ref=e532]
+                - generic [ref=e533]: 米娅 (mǐyà)
+              - generic [ref=e534]:
+                - heading "Internal name" [level=3] [ref=e535]
+                - generic [ref=e536]:
+                  - code [ref=e537]: gongjianshou
+                  - text: (弓箭手, “archer”)
+              - generic [ref=e538]:
+                - heading "Birthday" [level=3] [ref=e539]
+                - generic [ref=e540]:
+                  - text: September 6 (Virgo)
+                  - superscript [ref=e541]:
+                    - link "[1]" [ref=e542] [cursor=pointer]:
+                      - /url: "#cite_note-MiyaCNGameProfile-1"
+                  - superscript [ref=e543]:
+                    - link "[2]" [ref=e544] [cursor=pointer]:
+                      - /url: "#cite_note-MiyaCNProfile-2"
+              - generic [ref=e545]:
+                - heading "Born" [level=3] [ref=e546]
+                - generic [ref=e547]:
+                  - text: Moonlit Forest,
+                  - link "Azrya Woodlands" [ref=e548] [cursor=pointer]:
+                    - /url: /wiki/Azrya_Woodlands
+              - generic [ref=e549]:
+                - heading "Age" [level=3] [ref=e550]
+                - generic [ref=e551]: Immortal
+              - generic [ref=e552]:
+                - heading "Gender" [level=3] [ref=e553]
+                - generic [ref=e554]: Female
+              - generic [ref=e555]:
+                - heading "Species" [level=3] [ref=e556]
+                - generic [ref=e557]: Moon elf
+              - generic [ref=e558]:
+                - heading "Occupation" [level=3] [ref=e559]
+                - generic [ref=e560]: Priestess
+              - generic [ref=e561]:
+                - heading "Affiliation" [level=3] [ref=e562]
+                - list [ref=e564]:
+                  - listitem [ref=e565]: Lunar Temple
+                  - listitem [ref=e566]:
+                    - link "Moniyan Empire" [ref=e567] [cursor=pointer]:
+                      - /url: /wiki/Moniyan_Empire
+                  - listitem [ref=e568]:
+                    - link "The Abyss" [ref=e569] [cursor=pointer]:
+                      - /url: /wiki/The_Abyss
+                    - text: (enemies)
+              - generic [ref=e570]:
+                - heading "Weapons" [level=3] [ref=e571]
+                - generic [ref=e572]: Silver bow and arrow
+              - generic [ref=e573]:
+                - heading "Abilities" [level=3] [ref=e574]
+                - list [ref=e576]:
+                  - listitem [ref=e577]:
+                    - text: Summons
+                    - link "Moonlight Shadows" [ref=e578] [cursor=pointer]:
+                      - /url: "#Passive"
+                    - text: and
+                    - link "Moon Eclipse" [ref=e579] [cursor=pointer]:
+                      - /url: "#Skill_2"
+                  - listitem [ref=e580]:
+                    - link "Invisibility" [ref=e581] [cursor=pointer]:
+                      - /url: "#Ultimate"
+              - generic [ref=e582]:
+                - heading "Battles fought" [level=3] [ref=e583]
+                - generic [ref=e584]: Invasion of Moonlit Forest
+              - generic [ref=e585]:
+                - heading "Website" [level=3] [ref=e586]
+                - list [ref=e588]:
+                  - listitem [ref=e589]:
+                    - link "Legends of Dawn hero page" [ref=e590] [cursor=pointer]:
+                      - /url: https://play.mobilelegends.com/lore/hero/Miya
+                  - listitem [ref=e591]:
+                    - link "Miya Mastery Code" [ref=e592] [cursor=pointer]:
+                      - /url: /wiki/Miya/Mastery_Code
+              - generic [ref=e593]:
+                - heading "Relationships" [level=2] [ref=e594]
+                - list [ref=e597]:
+                  - listitem [ref=e598]:
+                    - generic [ref=e599]:
+                      - generic "Estes" [ref=e602]:
+                        - img "Estes" [ref=e603]
+                      - link "Estes" [ref=e605] [cursor=pointer]:
+                        - /url: /wiki/Estes
+                    - text: (older brother)
+                  - listitem [ref=e606]:
+                    - generic [ref=e607]:
+                      - generic "Alucard" [ref=e610]:
+                        - img "Alucard" [ref=e611]
+                      - link "Alucard" [ref=e613] [cursor=pointer]:
+                        - /url: /wiki/Alucard
+                    - text: (love interest)
+                    - superscript [ref=e614]:
+                      - link "[3]" [ref=e615] [cursor=pointer]:
+                        - /url: "#cite_note-3"
+                  - listitem [ref=e616]:
+                    - generic [ref=e617]:
+                      - generic "Alice" [ref=e620]:
+                        - img "Alice" [ref=e621]
+                      - link "Alice" [ref=e623] [cursor=pointer]:
+                        - /url: /wiki/Alice
+                    - text: ","
+                    - generic [ref=e624]:
+                      - generic "Balmond" [ref=e627]:
+                        - img "Balmond" [ref=e628]
+                      - link "Balmond" [ref=e630] [cursor=pointer]:
+                        - /url: /wiki/Balmond
+                    - text: (enemies)
+              - generic [ref=e631]:
+                - heading "Voiced by" [level=2] [ref=e632]:
+                  - link "Voiced by" [ref=e633] [cursor=pointer]:
+                    - /url: /wiki/List_of_voice_actors
+                - generic [ref=e634]:
+                  - heading "English" [level=3] [ref=e635]
+                  - generic [ref=e636]:
+                    - link "Feena Glynn" [ref=e637] [cursor=pointer]:
+                      - /url: https://www.imdb.com/find?q=nm8441206
+                    - text: (2017–2020)
+                    - superscript [ref=e638]: "[citation needed]"
+                    - paragraph [ref=e639]:
+                      - text: Christina Clark (2020–present)
+                      - superscript [ref=e640]:
+                        - link "[4]" [ref=e641] [cursor=pointer]:
+                          - /url: "#cite_note-4"
+                - generic [ref=e642]:
+                  - heading "Japanese" [level=3] [ref=e643]
+                  - generic [ref=e644]:
+                    - link "Morisaki Miho (森嵜 美穂)" [ref=e645] [cursor=pointer]:
+                      - /url: https://en.wikipedia.org/wiki/ja:%E6%A3%AE%E5%B5%9C%E7%BE%8E%E7%A9%82
+                    - superscript [ref=e646]:
+                      - link "[5]" [ref=e647] [cursor=pointer]:
+                        - /url: "#cite_note-In-game_credit-5"
+                - generic [ref=e648]:
+                  - heading "Indonesian" [level=3] [ref=e649]
+                  - generic [ref=e650]:
+                    - text: Siti Balqis
+                    - superscript [ref=e651]: "[citation needed]"
+                - generic [ref=e652]:
+                  - heading "Arabic" [level=3] [ref=e653]
+                  - generic [ref=e654]:
+                    - text: Asia Nabulsi
+                    - superscript [ref=e655]: "[citation needed]"
+                - generic [ref=e656]:
+                  - heading "Portuguese" [level=3] [ref=e657]
+                  - generic [ref=e658]:
+                    - text: Michelle Zampieri
+                    - superscript [ref=e659]: "[citation needed]"
+                - generic [ref=e660]:
+                  - heading "Russian" [level=3] [ref=e661]
+                  - generic [ref=e662]:
+                    - text: Shcherbakova Paulina
+                    - superscript [ref=e663]: "[citation needed]"
+                - generic [ref=e664]:
+                  - heading "Turkish" [level=3] [ref=e665]
+                  - generic [ref=e666]:
+                    - text: Zeynep Acehan
+                    - superscript [ref=e667]: "[citation needed]"
+                - generic [ref=e668]:
+                  - heading "Spanish" [level=3] [ref=e669]
+                  - generic [ref=e670]:
+                    - link "Jessica Ángeles" [ref=e671] [cursor=pointer]:
+                      - /url: https://www.imdb.com/find?q=nm8858398
+                    - superscript [ref=e672]: "[citation needed]"
+                - generic [ref=e673]:
+                  - heading "Chinese" [level=3] [ref=e674]
+                  - generic [ref=e675]:
+                    - text: Youwu Zhang (幽舞越山)
+                    - superscript [ref=e676]: "[citation needed]"
+            - table [ref=e677]:
+              - rowgroup [ref=e678]:
+                - row "“ The Moon Priestess guarding the Azrya Woodlands ”" [ref=e679]:
+                  - cell "“" [ref=e680]
+                  - cell "The Moon Priestess guarding the Azrya Woodlands" [ref=e681]:
+                    - text: The Moon Priestess guarding the
+                    - link "Azrya Woodlands" [ref=e682] [cursor=pointer]:
+                      - /url: /wiki/Azrya_Woodlands
+                  - cell "”" [ref=e683]
+            - paragraph [ref=e684]:
+              - text: Born at the end of the Era of Strife, Miya bore witness to the unspeakable tragedies that befell the
+              - link "elves" [ref=e685] [cursor=pointer]:
+                - /url: /wiki/Elf
+              - text: during the Endless War. She saw how the
+              - link "Abyss" [ref=e686] [cursor=pointer]:
+                - /url: /wiki/Abyss
+              - text: defiled the Shadow Swamp and corrupted many of her people into Dark Elves. It was not until the Moon Goddess created the Lunar Aegis over
+              - link "Azrya" [ref=e687] [cursor=pointer]:
+                - /url: /wiki/Azrya_Woodlands
+              - text: that the Moon Elves were able to thrive again under its protection. Miya became the Priestess of the Moon, and for thousands of years she served faithfully in the Lunar Temple, diligently watching over her people. However, with the continued expansion of the Abyss and its dark legions, the
+              - link "Land of Dawn" [ref=e688] [cursor=pointer]:
+                - /url: /wiki/Land_of_Dawn
+              - text: is once again shrouded by the fog of war. From the Moonlit Forest, a call to war that has not been heard in thousands of years sounded again. Miya took up her silver bow and swore by the light of the moon to fight for her people.
+            - heading "Bio" [level=3] [ref=e689]
+            - paragraph [ref=e690]:
+              - text: "\"What is war, brother?\""
+              - text: "\"When the races of the Land of Dawn turned on one another instead of embracing unity and mutual prosperity, that is war. When they invaded their neighbors and razed cities to the ground, that is a war. When they choose destruction over peace, cruelty over benevolence, and corruption over purity... that is war.\""
+              - text: "\"Peace, benevolence, and purity... is that your wish for the world?\""
+              - link "Estes" [ref=e691] [cursor=pointer]:
+                - /url: /wiki/Estes
+              - text: did not reply. The outstretched branches of the Tree of Life wrapped around him, and he fell back into deep slumber.
+              - text: This time he would not awaken again for many years. Long enough for Miya to grow from a little girl, who couldn't even reach the branches of the Tree of Life, into a fearless warrior and protector of the Moonlit Forest.
+            - paragraph [ref=e692]:
+              - text: Miya stood atop the trees and scouted the enemy incursion. A warband of orcs and demons had just broken through the border, inflicting a wound on the Lunar Aegis that caused the Tree of Life to shake. With a draw of her bow, three silvery beams of moonlight gracefully danced through the branches before swiftly slaying the leader and sending the rest fleeing in disarray. With the threat gone, the elves channeled the energy from the Tree of Life to repair the breach and restore the Aegis. Peace returned to the forest and all was well.
+              - text: Miya, nestled wearily in the trees, had assumed the responsibility of protecting the Moonlit Forest after her brother Estes went into slumber to preserve the energy of the Lunar Aegis. In the beginning, Estes would speak to Miya through the Tree of Life, and it was through these conversations that she learned of the peace, benevolence, and purity that her brother longed for. And in Estes's absence, Miya watched over the forest according to the last words he spoke.
+              - text: As she relaxed and put down her bow, Miya noticed that she had bruised her hand while dealing with the intruders. She began to recall the times when she practised archery while her brother studied nearby. As a somewhat stubborn child, Miya would often shoot her bow incessantly trying to hit a leaf or branch, until her fingers bled. Her brother would look up from his scroll and, with a wave of his hand, heal her wounds with the forest' magic.
+              - text: Perhaps Miya was too attached to the past. She often found herself longing for a time when she could still hide under her brother's protection. Miya snapped back to attention and clenched her fist. This was no time to dwell on the past. She knew the only direction for her was forward, for she had become the hope that her people looked to in these dire times.
+              - text: But Miya knew deep down she was only lying to herself. She turned a blind eye to the outside world as evil gained strength, and only acted when the enemy encroached on her lands. While this has kept the elves from war, how long would it last? Even a fool could see she was delaying the inevitable. A war that's never fought can never be won.
+              - text: But peace, benevolence, and purity were her brother's wishes. How could she willingly plunge her people into the horrors of war? She could not; she would not.
+            - paragraph [ref=e693]:
+              - text: But war comes and goes as it wishes, and it would come suddenly for the Moon Elves one bloodstained dawn. The orc shock troops tore through the Aegis. But unlike previous attacks, the orcs seemed far more savage this time, as if they've been sent into a mindless bloodlust by dark magic. Black smoke permeated through the forest as the elves awoke to screams and the crackling of burning trees. Great pillars of smoke could be seen from the direction of the Tree of Life.
+              - text: War was here.
+              - text: "\"Run! Get out of the forest! Our home is lost, save yourselves!\""
+              - text: Miya heard the desperate cries, and before she could act, most of her people were already fleeing in panic.
+            - paragraph [ref=e694]:
+              - text: "\"Brother... give me an answer!\""
+              - text: Miya made one last plea to the Tree of Life as smoke enveloped her, hoping for salvation, but the tree remained silent amidst the scorched Earth.
+              - text: Miya looked around at her home, the place where the first oracle emerged from the Tree of Life; the place where the elves first took root; the place where their branches grew into a great empire; the place where the last pure Moon Elves stood firm against the Abyss's corruption. This was their most sacred ground, blessed by the Moon Goddess herself, and Estes's hope for their future.
+            - paragraph [ref=e695]:
+              - text: "\"What is war...\""
+              - text: She finally found her answer.
+              - text: "\"When we have been pushed to the brink of destruction and finally take up arms for our very survival, that is war. When we must defend our last home, the Moonlit Forest, at any cost, that is war.\""
+              - text: The Moon Elves heard Miya's words and looked back to their home.
+              - text: "\"My people! We have suffered for too long... lived in a fear for too long. There is nowhere left for us to run. If the Moonlit Forest falls, then we will truly have lost everything. Who will stand with me one last time?\""
+              - text: At first, a few dozen elven warriors stepped out from the trees. Then hundreds more followed, holding swords, spears, and bows. As they rushed to Miya's side, their silver hair shimmered like cascading moonlight upon the battlefield.
+              - text: The Tree of Life, too, answered Miya's call. Using its precious energy, the tree spread its roots in all directions to smother the raging fires, and reinvigorated the Moon Elves for a final counter attack.
+              - text: The Moon Elves rushed out from the trees and caught the Abyss legion completely off guard. They quickly gained the upper hand and pressed their attack until every invader was driven out of the Moonlit Forest. The surviving orcs came to their senses as their bloodlust subsided, and gained a newfound respect for the elves.
+            - paragraph [ref=e696]:
+              - text: "\"I understand now, brother.\""
+              - text: "\"Peace, benevolence, and purity are what you wished for, but if we lose our home, our way of life, then all our efforts will be for naught. If war is already upon our doorstep, then we will meet it head on. We are prepared to sacrifice everything for our home. Give me the strength, courage and faith to protect our people, and our homeland!\""
+            - heading "Side story" [level=3] [ref=e698]
+            - definition [ref=e700]:
+              - generic [ref=e701]:
+                - text: "Main article:"
+                - link "Time of Lunar Eclipse" [ref=e702] [cursor=pointer]:
+                  - /url: /wiki/Time_of_Lunar_Eclipse
+            - heading "Abilities" [level=2] [ref=e703]
+            - heading "Passive" [level=3] [ref=e704]
+            - table [ref=e705]:
+              - rowgroup [ref=e706]:
+                - row [ref=e707]:
+                  - cell [ref=e708]:
+                    - figure [ref=e710]:
+                      - link "Moon Blessing" [ref=e711] [cursor=pointer]:
+                        - /url: https://static.wikia.nocookie.net/mobile-legends/images/d/d8/Moon_Blessing.png/revision/latest?cb=20220302071911
+                        - img "Moon Blessing" [ref=e712]
+                  - cell [ref=e713]:
+                    - generic [ref=e714]: Moon Blessing
+                    - generic [ref=e715]: "Buff | Attack Effects: 25% | Lifesteal Ratio: 0%"
+                    - separator [ref=e716]
+                    - text: Each time Miya hits a target with her
+                    - link "Basic Attack" [ref=e718] [cursor=pointer]:
+                      - /url: /wiki/Basic_Attack
+                      - img "Basic Attack" [ref=e719]
+                    - link "Basic Attack" [ref=e720] [cursor=pointer]:
+                      - /url: /wiki/Basic_Attack
+                    - text: ", she gains 5%"
+                    - link "Attack Speed" [ref=e721] [cursor=pointer]:
+                      - /url: /wiki/Attack_Speed
+                    - text: for 4 seconds. Stacks up to 5 times.
+                    - text: After reaching full stacks, Miya summons a Moonlight Shadow with each Basic Attack that deals 30
+                    - link "(+25% Total Physical Attack)" [ref=e722] [cursor=pointer]:
+                      - /url: /wiki/Physical_Attack
+                    - link "Physical Damage" [ref=e723] [cursor=pointer]:
+                      - /url: /wiki/Physical_Damage
+                    - text: and inherits a portion of Attack Effects.
+                    - separator [ref=e724]
+                    - text: Skill terms
+                    - generic [ref=e725]:
+                      - text: "[Expand]"
+                      - generic [ref=e726]:
+                        - term [ref=e727]:
+                          - link "Attack Speed" [ref=e728] [cursor=pointer]:
+                            - /url: /wiki/Attack_Speed
+                        - definition [ref=e729]: Current Attack Speed = Base Attack Speed + Extra Attack Speed × Attack Speed Ratio. The current total Attack Speed determines the number of attacks per second (capped at 3 attacks per second).
+                        - term [ref=e730]:
+                          - link "Crit Rate" [ref=e731] [cursor=pointer]:
+                            - /url: /wiki/Crit_Rate
+                        - definition [ref=e732]: "Chance to cause Crit Damage with Basic ATK (including Physical and Magic). The default is 0. A Crit Damage is guaranteed when it is over 100%. Some skills trigger this effect. For example: Layla's Malefic Bomb and the Typhoon effect of Windtalker."
+                        - term [ref=e733]:
+                          - link "Attack Effect" [ref=e734] [cursor=pointer]:
+                            - /url: /wiki/Attack_Effect
+                        - definition [ref=e735]: Both Physical and Magic Basic Attacks can trigger Attack Effects Attack Effects include the "Devour" effect of the Demon Hunter Sword equipment, the 'Weakness Finder" Talent effect, etc.
+                - row "Icon variants [Collapse] Stack scaling Property 1 2 3 4 5 Extra Attack Speed 5%" [ref=e736]:
+                  - cell "Icon variants [Collapse] Stack scaling Property 1 2 3 4 5 Extra Attack Speed 5%" [ref=e737]:
+                    - table "Icon variants [Collapse]" [ref=e738]:
+                      - caption [ref=e739]: Icon variants [Collapse]
+                      - rowgroup [ref=e740]:
+                        - row "Legend Skin Tag Moon Blessing (Legend)" [ref=e741]:
+                          - cell "Legend Skin Tag" [ref=e742]:
+                            - img "Legend Skin Tag" [ref=e745]
+                          - cell "Moon Blessing (Legend)" [ref=e746]:
+                            - link "Moon Blessing (Legend)" [ref=e748] [cursor=pointer]:
+                              - /url: https://static.wikia.nocookie.net/mobile-legends/images/1/1d/Moon_Blessing_%28Legend%29.png/revision/latest?cb=20210315020557
+                              - img "Moon Blessing (Legend)" [ref=e749]
+                    - generic [ref=e750]: Stack scaling
+                    - table [ref=e751]:
+                      - rowgroup [ref=e752]:
+                        - row "Property 1 2 3 4 5" [ref=e753]:
+                          - columnheader "Property" [ref=e754]
+                          - columnheader "1" [ref=e755]
+                          - columnheader "2" [ref=e756]
+                          - columnheader "3" [ref=e757]
+                          - columnheader "4" [ref=e758]
+                          - columnheader "5" [ref=e759]
+                        - row "Extra Attack Speed 5%" [ref=e760]:
+                          - cell "Extra Attack Speed" [ref=e761]
+                          - cell "5%" [ref=e762]
+            - heading "Skill 1" [level=3] [ref=e763]
+            - table [ref=e764]:
+              - rowgroup [ref=e765]:
+                - 'row "Moon Arrow Buff AOE | Attack Effects: 20% | Lifesteal Ratio: 0% Miya shoots two extra arrows with each Basic Attack Basic Attack, dealing 10–35 (+100% Total Physical Attack) Physical Damage to the target enemy and 30% damage to nearby targets. This effect lasts 4 seconds. Each extra arrow inherits a portion of Attack Effects. Skill terms [Expand] Physical Basic Attack Deal Physical Damage to enemies. Triggers ATK Effects and Lifesteal. Attack Effect Both Physical and Magic Basic Attacks can trigger Attack Effects Attack Effects include the \"Devour\" effect of the Demon Hunter Sword equipment, the ''Weakness Finder\" Talent effect, etc." [ref=e766]':
+                  - cell [ref=e767]:
+                    - figure [ref=e769]:
+                      - link "Moon Arrow" [ref=e770] [cursor=pointer]:
+                        - /url: https://static.wikia.nocookie.net/mobile-legends/images/0/0e/Moon_Arrow.png/revision/latest?cb=20220302071842
+                        - img "Moon Arrow" [ref=e771]
+                  - 'cell "Moon Arrow Buff AOE | Attack Effects: 20% | Lifesteal Ratio: 0% Miya shoots two extra arrows with each Basic Attack Basic Attack, dealing 10–35 (+100% Total Physical Attack) Physical Damage to the target enemy and 30% damage to nearby targets. This effect lasts 4 seconds. Each extra arrow inherits a portion of Attack Effects. Skill terms [Expand] Physical Basic Attack Deal Physical Damage to enemies. Triggers ATK Effects and Lifesteal. Attack Effect Both Physical and Magic Basic Attacks can trigger Attack Effects Attack Effects include the \"Devour\" effect of the Demon Hunter Sword equipment, the ''Weakness Finder\" Talent effect, etc." [ref=e772]':
+                    - generic [ref=e773]: Moon Arrow
+                    - generic [ref=e774]: "Buff AOE | Attack Effects: 20% | Lifesteal Ratio: 0%"
+                    - separator [ref=e775]
+                    - text: Miya shoots two extra arrows with each
+                    - link "Basic Attack" [ref=e777] [cursor=pointer]:
+                      - /url: /wiki/Basic_Attack
+                      - img "Basic Attack" [ref=e778]
+                    - link "Basic Attack" [ref=e779] [cursor=pointer]:
+                      - /url: /wiki/Basic_Attack
+                    - text: ", dealing 10–35"
+                    - link "(+100% Total Physical Attack)" [ref=e780] [cursor=pointer]:
+                      - /url: /wiki/Physical_Attack
+                    - link "Physical Damage" [ref=e781] [cursor=pointer]:
+                      - /url: /wiki/Physical_Damage
+                    - text: to the target enemy and 30% damage to nearby targets. This effect lasts 4 seconds. Each extra arrow inherits a portion of Attack Effects.
+                    - separator [ref=e782]
+                    - text: Skill terms
+                    - generic [ref=e783]:
+                      - text: "[Expand]"
+                      - generic [ref=e784]:
+                        - term [ref=e785]:
+                          - link "Physical Basic Attack" [ref=e786] [cursor=pointer]:
+                            - /url: /wiki/Physical_Basic_Attack
+                        - definition [ref=e787]: Deal Physical Damage to enemies. Triggers ATK Effects and Lifesteal.
+                        - term [ref=e788]:
+                          - link "Attack Effect" [ref=e789] [cursor=pointer]:
+                            - /url: /wiki/Attack_Effect
+                        - definition [ref=e790]: Both Physical and Magic Basic Attacks can trigger Attack Effects Attack Effects include the "Devour" effect of the Demon Hunter Sword equipment, the 'Weakness Finder" Talent effect, etc.
+                - row "Icon variants [Collapse] Level scaling Properties 1 2 3 4 5 6 Cooldown 11.0 Mana Cost 50 55 60 65 70 75 Base Damage 10 15 20 25 30 35 Duration 4 5 6 7 8 9 Notes Cooldown starts upon casting. This skill cannot be cast again until its duration ends." [ref=e791]:
+                  - cell "Icon variants [Collapse] Level scaling Properties 1 2 3 4 5 6 Cooldown 11.0 Mana Cost 50 55 60 65 70 75 Base Damage 10 15 20 25 30 35 Duration 4 5 6 7 8 9 Notes Cooldown starts upon casting. This skill cannot be cast again until its duration ends." [ref=e792]:
+                    - table "Icon variants [Collapse]" [ref=e793]:
+                      - caption [ref=e794]: Icon variants [Collapse]
+                      - rowgroup [ref=e795]:
+                        - row "Legend Skin Tag Moon Arrow (Legend)" [ref=e796]:
+                          - cell "Legend Skin Tag" [ref=e797]:
+                            - img "Legend Skin Tag" [ref=e800]
+                          - cell "Moon Arrow (Legend)" [ref=e801]:
+                            - link "Moon Arrow (Legend)" [ref=e803] [cursor=pointer]:
+                              - /url: https://static.wikia.nocookie.net/mobile-legends/images/3/36/Moon_Arrow_%28Legend%29.png/revision/latest?cb=20210315020251
+                              - img "Moon Arrow (Legend)" [ref=e804]
+                    - generic [ref=e805]: Level scaling
+                    - table [ref=e806]:
+                      - rowgroup [ref=e807]:
+                        - row "Properties 1 2 3 4 5 6" [ref=e808]:
+                          - columnheader "Properties" [ref=e809]
+                          - columnheader "1" [ref=e810]
+                          - columnheader "2" [ref=e811]
+                          - columnheader "3" [ref=e812]
+                          - columnheader "4" [ref=e813]
+                          - columnheader "5" [ref=e814]
+                          - columnheader "6" [ref=e815]
+                        - row "Cooldown 11.0" [ref=e816]:
+                          - cell "Cooldown" [ref=e817]
+                          - cell "11.0" [ref=e818]
+                        - row "Mana Cost 50 55 60 65 70 75" [ref=e819]:
+                          - cell "Mana Cost" [ref=e820]
+                          - cell "50" [ref=e821]
+                          - cell "55" [ref=e822]
+                          - cell "60" [ref=e823]
+                          - cell "65" [ref=e824]
+                          - cell "70" [ref=e825]
+                          - cell "75" [ref=e826]
+                        - row "Base Damage 10 15 20 25 30 35" [ref=e827]:
+                          - cell "Base Damage" [ref=e828]
+                          - cell "10" [ref=e829]
+                          - cell "15" [ref=e830]
+                          - cell "20" [ref=e831]
+                          - cell "25" [ref=e832]
+                          - cell "30" [ref=e833]
+                          - cell "35" [ref=e834]
+                        - row "Duration 4 5 6 7 8 9" [ref=e835]:
+                          - cell "Duration" [ref=e836]
+                          - cell "4" [ref=e837]
+                          - cell "5" [ref=e838]
+                          - cell "6" [ref=e839]
+                          - cell "7" [ref=e840]
+                          - cell "8" [ref=e841]
+                          - cell "9" [ref=e842]
+                    - paragraph [ref=e843]: Notes
+                    - list [ref=e844]:
+                      - listitem [ref=e845]: Cooldown starts upon casting.
+                      - listitem [ref=e846]: This skill cannot be cast again until its duration ends.
+            - heading "Skill 2" [level=3] [ref=e848]
+            - table [ref=e849]:
+              - rowgroup [ref=e850]:
+                - 'row "Arrow of Eclipse CC AOE Miya launches an empowered arrow on the target area, dealing 270–420 (+45% Total Physical Attack) Physical Damage to enemies within and immobilizing them for 1.2 seconds. The arrow then splits into 6 scattering minor arrows, each dealing 40–105 (+20% Total Physical Attack) Physical Damage to the first enemy hit and slowing them by 30% for 2 seconds. Skill terms [Expand] Immobilize Low level Crowd Control: Prevents a target from moving or using Blink/Charge skills. Cannot interrupt skills. Physical Damage Skill Deal Physical DMG to enemies. Triggers Spell Vamp." [ref=e851]':
+                  - cell [ref=e852]:
+                    - figure [ref=e854]:
+                      - link "Arrow of Eclipse" [ref=e855] [cursor=pointer]:
+                        - /url: https://static.wikia.nocookie.net/mobile-legends/images/7/73/Arrow_of_Eclipse.png/revision/latest?cb=20220302071714
+                        - img "Arrow of Eclipse" [ref=e856]
+                  - 'cell "Arrow of Eclipse CC AOE Miya launches an empowered arrow on the target area, dealing 270–420 (+45% Total Physical Attack) Physical Damage to enemies within and immobilizing them for 1.2 seconds. The arrow then splits into 6 scattering minor arrows, each dealing 40–105 (+20% Total Physical Attack) Physical Damage to the first enemy hit and slowing them by 30% for 2 seconds. Skill terms [Expand] Immobilize Low level Crowd Control: Prevents a target from moving or using Blink/Charge skills. Cannot interrupt skills. Physical Damage Skill Deal Physical DMG to enemies. Triggers Spell Vamp." [ref=e857]':
+                    - generic [ref=e858]: Arrow of Eclipse
+                    - generic [ref=e859]: CC AOE
+                    - separator [ref=e860]
+                    - text: Miya launches an empowered arrow on the target area, dealing 270–420
+                    - link "(+45% Total Physical Attack)" [ref=e861] [cursor=pointer]:
+                      - /url: /wiki/Physical_Attack
+                    - link "Physical Damage" [ref=e862] [cursor=pointer]:
+                      - /url: /wiki/Physical_Damage
+                    - text: to enemies within and
+                    - link "immobilizing" [ref=e863] [cursor=pointer]:
+                      - /url: /wiki/Immobilizing
+                    - text: them for 1.2 seconds. The arrow then splits into 6 scattering minor arrows, each dealing 40–105
+                    - link "(+20% Total Physical Attack)" [ref=e864] [cursor=pointer]:
+                      - /url: /wiki/Physical_Attack
+                    - link "Physical Damage" [ref=e865] [cursor=pointer]:
+                      - /url: /wiki/Physical_Damage
+                    - text: to the first enemy hit and
+                    - link "slowing" [ref=e866] [cursor=pointer]:
+                      - /url: /wiki/Slowing
+                    - text: them by 30% for 2 seconds.
+                    - separator [ref=e867]
+                    - text: Skill terms
+                    - generic [ref=e868]:
+                      - text: "[Expand]"
+                      - generic [ref=e869]:
+                        - term [ref=e870]:
+                          - link "Immobilize" [ref=e871] [cursor=pointer]:
+                            - /url: /wiki/Immobilize
+                        - definition [ref=e872]: "Low level Crowd Control: Prevents a target from moving or using Blink/Charge skills. Cannot interrupt skills."
+                        - term [ref=e873]: Physical Damage Skill
+                        - definition [ref=e874]: Deal Physical DMG to enemies. Triggers Spell Vamp.
+                - row "Icon variants [Collapse] Level scaling Properties 1 2 3 4 5 6 Cooldown 8.0 Mana Cost 80 90 100 110 120 130 Base Damage 270 300 330 360 390 420 Arrow Damage 40 53 66 79 92 105" [ref=e875]:
+                  - cell "Icon variants [Collapse] Level scaling Properties 1 2 3 4 5 6 Cooldown 8.0 Mana Cost 80 90 100 110 120 130 Base Damage 270 300 330 360 390 420 Arrow Damage 40 53 66 79 92 105" [ref=e876]:
+                    - table "Icon variants [Collapse]" [ref=e877]:
+                      - caption [ref=e878]: Icon variants [Collapse]
+                      - rowgroup [ref=e879]:
+                        - row "Legend Skin Tag Arrow of Eclipse (Legend)" [ref=e880]:
+                          - cell "Legend Skin Tag" [ref=e881]:
+                            - img "Legend Skin Tag" [ref=e884]
+                          - cell "Arrow of Eclipse (Legend)" [ref=e885]:
+                            - link "Arrow of Eclipse (Legend)" [ref=e887] [cursor=pointer]:
+                              - /url: https://static.wikia.nocookie.net/mobile-legends/images/6/6a/Arrow_of_Eclipse_%28Legend%29.png/revision/latest?cb=20210315020258
+                              - img "Arrow of Eclipse (Legend)" [ref=e888]
+                    - generic [ref=e889]: Level scaling
+                    - table [ref=e890]:
+                      - rowgroup [ref=e891]:
+                        - row "Properties 1 2 3 4 5 6" [ref=e892]:
+                          - columnheader "Properties" [ref=e893]
+                          - columnheader "1" [ref=e894]
+                          - columnheader "2" [ref=e895]
+                          - columnheader "3" [ref=e896]
+                          - columnheader "4" [ref=e897]
+                          - columnheader "5" [ref=e898]
+                          - columnheader "6" [ref=e899]
+                        - row "Cooldown 8.0" [ref=e900]:
+                          - cell "Cooldown" [ref=e901]
+                          - cell "8.0" [ref=e902]
+                        - row "Mana Cost 80 90 100 110 120 130" [ref=e903]:
+                          - cell "Mana Cost" [ref=e904]
+                          - cell "80" [ref=e905]
+                          - cell "90" [ref=e906]
+                          - cell "100" [ref=e907]
+                          - cell "110" [ref=e908]
+                          - cell "120" [ref=e909]
+                          - cell "130" [ref=e910]
+                        - row "Base Damage 270 300 330 360 390 420" [ref=e911]:
+                          - cell "Base Damage" [ref=e912]
+                          - cell "270" [ref=e913]
+                          - cell "300" [ref=e914]
+                          - cell "330" [ref=e915]
+                          - cell "360" [ref=e916]
+                          - cell "390" [ref=e917]
+                          - cell "420" [ref=e918]
+                        - row "Arrow Damage 40 53 66 79 92 105" [ref=e919]:
+                          - cell "Arrow Damage" [ref=e920]
+                          - cell "40" [ref=e921]
+                          - cell "53" [ref=e922]
+                          - cell "66" [ref=e923]
+                          - cell "79" [ref=e924]
+                          - cell "92" [ref=e925]
+                          - cell "105" [ref=e926]
+            - heading "Ultimate" [level=3] [ref=e927]
+            - table [ref=e928]:
+              - rowgroup [ref=e929]:
+                - row "Hidden Moonlight Conceal Remove CC Miya removes all debuffs on her and conceals herself, gaining 65% extra Movement Speed. This state lasts 2 seconds or until she launches an attack. Miya gains full stacks of Moon Blessing Moon Blessing upon leaving the state. Skill terms [Expand] Exceptional Status Debuff applied to the enemy. Conceal Movement Speed Movement Speed on the battlefield. Usually Calculated and Actual Movement Speed is equal. But when Movement Speed is below 230 or over 420 both Slowdown and Speedup Effect will decay. Calculated Movement Speed = Basic Movement Speed × (100% + All Speedup Effect% - All Slowdown Effect%)." [ref=e930]:
+                  - cell [ref=e931]:
+                    - figure [ref=e933]:
+                      - link "Hidden Moonlight" [ref=e934] [cursor=pointer]:
+                        - /url: https://static.wikia.nocookie.net/mobile-legends/images/e/ec/Hidden_Moonlight.png/revision/latest?cb=20220302071615
+                        - img "Hidden Moonlight" [ref=e935]
+                  - cell "Hidden Moonlight Conceal Remove CC Miya removes all debuffs on her and conceals herself, gaining 65% extra Movement Speed. This state lasts 2 seconds or until she launches an attack. Miya gains full stacks of Moon Blessing Moon Blessing upon leaving the state. Skill terms [Expand] Exceptional Status Debuff applied to the enemy. Conceal Movement Speed Movement Speed on the battlefield. Usually Calculated and Actual Movement Speed is equal. But when Movement Speed is below 230 or over 420 both Slowdown and Speedup Effect will decay. Calculated Movement Speed = Basic Movement Speed × (100% + All Speedup Effect% - All Slowdown Effect%)." [ref=e936]:
+                    - generic [ref=e937]: Hidden Moonlight
+                    - generic [ref=e938]: Conceal Remove CC
+                    - separator [ref=e939]
+                    - text: Miya removes all
+                    - link "debuffs" [ref=e940] [cursor=pointer]:
+                      - /url: /wiki/Debuffs
+                    - text: on her and
+                    - link "conceals" [ref=e941] [cursor=pointer]:
+                      - /url: /wiki/Conceals
+                    - text: herself, gaining 65% extra
+                    - link "Movement Speed" [ref=e942] [cursor=pointer]:
+                      - /url: /wiki/Movement_Speed
+                    - text: . This state lasts 2 seconds or until she launches an attack.
+                    - text: Miya gains full stacks of
+                    - generic [ref=e943]:
+                      - generic "Moon Blessing" [ref=e946]:
+                        - img "Moon Blessing" [ref=e947]
+                      - generic [ref=e948]: Moon Blessing
+                    - text: upon leaving the state.
+                    - separator [ref=e949]
+                    - text: Skill terms
+                    - generic [ref=e950]:
+                      - text: "[Expand]"
+                      - generic [ref=e951]:
+                        - term [ref=e952]: Exceptional Status
+                        - definition [ref=e953]: Debuff applied to the enemy.
+                        - term [ref=e954]:
+                          - link "Conceal" [ref=e955] [cursor=pointer]:
+                            - /url: /wiki/Conceal
+                        - definition
+                        - term [ref=e956]:
+                          - link "Movement Speed" [ref=e957] [cursor=pointer]:
+                            - /url: /wiki/Movement_Speed
+                        - definition [ref=e958]: Movement Speed on the battlefield. Usually Calculated and Actual Movement Speed is equal. But when Movement Speed is below 230 or over 420 both Slowdown and Speedup Effect will decay. Calculated Movement Speed = Basic Movement Speed × (100% + All Speedup Effect% - All Slowdown Effect%).
+                - row "Icon variants [Collapse] Level scaling Properties 1 2 3 Cooldown 30.0 25.0 20.0 Mana Cost 120 145 170 Notes \"Attacks\" that end the duration of Moon Blessing only refer to Miya's basic attacks and her non-ultimate skill casts." [ref=e959]:
+                  - cell "Icon variants [Collapse] Level scaling Properties 1 2 3 Cooldown 30.0 25.0 20.0 Mana Cost 120 145 170 Notes \"Attacks\" that end the duration of Moon Blessing only refer to Miya's basic attacks and her non-ultimate skill casts." [ref=e960]:
+                    - table "Icon variants [Collapse]" [ref=e961]:
+                      - caption [ref=e962]: Icon variants [Collapse]
+                      - rowgroup [ref=e963]:
+                        - row "Legend Skin Tag Hidden Moonlight (Legend)" [ref=e964]:
+                          - cell "Legend Skin Tag" [ref=e965]:
+                            - img "Legend Skin Tag" [ref=e968]
+                          - cell "Hidden Moonlight (Legend)" [ref=e969]:
+                            - link "Hidden Moonlight (Legend)" [ref=e971] [cursor=pointer]:
+                              - /url: https://static.wikia.nocookie.net/mobile-legends/images/a/a7/Hidden_Moonlight_%28Legend%29.png/revision/latest?cb=20210315020605
+                              - img "Hidden Moonlight (Legend)" [ref=e972]
+                    - generic [ref=e973]: Level scaling
+                    - table [ref=e974]:
+                      - rowgroup [ref=e975]:
+                        - row "Properties 1 2 3" [ref=e976]:
+                          - columnheader "Properties" [ref=e977]
+                          - columnheader "1" [ref=e978]
+                          - columnheader "2" [ref=e979]
+                          - columnheader "3" [ref=e980]
+                        - row "Cooldown 30.0 25.0 20.0" [ref=e981]:
+                          - cell "Cooldown" [ref=e982]
+                          - cell "30.0" [ref=e983]
+                          - cell "25.0" [ref=e984]
+                          - cell "20.0" [ref=e985]
+                        - row "Mana Cost 120 145 170" [ref=e986]:
+                          - cell "Mana Cost" [ref=e987]
+                          - cell "120" [ref=e988]
+                          - cell "145" [ref=e989]
+                          - cell "170" [ref=e990]
+                    - paragraph [ref=e991]: Notes
+                    - list [ref=e992]:
+                      - listitem [ref=e993]: "\"Attacks\" that end the duration of Moon Blessing only refer to Miya's basic attacks and her non-ultimate skill casts."
+            - heading "Gallery" [level=2] [ref=e995]
+            - heading "Splash art" [level=3] [ref=e996]
+            - generic [ref=e997]:
+              - generic [ref=e998]:
+                - link "Moonlight Archer" [ref=e1001] [cursor=pointer]:
+                  - /url: /wiki/File:Miya_(Moonlight_Archer).jpg
+                  - img "Moonlight Archer" [ref=e1002]
+                - generic [ref=e1003]: Moonlight Archer
+              - generic [ref=e1004]:
+                - link "Burning Bow" [ref=e1007] [cursor=pointer]:
+                  - /url: /wiki/File:Miya_(Burning_Bow).jpg
+                  - img "Burning Bow" [ref=e1008]
+                - generic [ref=e1009]: Burning Bow
+              - generic [ref=e1010]:
+                - link "Christmas Carnival" [ref=e1013] [cursor=pointer]:
+                  - /url: /wiki/File:Miya_(Christmas_Carnival).jpg
+                  - img "Christmas Carnival" [ref=e1014]
+                - generic [ref=e1015]: Christmas Carnival
+              - generic [ref=e1016]:
+                - link "Captain Thorns" [ref=e1019] [cursor=pointer]:
+                  - /url: /wiki/File:Miya_(Captain_Thorns).jpg
+                  - img "Captain Thorns" [ref=e1020]
+                - generic [ref=e1021]: Captain Thorns
+              - generic [ref=e1022]:
+                - link "Honor" [ref=e1025] [cursor=pointer]:
+                  - /url: /wiki/File:Miya_(Honor).jpg
+                  - img "Honor" [ref=e1026]
+                - generic [ref=e1027]: Honor
+              - generic [ref=e1028]:
+                - link "Modena Butterfly" [ref=e1031] [cursor=pointer]:
+                  - /url: /wiki/File:Miya_(Modena_Butterfly).jpg
+                  - img "Modena Butterfly" [ref=e1032]
+                - generic [ref=e1033]: Modena Butterfly
+              - generic [ref=e1034]:
+                - link "Sweet Fantasy" [ref=e1037] [cursor=pointer]:
+                  - /url: /wiki/File:Miya_(Sweet_Fantasy).jpg
+                  - img "Sweet Fantasy" [ref=e1038]
+                - generic [ref=e1039]: Sweet Fantasy
+              - generic [ref=e1040]:
+                - link "Suzuhime" [ref=e1043] [cursor=pointer]:
+                  - /url: /wiki/File:Miya_(Suzuhime).jpg
+                  - img "Suzuhime" [ref=e1044]
+                - generic [ref=e1045]: Suzuhime
+              - generic [ref=e1046]:
+                - link "Jungle Ranger" [ref=e1049] [cursor=pointer]:
+                  - /url: /wiki/File:Miya_(Jungle_Ranger).jpg
+                  - img "Jungle Ranger" [ref=e1050]
+                - generic [ref=e1051]: Jungle Ranger
+              - generic [ref=e1052]:
+                - link "Moon Priestess" [ref=e1055] [cursor=pointer]:
+                  - /url: /wiki/File:Miya_(Moon_Priestess).jpg
+                  - img "Moon Priestess" [ref=e1056]
+                - generic [ref=e1057]: Moon Priestess
+              - generic [ref=e1058]:
+                - link "Doom Catalyst" [ref=e1061] [cursor=pointer]:
+                  - /url: /wiki/File:Miya_(Doom_Catalyst).jpg
+                  - img "Doom Catalyst" [ref=e1062]
+                - generic [ref=e1063]: Doom Catalyst
+              - generic [ref=e1064]:
+                - link "Atomic Pop Miya" [ref=e1067] [cursor=pointer]:
+                  - /url: /wiki/File:Miya_(Atomic_Pop_Miya).jpg
+                  - img "Atomic Pop Miya" [ref=e1068]
+                - generic [ref=e1069]: Atomic Pop Miya
+              - generic [ref=e1070]:
+                - link "Nightowl Huntress" [ref=e1073] [cursor=pointer]:
+                  - /url: /wiki/File:Miya_(Nightowl_Huntress).jpg
+                  - img "Nightowl Huntress" [ref=e1074]
+                - generic [ref=e1075]: Nightowl Huntress
+              - generic [ref=e1076]:
+                - link "Arrow of Spring" [ref=e1079] [cursor=pointer]:
+                  - /url: /wiki/File:Miya_Arrow_of_Spring.png
+                  - img "Arrow of Spring" [ref=e1080]
+                - generic [ref=e1081]: Arrow of Spring
+            - heading "Painted skins" [level=3] [ref=e1083]
+            - generic [ref=e1085]:
+              - link "Nightowl Sentiel" [ref=e1088] [cursor=pointer]:
+                - /url: /wiki/File:Miya_Nightowl_Sentiel.png
+                - img "Nightowl Sentiel" [ref=e1089]
+              - generic [ref=e1090]: Nightowl Sentiel
+            - heading "Avatar icons" [level=3] [ref=e1091]
+            - generic [ref=e1092]:
+              - generic [ref=e1093]:
+                - link "Moonlight Archer" [ref=e1096] [cursor=pointer]:
+                  - /url: /wiki/File:Hero011-icon.png
+                  - img "Moonlight Archer" [ref=e1097]
+                - generic [ref=e1098]: Moonlight Archer
+              - generic [ref=e1099]:
+                - link "Burning Bow" [ref=e1102] [cursor=pointer]:
+                  - /url: /wiki/File:Hero012-icon.png
+                  - img "Burning Bow" [ref=e1103]
+                - generic [ref=e1104]: Burning Bow
+              - generic [ref=e1105]:
+                - link "Christmas Carnival" [ref=e1108] [cursor=pointer]:
+                  - /url: /wiki/File:Hero013-icon.png
+                  - img "Christmas Carnival" [ref=e1109]
+                - generic [ref=e1110]: Christmas Carnival
+              - generic [ref=e1111]:
+                - link "Captain Thorns" [ref=e1114] [cursor=pointer]:
+                  - /url: /wiki/File:Hero014-icon.png
+                  - img "Captain Thorns" [ref=e1115]
+                - generic [ref=e1116]: Captain Thorns
+              - generic [ref=e1117]:
+                - link "Honor" [ref=e1120] [cursor=pointer]:
+                  - /url: /wiki/File:Hero015-icon.png
+                  - img "Honor" [ref=e1121]
+                - generic [ref=e1122]: Honor
+              - generic [ref=e1123]:
+                - link "Modena Butterfly" [ref=e1126] [cursor=pointer]:
+                  - /url: /wiki/File:Hero016-icon.png
+                  - img "Modena Butterfly" [ref=e1127]
+                - generic [ref=e1128]: Modena Butterfly
+              - generic [ref=e1129]:
+                - link "Sweet Fantasy" [ref=e1132] [cursor=pointer]:
+                  - /url: /wiki/File:Hero017-icon.png
+                  - img "Sweet Fantasy" [ref=e1133]
+                - generic [ref=e1134]: Sweet Fantasy
+              - generic [ref=e1135]:
+                - link "Suzuhime" [ref=e1138] [cursor=pointer]:
+                  - /url: /wiki/File:Hero018-icon.png
+                  - img "Suzuhime" [ref=e1139]
+                - generic [ref=e1140]: Suzuhime
+              - generic [ref=e1141]:
+                - link "Jungle Ranger" [ref=e1144] [cursor=pointer]:
+                  - /url: /wiki/File:Hero019-icon.png
+                  - img "Jungle Ranger" [ref=e1145]
+                - generic [ref=e1146]: Jungle Ranger
+              - generic [ref=e1147]:
+                - link "Moon Priestess" [ref=e1150] [cursor=pointer]:
+                  - /url: /wiki/File:Hero0110-icon.png
+                  - img "Moon Priestess" [ref=e1151]
+                - generic [ref=e1152]: Moon Priestess
+              - generic [ref=e1153]:
+                - link "Doom Catalyst" [ref=e1156] [cursor=pointer]:
+                  - /url: /wiki/File:Hero100111-icon.png
+                  - img "Doom Catalyst" [ref=e1157]
+                - generic [ref=e1158]: Doom Catalyst
+              - generic [ref=e1159]:
+                - link "Atomic Pop Miya" [ref=e1162] [cursor=pointer]:
+                  - /url: /wiki/File:Hero100112-icon.png
+                  - img "Atomic Pop Miya" [ref=e1163]
+                - generic [ref=e1164]: Atomic Pop Miya
+              - generic [ref=e1165]:
+                - link "Nightowl Huntress" [ref=e1168] [cursor=pointer]:
+                  - /url: /wiki/File:Hero100114-icon.png
+                  - img "Nightowl Huntress" [ref=e1169]
+                - generic [ref=e1170]: Nightowl Huntress
+              - generic [ref=e1171]:
+                - link "Arrow of Spring" [ref=e1174] [cursor=pointer]:
+                  - /url: /wiki/File:Hero100115-icon.png
+                  - img "Arrow of Spring" [ref=e1175]
+                - generic [ref=e1176]: Arrow of Spring
+            - term [ref=e1178]: Painted skins
+            - generic [ref=e1179]:
+              - generic [ref=e1180]:
+                - link "Nightowl Warden" [ref=e1183] [cursor=pointer]:
+                  - /url: /wiki/File:Hero100114-color01-icon.png
+                  - img "Nightowl Warden" [ref=e1184]
+                - generic [ref=e1185]: Nightowl Warden
+              - generic [ref=e1186]:
+                - link "Nightowl Sentinel" [ref=e1189] [cursor=pointer]:
+                  - /url: /wiki/File:Hero100114-color02-icon.png
+                  - img "Nightowl Sentinel" [ref=e1190]
+                - generic [ref=e1191]: Nightowl Sentinel
+            - heading "Battle emotes" [level=3] [ref=e1193]
+            - generic [ref=e1194]:
+              - generic [ref=e1195]:
+                - link "Let's Go on a Date Obtained from limited-time events." [ref=e1198] [cursor=pointer]:
+                  - /url: /wiki/File:Battle_Emote_-_Let%27s_Go_on_a_Date!.png
+                  - img "Let's Go on a Date Obtained from limited-time events." [ref=e1199]
+                - generic [ref=e1200]:
+                  - text: Let's Go on a Date
+                  - text: Obtained from limited-time events.
+              - generic [ref=e1201]:
+                - link "Guiding Arrow Battle Emote. Obtained via the Gallery after collecting the Atomic Pop series skins." [ref=e1204] [cursor=pointer]:
+                  - /url: /wiki/File:Battle_Emote_-_Guiding_Arrow.png
+                  - img "Guiding Arrow Battle Emote. Obtained via the Gallery after collecting the Atomic Pop series skins." [ref=e1205]
+                - generic [ref=e1206]:
+                  - text: Guiding Arrow
+                  - text: Battle Emote. Obtained via the Gallery after collecting the
+                  - link "Atomic Pop" [ref=e1207] [cursor=pointer]:
+                    - /url: /wiki/ALLSTAR
+                  - text: series skins.
+              - generic [ref=e1208]:
+                - link "MRO - That's Me, Alright MLBB Rising Open Battle Emote" [ref=e1211] [cursor=pointer]:
+                  - /url: /wiki/File:Battle_Emote_-_MRO_That%27s_Me,_Alright.png
+                  - img "MRO - That's Me, Alright MLBB Rising Open Battle Emote" [ref=e1212]
+                - generic [ref=e1213]:
+                  - text: MRO - That's Me, Alright
+                  - text: MLBB Rising Open Battle Emote
+              - generic [ref=e1214]:
+                - 'link "Wishing Obtained via the Eternal Seasons: Spring & Fall event." [ref=e1217] [cursor=pointer]':
+                  - /url: /wiki/File:Wishing.png
+                  - 'img "Wishing Obtained via the Eternal Seasons: Spring & Fall event." [ref=e1218]'
+                - generic [ref=e1219]:
+                  - text: Wishing
+                  - text: "Obtained via the Eternal Seasons: Spring & Fall event."
+            - heading "Videos" [level=2] [ref=e1220]
+            - generic [ref=e1221]:
+              - generic [ref=e1222]:
+                - link "Hero Revamp - September Project NEXT Express -1 - Mobile Legends- Bang Bang (40 KB)" [ref=e1225] [cursor=pointer]:
+                  - /url: /wiki/File:Hero_Revamp_-_September_Project_NEXT_Express_-1_-_Mobile_Legends-_Bang_Bang
+                  - img [ref=e1227]
+                  - img "Hero Revamp - September Project NEXT Express -1 - Mobile Legends- Bang Bang (40 KB)" [ref=e1229]
+                - generic [ref=e1230]: Hero Revamp - September Project NEXT Express -1 - Mobile Legends- Bang Bang
+              - generic [ref=e1231]:
+                - link "Project NEXT Hero Revamp Project NEXT Express 2 Mobile Legends Bang Bang (34 KB)" [ref=e1234] [cursor=pointer]:
+                  - /url: /wiki/File:Project_NEXT_Hero_Revamp_Project_NEXT_Express_2_Mobile_Legends_Bang_Bang
+                  - img [ref=e1236]
+                  - img "Project NEXT Hero Revamp Project NEXT Express 2 Mobile Legends Bang Bang (34 KB)" [ref=e1238]
+                - generic [ref=e1239]: Project NEXT Hero Revamp Project NEXT Express 2 Mobile Legends Bang Bang
+            - heading "Trivia" [level=2] [ref=e1240]
+            - list [ref=e1241]:
+              - listitem [ref=e1242]: In Japanese, "Miya" (宮) means "shrine" or "palace," often referring to sacred places or nobility. This fits Miya's elegant and mystical Moon Elf background.
+              - listitem [ref=e1243]:
+                - text: She is somewhat inspired by
+                - link "Lufia" [ref=e1244] [cursor=pointer]:
+                  - /url: https://magicrush.fandom.com/wiki/Lufia
+                - text: from Magic Rush, a game created by
+                - link "Moonton" [ref=e1245] [cursor=pointer]:
+                  - /url: /wiki/Moonton
+                - text: before MLBB. Miya's skin Jungle Ranger is somewhat resemble to her.
+              - listitem [ref=e1246]:
+                - text: In the game, Miya is the first hero and the first
+                - link "marksman" [ref=e1247] [cursor=pointer]:
+                  - /url: /wiki/Marksman
+                - text: released
+                - link "according to sale time." [ref=e1248] [cursor=pointer]:
+                  - /url: /wiki/List_of_heroes
+              - listitem [ref=e1249]: She is the first hero to have a running animation when having a high movement speed attribute.
+              - listitem [ref=e1250]:
+                - text: "She is one of the three heroes that appear on the Mobile Legends: Bang Bang application icons, the other two are"
+                - generic [ref=e1251]:
+                  - generic "Layla" [ref=e1254]:
+                    - img "Layla" [ref=e1255]
+                  - link "Layla" [ref=e1257] [cursor=pointer]:
+                    - /url: /wiki/Layla
+                - text: for the game's Chinese version, and
+                - generic [ref=e1258]:
+                  - generic "Gusion" [ref=e1261]:
+                    - img "Gusion" [ref=e1262]
+                  - link "Gusion" [ref=e1264] [cursor=pointer]:
+                    - /url: /wiki/Gusion
+                - text: for the game's
+                - link "Indian version" [ref=e1265] [cursor=pointer]:
+                  - /url: /wiki/Moba_Legends:_5v5!
+                - text: .
+              - listitem [ref=e1266]: Miya's Honor skin is a giveaway skin to celebrate the summer vacation in the Philippines.
+              - listitem [ref=e1267]: "Her skin, Suzuhime (鈴姫) is Japanese and can be broken down into two parts: 鈴 (Suzu) – Means \"bell\" or \"chime,\" often associated with gentle, pleasant sounds. 姫 (Hime) – Means \"princess\" or \"young noblewoman.\""
+              - listitem [ref=e1268]: "One of her most famous lines: \"Where there is life, there is hope\" reflects her role as a guardian of nature and life."
+              - listitem [ref=e1269]:
+                - text: Miya was one of the heroes revamped in
+                - link "Project NEXT" [ref=e1270] [cursor=pointer]:
+                  - /url: /wiki/Project_NEXT_2020
+                - text: ’s first batch in September 2020, along with
+                - generic [ref=e1271]:
+                  - generic "Layla" [ref=e1274]:
+                    - img "Layla" [ref=e1275]
+                  - link "Layla" [ref=e1277] [cursor=pointer]:
+                    - /url: /wiki/Layla
+                - text: ","
+                - generic [ref=e1278]:
+                  - generic "Eudora" [ref=e1281]:
+                    - img "Eudora" [ref=e1282]
+                  - link "Eudora" [ref=e1284] [cursor=pointer]:
+                    - /url: /wiki/Eudora
+                - text: (whom Miya also shares the same Japanese-language voice actor, Morisaki Miho, with),
+                - generic [ref=e1285]:
+                  - generic "Zilong" [ref=e1288]:
+                    - img "Zilong" [ref=e1289]
+                  - link "Zilong" [ref=e1291] [cursor=pointer]:
+                    - /url: /wiki/Zilong
+                - text: and
+                - generic [ref=e1292]:
+                  - generic "Saber" [ref=e1295]:
+                    - img "Saber" [ref=e1296]
+                  - link "Saber" [ref=e1298] [cursor=pointer]:
+                    - /url: /wiki/Saber
+                - text: . The goal was to balance the power gap between older and newer heroes, as the latter had better mechanics and animations.
+            - heading "References" [level=2] [ref=e1300]
+            - list [ref=e1302]:
+              - listitem [ref=e1303]:
+                - link "↑" [ref=e1305] [cursor=pointer]:
+                  - /url: "#cite_ref-MiyaCNGameProfile_1-0"
+                - generic [ref=e1306]:
+                  - text: Official profile from MLBB CN
+                  - link "Game Profile CN Miya.jpg (363 KB)" [ref=e1311] [cursor=pointer]:
+                    - /url: /wiki/File:Game_Profile_CN_Miya.jpg
+                    - img "Game Profile CN Miya.jpg (363 KB)" [ref=e1312]
+              - listitem [ref=e1313]:
+                - link "↑" [ref=e1315] [cursor=pointer]:
+                  - /url: "#cite_ref-MiyaCNProfile_2-0"
+                - generic [ref=e1316]:
+                  - link "Official profile from Weibo" [ref=e1317] [cursor=pointer]:
+                    - /url: https://weibo.com/7711876938/P0fimxHf0
+                  - link "Profile CN Miya.jpg (662 KB)" [ref=e1322] [cursor=pointer]:
+                    - /url: /wiki/File:Profile_CN_Miya.jpg
+                    - img "Profile CN Miya.jpg (662 KB)" [ref=e1323]
+              - listitem [ref=e1324]:
+                - link "↑" [ref=e1326] [cursor=pointer]:
+                  - /url: "#cite_ref-3"
+                - link "TIME OF LUNAR ECLIPSE" [ref=e1328] [cursor=pointer]:
+                  - /url: https://play.mobilelegends.com/lore/albumitem/38/1/en
+              - listitem [ref=e1329]:
+                - link "↑" [ref=e1331] [cursor=pointer]:
+                  - /url: "#cite_ref-4"
+                - generic [ref=e1332]:
+                  - 'link "Mobile Legends: Adventure on Instagram: [Arcus Miya | Hero Reveal]" [ref=e1333] [cursor=pointer]':
+                    - /url: https://www.instagram.com/p/CnJY10EscmO/
+                  - text: ". 8 January 2023. Retrieved 10 January 2024. \"Don't mistake me for an Elf. I'm nothing like them!\" The new Hybrid Marksman Arcus Miya is arriving soon. What tragic past has she undergone, and what power has she gained? Let's check out her story in-game to find out more about her skills and secret! Will be available on 01/13/2023 #MobileLegends #mlanewhero #MLBB #MLA #adventure #RPG #MobileLegendsAdventure"
+              - listitem [ref=e1334]:
+                - link "↑" [ref=e1336] [cursor=pointer]:
+                  - /url: "#cite_ref-In-game_credit_5-0"
+                - text: In-game credit
+            - table [ref=e1337]:
+              - rowgroup [ref=e1338]:
+                - row "[Collapse] List of heroes" [ref=e1339]:
+                  - columnheader "[Collapse] List of heroes" [ref=e1340]:
+                    - text: "[Collapse]"
+                    - link "List of heroes" [ref=e1341] [cursor=pointer]:
+                      - /url: /wiki/List_of_heroes
+                - row "Tank Icon Tank Akai Akai • Alice Alice • Atlas Atlas • Barats Barats • Baxia Baxia • Belerick Belerick • Carmilla Carmilla • Chip Chip • Edith Edith • Esmeralda Esmeralda • Franco Franco • Fredrinn Fredrinn • Gatotkaca Gatotkaca • Gloo Gloo • Grock Grock • Hilda Hilda • Hylos Hylos • Johnson Johnson • Khufra Khufra • Lolita Lolita • Masha Masha • Minotaur Minotaur • Terizla Terizla • Tigreal Tigreal • Uranus Uranus" [ref=e1342]:
+                  - cell "Tank Icon Tank" [ref=e1343]:
+                    - link "Tank Icon" [ref=e1345] [cursor=pointer]:
+                      - /url: /wiki/Tank
+                      - img "Tank Icon" [ref=e1346]
+                    - link "Tank" [ref=e1347] [cursor=pointer]:
+                      - /url: /wiki/Tank
+                  - cell "Akai Akai • Alice Alice • Atlas Atlas • Barats Barats • Baxia Baxia • Belerick Belerick • Carmilla Carmilla • Chip Chip • Edith Edith • Esmeralda Esmeralda • Franco Franco • Fredrinn Fredrinn • Gatotkaca Gatotkaca • Gloo Gloo • Grock Grock • Hilda Hilda • Hylos Hylos • Johnson Johnson • Khufra Khufra • Lolita Lolita • Masha Masha • Minotaur Minotaur • Terizla Terizla • Tigreal Tigreal • Uranus Uranus" [ref=e1348]:
+                    - generic [ref=e1349]:
+                      - generic "Akai" [ref=e1352]:
+                        - img "Akai" [ref=e1353]
+                      - link "Akai" [ref=e1355] [cursor=pointer]:
+                        - /url: /wiki/Akai
+                    - text: •
+                    - generic [ref=e1356]:
+                      - generic "Alice" [ref=e1359]:
+                        - img "Alice" [ref=e1360]
+                      - link "Alice" [ref=e1362] [cursor=pointer]:
+                        - /url: /wiki/Alice
+                    - text: •
+                    - generic [ref=e1363]:
+                      - generic "Atlas" [ref=e1366]:
+                        - img "Atlas" [ref=e1367]
+                      - link "Atlas" [ref=e1369] [cursor=pointer]:
+                        - /url: /wiki/Atlas
+                    - text: •
+                    - generic [ref=e1370]:
+                      - generic "Barats" [ref=e1373]:
+                        - img "Barats" [ref=e1374]
+                      - link "Barats" [ref=e1376] [cursor=pointer]:
+                        - /url: /wiki/Barats
+                    - text: •
+                    - generic [ref=e1377]:
+                      - generic "Baxia" [ref=e1380]:
+                        - img "Baxia" [ref=e1381]
+                      - link "Baxia" [ref=e1383] [cursor=pointer]:
+                        - /url: /wiki/Baxia
+                    - text: •
+                    - generic [ref=e1384]:
+                      - generic "Belerick" [ref=e1387]:
+                        - img "Belerick" [ref=e1388]
+                      - link "Belerick" [ref=e1390] [cursor=pointer]:
+                        - /url: /wiki/Belerick
+                    - text: •
+                    - generic [ref=e1391]:
+                      - generic "Carmilla" [ref=e1394]:
+                        - img "Carmilla" [ref=e1395]
+                      - link "Carmilla" [ref=e1397] [cursor=pointer]:
+                        - /url: /wiki/Carmilla
+                    - text: •
+                    - generic [ref=e1398]:
+                      - generic "Chip" [ref=e1401]:
+                        - img "Chip" [ref=e1402]
+                      - link "Chip" [ref=e1404] [cursor=pointer]:
+                        - /url: /wiki/Chip
+                    - text: •
+                    - generic [ref=e1405]:
+                      - generic "Edith" [ref=e1408]:
+                        - img "Edith" [ref=e1409]
+                      - link "Edith" [ref=e1411] [cursor=pointer]:
+                        - /url: /wiki/Edith
+                    - text: •
+                    - generic [ref=e1412]:
+                      - generic "Esmeralda" [ref=e1415]:
+                        - img "Esmeralda" [ref=e1416]
+                      - link "Esmeralda" [ref=e1418] [cursor=pointer]:
+                        - /url: /wiki/Esmeralda
+                    - text: •
+                    - generic [ref=e1419]:
+                      - generic "Franco" [ref=e1422]:
+                        - img "Franco" [ref=e1423]
+                      - link "Franco" [ref=e1425] [cursor=pointer]:
+                        - /url: /wiki/Franco
+                    - text: •
+                    - generic [ref=e1426]:
+                      - generic "Fredrinn" [ref=e1429]:
+                        - img "Fredrinn" [ref=e1430]
+                      - link "Fredrinn" [ref=e1432] [cursor=pointer]:
+                        - /url: /wiki/Fredrinn
+                    - text: •
+                    - generic [ref=e1433]:
+                      - generic "Gatotkaca" [ref=e1436]:
+                        - img "Gatotkaca" [ref=e1437]
+                      - link "Gatotkaca" [ref=e1439] [cursor=pointer]:
+                        - /url: /wiki/Gatotkaca
+                    - text: •
+                    - generic [ref=e1440]:
+                      - generic "Gloo" [ref=e1443]:
+                        - img "Gloo" [ref=e1444]
+                      - link "Gloo" [ref=e1446] [cursor=pointer]:
+                        - /url: /wiki/Gloo
+                    - text: •
+                    - generic [ref=e1447]:
+                      - generic "Grock" [ref=e1450]:
+                        - img "Grock" [ref=e1451]
+                      - link "Grock" [ref=e1453] [cursor=pointer]:
+                        - /url: /wiki/Grock
+                    - text: •
+                    - generic [ref=e1454]:
+                      - generic "Hilda" [ref=e1457]:
+                        - img "Hilda" [ref=e1458]
+                      - link "Hilda" [ref=e1460] [cursor=pointer]:
+                        - /url: /wiki/Hilda
+                    - text: •
+                    - generic [ref=e1461]:
+                      - generic "Hylos" [ref=e1464]:
+                        - img "Hylos" [ref=e1465]
+                      - link "Hylos" [ref=e1467] [cursor=pointer]:
+                        - /url: /wiki/Hylos
+                    - text: •
+                    - generic [ref=e1468]:
+                      - generic "Johnson" [ref=e1471]:
+                        - img "Johnson" [ref=e1472]
+                      - link "Johnson" [ref=e1474] [cursor=pointer]:
+                        - /url: /wiki/Johnson
+                    - text: •
+                    - generic [ref=e1475]:
+                      - generic "Khufra" [ref=e1478]:
+                        - img "Khufra" [ref=e1479]
+                      - link "Khufra" [ref=e1481] [cursor=pointer]:
+                        - /url: /wiki/Khufra
+                    - text: •
+                    - generic [ref=e1482]:
+                      - generic "Lolita" [ref=e1485]:
+                        - img "Lolita" [ref=e1486]
+                      - link "Lolita" [ref=e1488] [cursor=pointer]:
+                        - /url: /wiki/Lolita
+                    - text: •
+                    - generic [ref=e1489]:
+                      - generic "Masha" [ref=e1492]:
+                        - img "Masha" [ref=e1493]
+                      - link "Masha" [ref=e1495] [cursor=pointer]:
+                        - /url: /wiki/Masha
+                    - text: •
+                    - generic [ref=e1496]:
+                      - generic "Minotaur" [ref=e1499]:
+                        - img "Minotaur" [ref=e1500]
+                      - link "Minotaur" [ref=e1502] [cursor=pointer]:
+                        - /url: /wiki/Minotaur
+                    - text: •
+                    - generic [ref=e1503]:
+                      - generic "Terizla" [ref=e1506]:
+                        - img "Terizla" [ref=e1507]
+                      - link "Terizla" [ref=e1509] [cursor=pointer]:
+                        - /url: /wiki/Terizla
+                    - text: •
+                    - generic [ref=e1510]:
+                      - generic "Tigreal" [ref=e1513]:
+                        - img "Tigreal" [ref=e1514]
+                      - link "Tigreal" [ref=e1516] [cursor=pointer]:
+                        - /url: /wiki/Tigreal
+                    - text: •
+                    - generic [ref=e1517]:
+                      - generic "Uranus" [ref=e1520]:
+                        - img "Uranus" [ref=e1521]
+                      - link "Uranus" [ref=e1523] [cursor=pointer]:
+                        - /url: /wiki/Uranus
+                - row "Fighter Icon Fighter Aldous Aldous • Alpha Alpha • Alucard Alucard • Argus Argus • Arlott Arlott • Aulus Aulus • Badang Badang • Balmond Balmond • Bane Bane • Barats Barats • Benedetta Benedetta • Chou Chou • Cici Cici • Dyrroth Dyrroth • Fredrinn Fredrinn • Freya Freya • Gatotkaca Gatotkaca • Grock Grock • Guinevere Guinevere • Hilda Hilda • Jawhead Jawhead • Julian Julian • Kaja Kaja • Kalea Kalea • Khaleed Khaleed • Lapu-Lapu Lapu-Lapu • Leomord Leomord • Lukas Lukas • Martis Martis • Masha Masha • Minsitthar Minsitthar • Paquito Paquito • Phoveus Phoveus • Roger Roger • Ruby Ruby • Silvanna Silvanna • Sora Sora • Sun Sun • Suyou Suyou • Terizla Terizla • Thamuz Thamuz • X.Borg X.Borg • Yin Yin • Yu Zhong Yu Zhong • Zilong Zilong" [ref=e1524]:
+                  - cell "Fighter Icon Fighter" [ref=e1525]:
+                    - link "Fighter Icon" [ref=e1527] [cursor=pointer]:
+                      - /url: /wiki/Fighter
+                      - img "Fighter Icon" [ref=e1528]
+                    - link "Fighter" [ref=e1529] [cursor=pointer]:
+                      - /url: /wiki/Fighter
+                  - cell "Aldous Aldous • Alpha Alpha • Alucard Alucard • Argus Argus • Arlott Arlott • Aulus Aulus • Badang Badang • Balmond Balmond • Bane Bane • Barats Barats • Benedetta Benedetta • Chou Chou • Cici Cici • Dyrroth Dyrroth • Fredrinn Fredrinn • Freya Freya • Gatotkaca Gatotkaca • Grock Grock • Guinevere Guinevere • Hilda Hilda • Jawhead Jawhead • Julian Julian • Kaja Kaja • Kalea Kalea • Khaleed Khaleed • Lapu-Lapu Lapu-Lapu • Leomord Leomord • Lukas Lukas • Martis Martis • Masha Masha • Minsitthar Minsitthar • Paquito Paquito • Phoveus Phoveus • Roger Roger • Ruby Ruby • Silvanna Silvanna • Sora Sora • Sun Sun • Suyou Suyou • Terizla Terizla • Thamuz Thamuz • X.Borg X.Borg • Yin Yin • Yu Zhong Yu Zhong • Zilong Zilong" [ref=e1530]:
+                    - generic [ref=e1531]:
+                      - generic "Aldous" [ref=e1534]:
+                        - img "Aldous" [ref=e1535]
+                      - link "Aldous" [ref=e1537] [cursor=pointer]:
+                        - /url: /wiki/Aldous
+                    - text: •
+                    - generic [ref=e1538]:
+                      - generic "Alpha" [ref=e1541]:
+                        - img "Alpha" [ref=e1542]
+                      - link "Alpha" [ref=e1544] [cursor=pointer]:
+                        - /url: /wiki/Alpha
+                    - text: •
+                    - generic [ref=e1545]:
+                      - generic "Alucard" [ref=e1548]:
+                        - img "Alucard" [ref=e1549]
+                      - link "Alucard" [ref=e1551] [cursor=pointer]:
+                        - /url: /wiki/Alucard
+                    - text: •
+                    - generic [ref=e1552]:
+                      - generic "Argus" [ref=e1555]:
+                        - img "Argus" [ref=e1556]
+                      - link "Argus" [ref=e1558] [cursor=pointer]:
+                        - /url: /wiki/Argus
+                    - text: •
+                    - generic [ref=e1559]:
+                      - generic "Arlott" [ref=e1562]:
+                        - img "Arlott" [ref=e1563]
+                      - link "Arlott" [ref=e1565] [cursor=pointer]:
+                        - /url: /wiki/Arlott
+                    - text: •
+                    - generic [ref=e1566]:
+                      - generic "Aulus" [ref=e1569]:
+                        - img "Aulus" [ref=e1570]
+                      - link "Aulus" [ref=e1572] [cursor=pointer]:
+                        - /url: /wiki/Aulus
+                    - text: •
+                    - generic [ref=e1573]:
+                      - generic "Badang" [ref=e1576]:
+                        - img "Badang" [ref=e1577]
+                      - link "Badang" [ref=e1579] [cursor=pointer]:
+                        - /url: /wiki/Badang
+                    - text: •
+                    - generic [ref=e1580]:
+                      - generic "Balmond" [ref=e1583]:
+                        - img "Balmond" [ref=e1584]
+                      - link "Balmond" [ref=e1586] [cursor=pointer]:
+                        - /url: /wiki/Balmond
+                    - text: •
+                    - generic [ref=e1587]:
+                      - generic "Bane" [ref=e1590]:
+                        - img "Bane" [ref=e1591]
+                      - link "Bane" [ref=e1593] [cursor=pointer]:
+                        - /url: /wiki/Bane
+                    - text: •
+                    - generic [ref=e1594]:
+                      - generic "Barats" [ref=e1597]:
+                        - img "Barats" [ref=e1598]
+                      - link "Barats" [ref=e1600] [cursor=pointer]:
+                        - /url: /wiki/Barats
+                    - text: •
+                    - generic [ref=e1601]:
+                      - generic "Benedetta" [ref=e1604]:
+                        - img "Benedetta" [ref=e1605]
+                      - link "Benedetta" [ref=e1607] [cursor=pointer]:
+                        - /url: /wiki/Benedetta
+                    - text: •
+                    - generic [ref=e1608]:
+                      - generic "Chou" [ref=e1611]:
+                        - img "Chou" [ref=e1612]
+                      - link "Chou" [ref=e1614] [cursor=pointer]:
+                        - /url: /wiki/Chou
+                    - text: •
+                    - generic [ref=e1615]:
+                      - generic "Cici" [ref=e1618]:
+                        - img "Cici" [ref=e1619]
+                      - link "Cici" [ref=e1621] [cursor=pointer]:
+                        - /url: /wiki/Cici
+                    - text: •
+                    - generic [ref=e1622]:
+                      - generic "Dyrroth" [ref=e1625]:
+                        - img "Dyrroth" [ref=e1626]
+                      - link "Dyrroth" [ref=e1628] [cursor=pointer]:
+                        - /url: /wiki/Dyrroth
+                    - text: •
+                    - generic [ref=e1629]:
+                      - generic "Fredrinn" [ref=e1632]:
+                        - img "Fredrinn" [ref=e1633]
+                      - link "Fredrinn" [ref=e1635] [cursor=pointer]:
+                        - /url: /wiki/Fredrinn
+                    - text: •
+                    - generic [ref=e1636]:
+                      - generic "Freya" [ref=e1639]:
+                        - img "Freya" [ref=e1640]
+                      - link "Freya" [ref=e1642] [cursor=pointer]:
+                        - /url: /wiki/Freya
+                    - text: •
+                    - generic [ref=e1643]:
+                      - generic "Gatotkaca" [ref=e1646]:
+                        - img "Gatotkaca" [ref=e1647]
+                      - link "Gatotkaca" [ref=e1649] [cursor=pointer]:
+                        - /url: /wiki/Gatotkaca
+                    - text: •
+                    - generic [ref=e1650]:
+                      - generic "Grock" [ref=e1653]:
+                        - img "Grock" [ref=e1654]
+                      - link "Grock" [ref=e1656] [cursor=pointer]:
+                        - /url: /wiki/Grock
+                    - text: •
+                    - generic [ref=e1657]:
+                      - generic "Guinevere" [ref=e1660]:
+                        - img "Guinevere" [ref=e1661]
+                      - link "Guinevere" [ref=e1663] [cursor=pointer]:
+                        - /url: /wiki/Guinevere
+                    - text: •
+                    - generic [ref=e1664]:
+                      - generic "Hilda" [ref=e1667]:
+                        - img "Hilda" [ref=e1668]
+                      - link "Hilda" [ref=e1670] [cursor=pointer]:
+                        - /url: /wiki/Hilda
+                    - text: •
+                    - generic [ref=e1671]:
+                      - generic "Jawhead" [ref=e1674]:
+                        - img "Jawhead" [ref=e1675]
+                      - link "Jawhead" [ref=e1677] [cursor=pointer]:
+                        - /url: /wiki/Jawhead
+                    - text: •
+                    - generic [ref=e1678]:
+                      - generic "Julian" [ref=e1681]:
+                        - img "Julian" [ref=e1682]
+                      - link "Julian" [ref=e1684] [cursor=pointer]:
+                        - /url: /wiki/Julian
+                    - text: •
+                    - generic [ref=e1685]:
+                      - generic "Kaja" [ref=e1688]:
+                        - img "Kaja" [ref=e1689]
+                      - link "Kaja" [ref=e1691] [cursor=pointer]:
+                        - /url: /wiki/Kaja
+                    - text: •
+                    - generic [ref=e1692]:
+                      - generic "Kalea" [ref=e1695]:
+                        - img "Kalea" [ref=e1696]
+                      - link "Kalea" [ref=e1698] [cursor=pointer]:
+                        - /url: /wiki/Kalea
+                    - text: •
+                    - generic [ref=e1699]:
+                      - generic "Khaleed" [ref=e1702]:
+                        - img "Khaleed" [ref=e1703]
+                      - link "Khaleed" [ref=e1705] [cursor=pointer]:
+                        - /url: /wiki/Khaleed
+                    - text: •
+                    - generic [ref=e1706]:
+                      - generic "Lapu-Lapu" [ref=e1709]:
+                        - img "Lapu-Lapu" [ref=e1710]
+                      - link "Lapu-Lapu" [ref=e1712] [cursor=pointer]:
+                        - /url: /wiki/Lapu-Lapu
+                    - text: •
+                    - generic [ref=e1713]:
+                      - generic "Leomord" [ref=e1716]:
+                        - img "Leomord" [ref=e1717]
+                      - link "Leomord" [ref=e1719] [cursor=pointer]:
+                        - /url: /wiki/Leomord
+                    - text: •
+                    - generic [ref=e1720]:
+                      - generic "Lukas" [ref=e1723]:
+                        - img "Lukas" [ref=e1724]
+                      - link "Lukas" [ref=e1726] [cursor=pointer]:
+                        - /url: /wiki/Lukas
+                    - text: •
+                    - generic [ref=e1727]:
+                      - generic "Martis" [ref=e1730]:
+                        - img "Martis" [ref=e1731]
+                      - link "Martis" [ref=e1733] [cursor=pointer]:
+                        - /url: /wiki/Martis
+                    - text: •
+                    - generic [ref=e1734]:
+                      - generic "Masha" [ref=e1737]:
+                        - img "Masha" [ref=e1738]
+                      - link "Masha" [ref=e1740] [cursor=pointer]:
+                        - /url: /wiki/Masha
+                    - text: •
+                    - generic [ref=e1741]:
+                      - generic "Minsitthar" [ref=e1744]:
+                        - img "Minsitthar" [ref=e1745]
+                      - link "Minsitthar" [ref=e1747] [cursor=pointer]:
+                        - /url: /wiki/Minsitthar
+                    - text: •
+                    - generic [ref=e1748]:
+                      - generic "Paquito" [ref=e1751]:
+                        - img "Paquito" [ref=e1752]
+                      - link "Paquito" [ref=e1754] [cursor=pointer]:
+                        - /url: /wiki/Paquito
+                    - text: •
+                    - generic [ref=e1755]:
+                      - generic "Phoveus" [ref=e1758]:
+                        - img "Phoveus" [ref=e1759]
+                      - link "Phoveus" [ref=e1761] [cursor=pointer]:
+                        - /url: /wiki/Phoveus
+                    - text: •
+                    - generic [ref=e1762]:
+                      - generic "Roger" [ref=e1765]:
+                        - img "Roger" [ref=e1766]
+                      - link "Roger" [ref=e1768] [cursor=pointer]:
+                        - /url: /wiki/Roger
+                    - text: •
+                    - generic [ref=e1769]:
+                      - generic "Ruby" [ref=e1772]:
+                        - img "Ruby" [ref=e1773]
+                      - link "Ruby" [ref=e1775] [cursor=pointer]:
+                        - /url: /wiki/Ruby
+                    - text: •
+                    - generic [ref=e1776]:
+                      - generic "Silvanna" [ref=e1779]:
+                        - img "Silvanna" [ref=e1780]
+                      - link "Silvanna" [ref=e1782] [cursor=pointer]:
+                        - /url: /wiki/Silvanna
+                    - text: •
+                    - generic [ref=e1783]:
+                      - generic "Sora" [ref=e1786]:
+                        - img "Sora" [ref=e1787]
+                      - link "Sora" [ref=e1789] [cursor=pointer]:
+                        - /url: /wiki/Sora
+                    - text: •
+                    - generic [ref=e1790]:
+                      - generic "Sun" [ref=e1793]:
+                        - img "Sun" [ref=e1794]
+                      - link "Sun" [ref=e1796] [cursor=pointer]:
+                        - /url: /wiki/Sun
+                    - text: •
+                    - generic [ref=e1797]:
+                      - generic "Suyou" [ref=e1800]:
+                        - img "Suyou" [ref=e1801]
+                      - link "Suyou" [ref=e1803] [cursor=pointer]:
+                        - /url: /wiki/Suyou
+                    - text: •
+                    - generic [ref=e1804]:
+                      - generic "Terizla" [ref=e1807]:
+                        - img "Terizla" [ref=e1808]
+                      - link "Terizla" [ref=e1810] [cursor=pointer]:
+                        - /url: /wiki/Terizla
+                    - text: •
+                    - generic [ref=e1811]:
+                      - generic "Thamuz" [ref=e1814]:
+                        - img "Thamuz" [ref=e1815]
+                      - link "Thamuz" [ref=e1817] [cursor=pointer]:
+                        - /url: /wiki/Thamuz
+                    - text: •
+                    - generic [ref=e1818]:
+                      - generic "X.Borg" [ref=e1821]:
+                        - img "X.Borg" [ref=e1822]
+                      - link "X.Borg" [ref=e1824] [cursor=pointer]:
+                        - /url: /wiki/X.Borg
+                    - text: •
+                    - generic [ref=e1825]:
+                      - generic "Yin" [ref=e1828]:
+                        - img "Yin" [ref=e1829]
+                      - link "Yin" [ref=e1831] [cursor=pointer]:
+                        - /url: /wiki/Yin
+                    - text: •
+                    - generic [ref=e1832]:
+                      - generic "Yu Zhong" [ref=e1835]:
+                        - img "Yu Zhong" [ref=e1836]
+                      - link "Yu Zhong" [ref=e1838] [cursor=pointer]:
+                        - /url: /wiki/Yu_Zhong
+                    - text: •
+                    - generic [ref=e1839]:
+                      - generic "Zilong" [ref=e1842]:
+                        - img "Zilong" [ref=e1843]
+                      - link "Zilong" [ref=e1845] [cursor=pointer]:
+                        - /url: /wiki/Zilong
+                - row "Assassin Icon Assassin Aamon Aamon • Alucard Alucard • Arlott Arlott • Benedetta Benedetta • Fanny Fanny • Gusion Gusion • Hanzo Hanzo • Harley Harley • Hayabusa Hayabusa • Helcurt Helcurt • Hirara Hirara • Joy Joy • Julian Julian • Kadita Kadita • Karina Karina • Lancelot Lancelot • Lesley Lesley • Ling Ling • Mathilda Mathilda • Natalia Natalia • Nolan Nolan • Paquito Paquito • Saber Saber • Selena Selena • Sora Sora • Suyou Suyou • Yi Sun-shin Yi Sun-shin • Yin Yin • Zilong Zilong" [ref=e1846]:
+                  - cell "Assassin Icon Assassin" [ref=e1847]:
+                    - link "Assassin Icon" [ref=e1849] [cursor=pointer]:
+                      - /url: /wiki/Assassin
+                      - img "Assassin Icon" [ref=e1850]
+                    - link "Assassin" [ref=e1851] [cursor=pointer]:
+                      - /url: /wiki/Assassin
+                  - cell "Aamon Aamon • Alucard Alucard • Arlott Arlott • Benedetta Benedetta • Fanny Fanny • Gusion Gusion • Hanzo Hanzo • Harley Harley • Hayabusa Hayabusa • Helcurt Helcurt • Hirara Hirara • Joy Joy • Julian Julian • Kadita Kadita • Karina Karina • Lancelot Lancelot • Lesley Lesley • Ling Ling • Mathilda Mathilda • Natalia Natalia • Nolan Nolan • Paquito Paquito • Saber Saber • Selena Selena • Sora Sora • Suyou Suyou • Yi Sun-shin Yi Sun-shin • Yin Yin • Zilong Zilong" [ref=e1852]:
+                    - generic [ref=e1853]:
+                      - generic "Aamon" [ref=e1856]:
+                        - img "Aamon" [ref=e1857]
+                      - link "Aamon" [ref=e1859] [cursor=pointer]:
+                        - /url: /wiki/Aamon
+                    - text: •
+                    - generic [ref=e1860]:
+                      - generic "Alucard" [ref=e1863]:
+                        - img "Alucard" [ref=e1864]
+                      - link "Alucard" [ref=e1866] [cursor=pointer]:
+                        - /url: /wiki/Alucard
+                    - text: •
+                    - generic [ref=e1867]:
+                      - generic "Arlott" [ref=e1870]:
+                        - img "Arlott" [ref=e1871]
+                      - link "Arlott" [ref=e1873] [cursor=pointer]:
+                        - /url: /wiki/Arlott
+                    - text: •
+                    - generic [ref=e1874]:
+                      - generic "Benedetta" [ref=e1877]:
+                        - img "Benedetta" [ref=e1878]
+                      - link "Benedetta" [ref=e1880] [cursor=pointer]:
+                        - /url: /wiki/Benedetta
+                    - text: •
+                    - generic [ref=e1881]:
+                      - generic "Fanny" [ref=e1884]:
+                        - img "Fanny" [ref=e1885]
+                      - link "Fanny" [ref=e1887] [cursor=pointer]:
+                        - /url: /wiki/Fanny
+                    - text: •
+                    - generic [ref=e1888]:
+                      - generic "Gusion" [ref=e1891]:
+                        - img "Gusion" [ref=e1892]
+                      - link "Gusion" [ref=e1894] [cursor=pointer]:
+                        - /url: /wiki/Gusion
+                    - text: •
+                    - generic [ref=e1895]:
+                      - generic "Hanzo" [ref=e1898]:
+                        - img "Hanzo" [ref=e1899]
+                      - link "Hanzo" [ref=e1901] [cursor=pointer]:
+                        - /url: /wiki/Hanzo
+                    - text: •
+                    - generic [ref=e1902]:
+                      - generic "Harley" [ref=e1905]:
+                        - img "Harley" [ref=e1906]
+                      - link "Harley" [ref=e1908] [cursor=pointer]:
+                        - /url: /wiki/Harley
+                    - text: •
+                    - generic [ref=e1909]:
+                      - generic "Hayabusa" [ref=e1912]:
+                        - img "Hayabusa" [ref=e1913]
+                      - link "Hayabusa" [ref=e1915] [cursor=pointer]:
+                        - /url: /wiki/Hayabusa
+                    - text: •
+                    - generic [ref=e1916]:
+                      - generic "Helcurt" [ref=e1919]:
+                        - img "Helcurt" [ref=e1920]
+                      - link "Helcurt" [ref=e1922] [cursor=pointer]:
+                        - /url: /wiki/Helcurt
+                    - text: •
+                    - generic [ref=e1923]:
+                      - generic "Hirara" [ref=e1926]:
+                        - img "Hirara" [ref=e1927]
+                      - link "Hirara" [ref=e1929] [cursor=pointer]:
+                        - /url: /wiki/Hirara
+                    - text: •
+                    - generic [ref=e1930]:
+                      - generic "Joy" [ref=e1933]:
+                        - img "Joy" [ref=e1934]
+                      - link "Joy" [ref=e1936] [cursor=pointer]:
+                        - /url: /wiki/Joy
+                    - text: •
+                    - generic [ref=e1937]:
+                      - generic "Julian" [ref=e1940]:
+                        - img "Julian" [ref=e1941]
+                      - link "Julian" [ref=e1943] [cursor=pointer]:
+                        - /url: /wiki/Julian
+                    - text: •
+                    - generic [ref=e1944]:
+                      - generic "Kadita" [ref=e1947]:
+                        - img "Kadita" [ref=e1948]
+                      - link "Kadita" [ref=e1950] [cursor=pointer]:
+                        - /url: /wiki/Kadita
+                    - text: •
+                    - generic [ref=e1951]:
+                      - generic "Karina" [ref=e1954]:
+                        - img "Karina" [ref=e1955]
+                      - link "Karina" [ref=e1957] [cursor=pointer]:
+                        - /url: /wiki/Karina
+                    - text: •
+                    - generic [ref=e1958]:
+                      - generic "Lancelot" [ref=e1961]:
+                        - img "Lancelot" [ref=e1962]
+                      - link "Lancelot" [ref=e1964] [cursor=pointer]:
+                        - /url: /wiki/Lancelot
+                    - text: •
+                    - generic [ref=e1965]:
+                      - generic "Lesley" [ref=e1968]:
+                        - img "Lesley" [ref=e1969]
+                      - link "Lesley" [ref=e1971] [cursor=pointer]:
+                        - /url: /wiki/Lesley
+                    - text: •
+                    - generic [ref=e1972]:
+                      - generic "Ling" [ref=e1975]:
+                        - img "Ling" [ref=e1976]
+                      - link "Ling" [ref=e1978] [cursor=pointer]:
+                        - /url: /wiki/Ling
+                    - text: •
+                    - generic [ref=e1979]:
+                      - generic "Mathilda" [ref=e1982]:
+                        - img "Mathilda" [ref=e1983]
+                      - link "Mathilda" [ref=e1985] [cursor=pointer]:
+                        - /url: /wiki/Mathilda
+                    - text: •
+                    - generic [ref=e1986]:
+                      - generic "Natalia" [ref=e1989]:
+                        - img "Natalia" [ref=e1990]
+                      - link "Natalia" [ref=e1992] [cursor=pointer]:
+                        - /url: /wiki/Natalia
+                    - text: •
+                    - generic [ref=e1993]:
+                      - generic "Nolan" [ref=e1996]:
+                        - img "Nolan" [ref=e1997]
+                      - link "Nolan" [ref=e1999] [cursor=pointer]:
+                        - /url: /wiki/Nolan
+                    - text: •
+                    - generic [ref=e2000]:
+                      - generic "Paquito" [ref=e2003]:
+                        - img "Paquito" [ref=e2004]
+                      - link "Paquito" [ref=e2006] [cursor=pointer]:
+                        - /url: /wiki/Paquito
+                    - text: •
+                    - generic [ref=e2007]:
+                      - generic "Saber" [ref=e2010]:
+                        - img "Saber" [ref=e2011]
+                      - link "Saber" [ref=e2013] [cursor=pointer]:
+                        - /url: /wiki/Saber
+                    - text: •
+                    - generic [ref=e2014]:
+                      - generic "Selena" [ref=e2017]:
+                        - img "Selena" [ref=e2018]
+                      - link "Selena" [ref=e2020] [cursor=pointer]:
+                        - /url: /wiki/Selena
+                    - text: •
+                    - generic [ref=e2021]:
+                      - generic "Sora" [ref=e2024]:
+                        - img "Sora" [ref=e2025]
+                      - link "Sora" [ref=e2027] [cursor=pointer]:
+                        - /url: /wiki/Sora
+                    - text: •
+                    - generic [ref=e2028]:
+                      - generic "Suyou" [ref=e2031]:
+                        - img "Suyou" [ref=e2032]
+                      - link "Suyou" [ref=e2034] [cursor=pointer]:
+                        - /url: /wiki/Suyou
+                    - text: •
+                    - generic [ref=e2035]:
+                      - generic "Yi Sun-shin" [ref=e2038]:
+                        - img "Yi Sun-shin" [ref=e2039]
+                      - link "Yi Sun-shin" [ref=e2041] [cursor=pointer]:
+                        - /url: /wiki/Yi_Sun-shin
+                    - text: •
+                    - generic [ref=e2042]:
+                      - generic "Yin" [ref=e2045]:
+                        - img "Yin" [ref=e2046]
+                      - link "Yin" [ref=e2048] [cursor=pointer]:
+                        - /url: /wiki/Yin
+                    - text: •
+                    - generic [ref=e2049]:
+                      - generic "Zilong" [ref=e2052]:
+                        - img "Zilong" [ref=e2053]
+                      - link "Zilong" [ref=e2055] [cursor=pointer]:
+                        - /url: /wiki/Zilong
+                - row "Mage Icon Mage Alice Alice • Aurora Aurora • Bane Bane • Cecilion Cecilion • Chang'e Chang'e • Cyclops Cyclops • Esmeralda Esmeralda • Eudora Eudora • Faramis Faramis • Gord Gord • Harith Harith • Harley Harley • Kadita Kadita • Kagura Kagura • Kimmy Kimmy • Lunox Lunox • Luo Yi Luo Yi • Lylia Lylia • Nana Nana • Novaria Novaria • Odette Odette • Pharsa Pharsa • Selena Selena • Vale Vale • Valentina Valentina • Valir Valir • Vexana Vexana • Xavier Xavier • Yve Yve • Zetian Zetian • Zhask Zhask • Zhuxin Zhuxin" [ref=e2056]:
+                  - cell "Mage Icon Mage" [ref=e2057]:
+                    - link "Mage Icon" [ref=e2059] [cursor=pointer]:
+                      - /url: /wiki/Mage
+                      - img "Mage Icon" [ref=e2060]
+                    - link "Mage" [ref=e2061] [cursor=pointer]:
+                      - /url: /wiki/Mage
+                  - cell "Alice Alice • Aurora Aurora • Bane Bane • Cecilion Cecilion • Chang'e Chang'e • Cyclops Cyclops • Esmeralda Esmeralda • Eudora Eudora • Faramis Faramis • Gord Gord • Harith Harith • Harley Harley • Kadita Kadita • Kagura Kagura • Kimmy Kimmy • Lunox Lunox • Luo Yi Luo Yi • Lylia Lylia • Nana Nana • Novaria Novaria • Odette Odette • Pharsa Pharsa • Selena Selena • Vale Vale • Valentina Valentina • Valir Valir • Vexana Vexana • Xavier Xavier • Yve Yve • Zetian Zetian • Zhask Zhask • Zhuxin Zhuxin" [ref=e2062]:
+                    - generic [ref=e2063]:
+                      - generic "Alice" [ref=e2066]:
+                        - img "Alice" [ref=e2067]
+                      - link "Alice" [ref=e2069] [cursor=pointer]:
+                        - /url: /wiki/Alice
+                    - text: •
+                    - generic [ref=e2070]:
+                      - generic "Aurora" [ref=e2073]:
+                        - img "Aurora" [ref=e2074]
+                      - link "Aurora" [ref=e2076] [cursor=pointer]:
+                        - /url: /wiki/Aurora
+                    - text: •
+                    - generic [ref=e2077]:
+                      - generic "Bane" [ref=e2080]:
+                        - img "Bane" [ref=e2081]
+                      - link "Bane" [ref=e2083] [cursor=pointer]:
+                        - /url: /wiki/Bane
+                    - text: •
+                    - generic [ref=e2084]:
+                      - generic "Cecilion" [ref=e2087]:
+                        - img "Cecilion" [ref=e2088]
+                      - link "Cecilion" [ref=e2090] [cursor=pointer]:
+                        - /url: /wiki/Cecilion
+                    - text: •
+                    - generic [ref=e2091]:
+                      - generic "Chang'e" [ref=e2094]:
+                        - img "Chang'e" [ref=e2095]
+                      - link "Chang'e" [ref=e2097] [cursor=pointer]:
+                        - /url: /wiki/Chang%27e
+                    - text: •
+                    - generic [ref=e2098]:
+                      - generic "Cyclops" [ref=e2101]:
+                        - img "Cyclops" [ref=e2102]
+                      - link "Cyclops" [ref=e2104] [cursor=pointer]:
+                        - /url: /wiki/Cyclops
+                    - text: •
+                    - generic [ref=e2105]:
+                      - generic "Esmeralda" [ref=e2108]:
+                        - img "Esmeralda" [ref=e2109]
+                      - link "Esmeralda" [ref=e2111] [cursor=pointer]:
+                        - /url: /wiki/Esmeralda
+                    - text: •
+                    - generic [ref=e2112]:
+                      - generic "Eudora" [ref=e2115]:
+                        - img "Eudora" [ref=e2116]
+                      - link "Eudora" [ref=e2118] [cursor=pointer]:
+                        - /url: /wiki/Eudora
+                    - text: •
+                    - generic [ref=e2119]:
+                      - generic "Faramis" [ref=e2122]:
+                        - img "Faramis" [ref=e2123]
+                      - link "Faramis" [ref=e2125] [cursor=pointer]:
+                        - /url: /wiki/Faramis
+                    - text: •
+                    - generic [ref=e2126]:
+                      - generic "Gord" [ref=e2129]:
+                        - img "Gord" [ref=e2130]
+                      - link "Gord" [ref=e2132] [cursor=pointer]:
+                        - /url: /wiki/Gord
+                    - text: •
+                    - generic [ref=e2133]:
+                      - generic "Harith" [ref=e2136]:
+                        - img "Harith" [ref=e2137]
+                      - link "Harith" [ref=e2139] [cursor=pointer]:
+                        - /url: /wiki/Harith
+                    - text: •
+                    - generic [ref=e2140]:
+                      - generic "Harley" [ref=e2143]:
+                        - img "Harley" [ref=e2144]
+                      - link "Harley" [ref=e2146] [cursor=pointer]:
+                        - /url: /wiki/Harley
+                    - text: •
+                    - generic [ref=e2147]:
+                      - generic "Kadita" [ref=e2150]:
+                        - img "Kadita" [ref=e2151]
+                      - link "Kadita" [ref=e2153] [cursor=pointer]:
+                        - /url: /wiki/Kadita
+                    - text: •
+                    - generic [ref=e2154]:
+                      - generic "Kagura" [ref=e2157]:
+                        - img "Kagura" [ref=e2158]
+                      - link "Kagura" [ref=e2160] [cursor=pointer]:
+                        - /url: /wiki/Kagura
+                    - text: •
+                    - generic [ref=e2161]:
+                      - generic "Kimmy" [ref=e2164]:
+                        - img "Kimmy" [ref=e2165]
+                      - link "Kimmy" [ref=e2167] [cursor=pointer]:
+                        - /url: /wiki/Kimmy
+                    - text: •
+                    - generic [ref=e2168]:
+                      - generic "Lunox" [ref=e2171]:
+                        - img "Lunox" [ref=e2172]
+                      - link "Lunox" [ref=e2174] [cursor=pointer]:
+                        - /url: /wiki/Lunox
+                    - text: •
+                    - generic [ref=e2175]:
+                      - generic "Luo Yi" [ref=e2178]:
+                        - img "Luo Yi" [ref=e2179]
+                      - link "Luo Yi" [ref=e2181] [cursor=pointer]:
+                        - /url: /wiki/Luo_Yi
+                    - text: •
+                    - generic [ref=e2182]:
+                      - generic "Lylia" [ref=e2185]:
+                        - img "Lylia" [ref=e2186]
+                      - link "Lylia" [ref=e2188] [cursor=pointer]:
+                        - /url: /wiki/Lylia
+                    - text: •
+                    - generic [ref=e2189]:
+                      - generic "Nana" [ref=e2192]:
+                        - img "Nana" [ref=e2193]
+                      - link "Nana" [ref=e2195] [cursor=pointer]:
+                        - /url: /wiki/Nana
+                    - text: •
+                    - generic [ref=e2196]:
+                      - generic "Novaria" [ref=e2199]:
+                        - img "Novaria" [ref=e2200]
+                      - link "Novaria" [ref=e2202] [cursor=pointer]:
+                        - /url: /wiki/Novaria
+                    - text: •
+                    - generic [ref=e2203]:
+                      - generic "Odette" [ref=e2206]:
+                        - img "Odette" [ref=e2207]
+                      - link "Odette" [ref=e2209] [cursor=pointer]:
+                        - /url: /wiki/Odette
+                    - text: •
+                    - generic [ref=e2210]:
+                      - generic "Pharsa" [ref=e2213]:
+                        - img "Pharsa" [ref=e2214]
+                      - link "Pharsa" [ref=e2216] [cursor=pointer]:
+                        - /url: /wiki/Pharsa
+                    - text: •
+                    - generic [ref=e2217]:
+                      - generic "Selena" [ref=e2220]:
+                        - img "Selena" [ref=e2221]
+                      - link "Selena" [ref=e2223] [cursor=pointer]:
+                        - /url: /wiki/Selena
+                    - text: •
+                    - generic [ref=e2224]:
+                      - generic "Vale" [ref=e2227]:
+                        - img "Vale" [ref=e2228]
+                      - link "Vale" [ref=e2230] [cursor=pointer]:
+                        - /url: /wiki/Vale
+                    - text: •
+                    - generic [ref=e2231]:
+                      - generic "Valentina" [ref=e2234]:
+                        - img "Valentina" [ref=e2235]
+                      - link "Valentina" [ref=e2237] [cursor=pointer]:
+                        - /url: /wiki/Valentina
+                    - text: •
+                    - generic [ref=e2238]:
+                      - generic "Valir" [ref=e2241]:
+                        - img "Valir" [ref=e2242]
+                      - link "Valir" [ref=e2244] [cursor=pointer]:
+                        - /url: /wiki/Valir
+                    - text: •
+                    - generic [ref=e2245]:
+                      - generic "Vexana" [ref=e2248]:
+                        - img "Vexana" [ref=e2249]
+                      - link "Vexana" [ref=e2251] [cursor=pointer]:
+                        - /url: /wiki/Vexana
+                    - text: •
+                    - generic [ref=e2252]:
+                      - generic "Xavier" [ref=e2255]:
+                        - img "Xavier" [ref=e2256]
+                      - link "Xavier" [ref=e2258] [cursor=pointer]:
+                        - /url: /wiki/Xavier
+                    - text: •
+                    - generic [ref=e2259]:
+                      - generic "Yve" [ref=e2262]:
+                        - img "Yve" [ref=e2263]
+                      - link "Yve" [ref=e2265] [cursor=pointer]:
+                        - /url: /wiki/Yve
+                    - text: •
+                    - generic [ref=e2266]:
+                      - generic "Zetian" [ref=e2269]:
+                        - img "Zetian" [ref=e2270]
+                      - link "Zetian" [ref=e2272] [cursor=pointer]:
+                        - /url: /wiki/Zetian
+                    - text: •
+                    - generic [ref=e2273]:
+                      - generic "Zhask" [ref=e2276]:
+                        - img "Zhask" [ref=e2277]
+                      - link "Zhask" [ref=e2279] [cursor=pointer]:
+                        - /url: /wiki/Zhask
+                    - text: •
+                    - generic [ref=e2280]:
+                      - generic "Zhuxin" [ref=e2283]:
+                        - img "Zhuxin" [ref=e2284]
+                      - link "Zhuxin" [ref=e2286] [cursor=pointer]:
+                        - /url: /wiki/Zhuxin
+                - row "Marksman Icon Marksman Beatrix Beatrix • Brody Brody • Bruno Bruno • Claude Claude • Clint Clint • Edith Edith • Granger Granger • Hanabi Hanabi • Irithel Irithel • Ixia Ixia • Karrie Karrie • Kimmy Kimmy • Layla Layla • Lesley Lesley • Melissa Melissa • Miya Miya • Moskov Moskov • Natan Natan • Obsidia Obsidia • Popol and Kupa Popol and Kupa • Roger Roger • Wanwan Wanwan • Yi Sun-shin Yi Sun-shin" [ref=e2287]:
+                  - cell "Marksman Icon Marksman" [ref=e2288]:
+                    - link "Marksman Icon" [ref=e2290] [cursor=pointer]:
+                      - /url: /wiki/Marksman
+                      - img "Marksman Icon" [ref=e2291]
+                    - link "Marksman" [ref=e2292] [cursor=pointer]:
+                      - /url: /wiki/Marksman
+                  - cell "Beatrix Beatrix • Brody Brody • Bruno Bruno • Claude Claude • Clint Clint • Edith Edith • Granger Granger • Hanabi Hanabi • Irithel Irithel • Ixia Ixia • Karrie Karrie • Kimmy Kimmy • Layla Layla • Lesley Lesley • Melissa Melissa • Miya Miya • Moskov Moskov • Natan Natan • Obsidia Obsidia • Popol and Kupa Popol and Kupa • Roger Roger • Wanwan Wanwan • Yi Sun-shin Yi Sun-shin" [ref=e2293]:
+                    - generic [ref=e2294]:
+                      - generic "Beatrix" [ref=e2297]:
+                        - img "Beatrix" [ref=e2298]
+                      - link "Beatrix" [ref=e2300] [cursor=pointer]:
+                        - /url: /wiki/Beatrix
+                    - text: •
+                    - generic [ref=e2301]:
+                      - generic "Brody" [ref=e2304]:
+                        - img "Brody" [ref=e2305]
+                      - link "Brody" [ref=e2307] [cursor=pointer]:
+                        - /url: /wiki/Brody
+                    - text: •
+                    - generic [ref=e2308]:
+                      - generic "Bruno" [ref=e2311]:
+                        - img "Bruno" [ref=e2312]
+                      - link "Bruno" [ref=e2314] [cursor=pointer]:
+                        - /url: /wiki/Bruno
+                    - text: •
+                    - generic [ref=e2315]:
+                      - generic "Claude" [ref=e2318]:
+                        - img "Claude" [ref=e2319]
+                      - link "Claude" [ref=e2321] [cursor=pointer]:
+                        - /url: /wiki/Claude
+                    - text: •
+                    - generic [ref=e2322]:
+                      - generic "Clint" [ref=e2325]:
+                        - img "Clint" [ref=e2326]
+                      - link "Clint" [ref=e2328] [cursor=pointer]:
+                        - /url: /wiki/Clint
+                    - text: •
+                    - generic [ref=e2329]:
+                      - generic "Edith" [ref=e2332]:
+                        - img "Edith" [ref=e2333]
+                      - link "Edith" [ref=e2335] [cursor=pointer]:
+                        - /url: /wiki/Edith
+                    - text: •
+                    - generic [ref=e2336]:
+                      - generic "Granger" [ref=e2339]:
+                        - img "Granger" [ref=e2340]
+                      - link "Granger" [ref=e2342] [cursor=pointer]:
+                        - /url: /wiki/Granger
+                    - text: •
+                    - generic [ref=e2343]:
+                      - generic "Hanabi" [ref=e2346]:
+                        - img "Hanabi" [ref=e2347]
+                      - link "Hanabi" [ref=e2349] [cursor=pointer]:
+                        - /url: /wiki/Hanabi
+                    - text: •
+                    - generic [ref=e2350]:
+                      - generic "Irithel" [ref=e2353]:
+                        - img "Irithel" [ref=e2354]
+                      - link "Irithel" [ref=e2356] [cursor=pointer]:
+                        - /url: /wiki/Irithel
+                    - text: •
+                    - generic [ref=e2357]:
+                      - generic "Ixia" [ref=e2360]:
+                        - img "Ixia" [ref=e2361]
+                      - link "Ixia" [ref=e2363] [cursor=pointer]:
+                        - /url: /wiki/Ixia
+                    - text: •
+                    - generic [ref=e2364]:
+                      - generic "Karrie" [ref=e2367]:
+                        - img "Karrie" [ref=e2368]
+                      - link "Karrie" [ref=e2370] [cursor=pointer]:
+                        - /url: /wiki/Karrie
+                    - text: •
+                    - generic [ref=e2371]:
+                      - generic "Kimmy" [ref=e2374]:
+                        - img "Kimmy" [ref=e2375]
+                      - link "Kimmy" [ref=e2377] [cursor=pointer]:
+                        - /url: /wiki/Kimmy
+                    - text: •
+                    - generic [ref=e2378]:
+                      - generic "Layla" [ref=e2381]:
+                        - img "Layla" [ref=e2382]
+                      - link "Layla" [ref=e2384] [cursor=pointer]:
+                        - /url: /wiki/Layla
+                    - text: •
+                    - generic [ref=e2385]:
+                      - generic "Lesley" [ref=e2388]:
+                        - img "Lesley" [ref=e2389]
+                      - link "Lesley" [ref=e2391] [cursor=pointer]:
+                        - /url: /wiki/Lesley
+                    - text: •
+                    - generic [ref=e2392]:
+                      - generic "Melissa" [ref=e2395]:
+                        - img "Melissa" [ref=e2396]
+                      - link "Melissa" [ref=e2398] [cursor=pointer]:
+                        - /url: /wiki/Melissa
+                    - text: •
+                    - generic [ref=e2399]:
+                      - generic "Miya" [ref=e2402]:
+                        - img "Miya" [ref=e2403]
+                      - strong [ref=e2405]: Miya
+                    - text: •
+                    - generic [ref=e2406]:
+                      - generic "Moskov" [ref=e2409]:
+                        - img "Moskov" [ref=e2410]
+                      - link "Moskov" [ref=e2412] [cursor=pointer]:
+                        - /url: /wiki/Moskov
+                    - text: •
+                    - generic [ref=e2413]:
+                      - generic "Natan" [ref=e2416]:
+                        - img "Natan" [ref=e2417]
+                      - link "Natan" [ref=e2419] [cursor=pointer]:
+                        - /url: /wiki/Natan
+                    - text: •
+                    - generic [ref=e2420]:
+                      - generic "Obsidia" [ref=e2423]:
+                        - img "Obsidia" [ref=e2424]
+                      - link "Obsidia" [ref=e2426] [cursor=pointer]:
+                        - /url: /wiki/Obsidia
+                    - text: •
+                    - generic [ref=e2427]:
+                      - generic "Popol and Kupa" [ref=e2430]:
+                        - img "Popol and Kupa" [ref=e2431]
+                      - link "Popol and Kupa" [ref=e2433] [cursor=pointer]:
+                        - /url: /wiki/Popol_and_Kupa
+                    - text: •
+                    - generic [ref=e2434]:
+                      - generic "Roger" [ref=e2437]:
+                        - img "Roger" [ref=e2438]
+                      - link "Roger" [ref=e2440] [cursor=pointer]:
+                        - /url: /wiki/Roger
+                    - text: •
+                    - generic [ref=e2441]:
+                      - generic "Wanwan" [ref=e2444]:
+                        - img "Wanwan" [ref=e2445]
+                      - link "Wanwan" [ref=e2447] [cursor=pointer]:
+                        - /url: /wiki/Wanwan
+                    - text: •
+                    - generic [ref=e2448]:
+                      - generic "Yi Sun-shin" [ref=e2451]:
+                        - img "Yi Sun-shin" [ref=e2452]
+                      - link "Yi Sun-shin" [ref=e2454] [cursor=pointer]:
+                        - /url: /wiki/Yi_Sun-shin
+                - row "Support Icon Support Angela Angela • Carmilla Carmilla • Chip Chip • Diggie Diggie • Estes Estes • Faramis Faramis • Floryn Floryn • Johnson Johnson • Kaja Kaja • Kalea Kalea • Lolita Lolita • Marcel Marcel • Mathilda Mathilda • Minotaur Minotaur • Rafaela Rafaela" [ref=e2455]:
+                  - cell "Support Icon Support" [ref=e2456]:
+                    - link "Support Icon" [ref=e2458] [cursor=pointer]:
+                      - /url: /wiki/Support_(role)
+                      - img "Support Icon" [ref=e2459]
+                    - link "Support" [ref=e2460] [cursor=pointer]:
+                      - /url: /wiki/Support
+                  - cell "Angela Angela • Carmilla Carmilla • Chip Chip • Diggie Diggie • Estes Estes • Faramis Faramis • Floryn Floryn • Johnson Johnson • Kaja Kaja • Kalea Kalea • Lolita Lolita • Marcel Marcel • Mathilda Mathilda • Minotaur Minotaur • Rafaela Rafaela" [ref=e2461]:
+                    - generic [ref=e2462]:
+                      - generic "Angela" [ref=e2465]:
+                        - img "Angela" [ref=e2466]
+                      - link "Angela" [ref=e2468] [cursor=pointer]:
+                        - /url: /wiki/Angela
+                    - text: •
+                    - generic [ref=e2469]:
+                      - generic "Carmilla" [ref=e2472]:
+                        - img "Carmilla" [ref=e2473]
+                      - link "Carmilla" [ref=e2475] [cursor=pointer]:
+                        - /url: /wiki/Carmilla
+                    - text: •
+                    - generic [ref=e2476]:
+                      - generic "Chip" [ref=e2479]:
+                        - img "Chip" [ref=e2480]
+                      - link "Chip" [ref=e2482] [cursor=pointer]:
+                        - /url: /wiki/Chip
+                    - text: •
+                    - generic [ref=e2483]:
+                      - generic "Diggie" [ref=e2486]:
+                        - img "Diggie" [ref=e2487]
+                      - link "Diggie" [ref=e2489] [cursor=pointer]:
+                        - /url: /wiki/Diggie
+                    - text: •
+                    - generic [ref=e2490]:
+                      - generic "Estes" [ref=e2493]:
+                        - img "Estes" [ref=e2494]
+                      - link "Estes" [ref=e2496] [cursor=pointer]:
+                        - /url: /wiki/Estes
+                    - text: •
+                    - generic [ref=e2497]:
+                      - generic "Faramis" [ref=e2500]:
+                        - img "Faramis" [ref=e2501]
+                      - link "Faramis" [ref=e2503] [cursor=pointer]:
+                        - /url: /wiki/Faramis
+                    - text: •
+                    - generic [ref=e2504]:
+                      - generic "Floryn" [ref=e2507]:
+                        - img "Floryn" [ref=e2508]
+                      - link "Floryn" [ref=e2510] [cursor=pointer]:
+                        - /url: /wiki/Floryn
+                    - text: •
+                    - generic [ref=e2511]:
+                      - generic "Johnson" [ref=e2514]:
+                        - img "Johnson" [ref=e2515]
+                      - link "Johnson" [ref=e2517] [cursor=pointer]:
+                        - /url: /wiki/Johnson
+                    - text: •
+                    - generic [ref=e2518]:
+                      - generic "Kaja" [ref=e2521]:
+                        - img "Kaja" [ref=e2522]
+                      - link "Kaja" [ref=e2524] [cursor=pointer]:
+                        - /url: /wiki/Kaja
+                    - text: •
+                    - generic [ref=e2525]:
+                      - generic "Kalea" [ref=e2528]:
+                        - img "Kalea" [ref=e2529]
+                      - link "Kalea" [ref=e2531] [cursor=pointer]:
+                        - /url: /wiki/Kalea
+                    - text: •
+                    - generic [ref=e2532]:
+                      - generic "Lolita" [ref=e2535]:
+                        - img "Lolita" [ref=e2536]
+                      - link "Lolita" [ref=e2538] [cursor=pointer]:
+                        - /url: /wiki/Lolita
+                    - text: •
+                    - generic [ref=e2539]:
+                      - generic "Marcel" [ref=e2542]:
+                        - img "Marcel" [ref=e2543]
+                      - link "Marcel" [ref=e2545] [cursor=pointer]:
+                        - /url: /wiki/Marcel
+                    - text: •
+                    - generic [ref=e2546]:
+                      - generic "Mathilda" [ref=e2549]:
+                        - img "Mathilda" [ref=e2550]
+                      - link "Mathilda" [ref=e2552] [cursor=pointer]:
+                        - /url: /wiki/Mathilda
+                    - text: •
+                    - generic [ref=e2553]:
+                      - generic "Minotaur" [ref=e2556]:
+                        - img "Minotaur" [ref=e2557]
+                      - link "Minotaur" [ref=e2559] [cursor=pointer]:
+                        - /url: /wiki/Minotaur
+                    - text: •
+                    - generic [ref=e2560]:
+                      - generic "Rafaela" [ref=e2563]:
+                        - img "Rafaela" [ref=e2564]
+                      - link "Rafaela" [ref=e2566] [cursor=pointer]:
+                        - /url: /wiki/Rafaela
+          - generic [ref=e2567]:
+            - generic "Toggle Categories" [ref=e2568]:
+              - generic [ref=e2569] [cursor=pointer]:
+                - text: Categories
+                - img [ref=e2570]
+            - generic [ref=e2572]:
+              - text: Community content is available under
+              - link "CC-BY-SA" [ref=e2573] [cursor=pointer]:
+                - /url: https://www.fandom.com/licensing
+              - text: unless otherwise noted.
+            - generic [ref=e2575]:
+              - generic [ref=e2576]: More Fandoms
+              - list [ref=e2578]:
+                - listitem [ref=e2579]:
+                  - link "Fantasy" [ref=e2580] [cursor=pointer]:
+                    - /url: https://www.fandom.com/fancentral/fantasy
+        - complementary [ref=e2581]:
+          - generic [ref=e2582]:
+            - generic [ref=e2584]:
+              - iframe [ref=e2587]:
+                - link [ref=f110e2] [cursor=pointer]:
+                  - /url: https://googleads.g.doubleclick.net/pcs/click?xai=AKAOjsvmxFLwIvJgFitWvL2PX5U0deB5a_YHUidejOxf2A3kKlsetVm_QzRewfGJgovQOqMrgd5bknQTVh9maFzAIuDOTpmRnYsXAmr9gIDQHvkf2lZkFlFPLLbgbHezuMQrSyPYQRGggzV-jAxdKa-EJsuZovy3KozjST90g4Ra0zovHNVJOAPPFjcbt_vq8fJHb5uw7cQLJccFAVFyq37TsKe1uAEVpi_-S2S468_3tiBjNq3MuxjtF3DRPS_Eeq8YJe4nPPFMf4002_cuyC-Pjudz24VqB_-Gwft_W1pHk-7P18haqoPL9ASinHoVsovGOArFPuLXQIDVW8fCeBQJA22hp1CIGlbt0mlp6FpYioxCGqw-X7wDSoeQJq1liCs5eSNwekEYLfIrXXPkVEQ6BIhrNP-FgfuEaMlfBtnpN-dv1Kwb3QDxx_ARVMgLL0--77idGhE10xrDTcReFcTjtJ4L-DLbWVc&sai=AMfl-YQ_ZWAIwVvuVRAbxKXT2P965QKQbvzF3LOwCuTwBg5rPzbSnollqoCMG7IrXfZRJnNttotMDpbEYCkfaVmV_pr9dtRhGWnd10ln6eInjlcAiDFC1iSMiovd30zerWOmQHXRunwc_8o0npyY-4af9XrfIdEYLiia6Uyki8p5kC2gxyKNa4jm5lmlIUrkNu0NO88gH6LVi6nqFO6lfUfn46bNiHO5ujkVcsMGS6J7Z8YJXZ56xIjwBqznekrk7EQk9BCNi7zQ2ATXdxBX0Vc1LO1G2ldtkxVlc96naydE311gK2Pt4Zw6RLhUlMne181PXv4XBwvtKVTe21c_eJs5YanIFmgnr0jgxIvfa_qpqdKI-jVxUNqXF4FbJmn_g290mTVSJXdAPxjlOA&sig=Cg0ArKJSzIiWZEb4Nk9B&fbs_aeid=%5Bgw_fbsaeid%5D&adurl=http://fandom.com
+              - generic [ref=e2588]: Advertisement
+            - generic [ref=e2589]:
+              - iframe [ref=e2592]:
+                - link [ref=f113e2] [cursor=pointer]:
+                  - /url: https://googleads.g.doubleclick.net/pcs/click?xai=AKAOjsveGAFYwN6DNN0-NubprDHjqyef37eRrkcp-K4JRo0MFtCv2WNe0ex-f6WtKYmzitqfAZnc9iDxMeyviX9LHQIYPLtKs_kwNlYY_-vgiNm9eI-E0kTzZgAfOqzSw3spPDc7AJSR2_Hg5LFPN3Mh5NwDURCatM5zKZkUY6cihjpHRNa78ccZFSNzGPXULLLn01_vTcptdm5aflN6PRPihXBBCZWg8xYcy_VpaSRWUDQZmtkg6i_sERbEeAOfhXisE_6s1akbeBHj3Rcr3Yvh0wK8z0LRdReqT91HwNiRHgYgyv03QC3c5AeCO8jmx-LmbODN4WwiwuzPnktfZJ-5XeuC8nvg2vzzhaZH5510BjBbGNbP4zHI_awTS84hx_4CP7NR-EeLVr8W5Jzw5PgaKwr6DlQwcmZwo7KOA5BlKMePBhRFMTslUhUOZ0wCLGxDAw&sai=AMfl-YTXtWuPy69So8NuapQ1kdkGxAAu6UT7AGS-sUBbReQJNQlMqfEG5sLwAM3R3cbSxDLgrVGT7VCg8PhSYL5bILY-UumgFNemwo2_lByyJI8RLw7d-a-Lx2Puta5Q1IC7d2tQQPFmZKSltuQ0nJh1CnnnFNkdDWBkYHCJRiRXWqllPpaO2A-79Q3H8ZOKL0FU3J4TztDJqkkdaHqXkZqfyLBAkNLbEH1yZ6wTsl3NRsbBJiEHIz67BPEWlccvMtzsTg9J1cG5V_bj2KxfNGTB1D1anDGjf_9NoW7F9u0U8gc0yqQMw8JCqgzqKjydJko8ddzRSR1VeNv5OLmCC8W-X-Mjq6FzuvrFnyE63i2-MDi3jNeGAw0D9cPfQt6nTgl-jRducJUA-eh2pQ&sig=Cg0ArKJSzAsuC-1_vzgg&fbs_aeid=%5Bgw_fbsaeid%5D&adurl=http://fandom.com
+              - generic [ref=e2593]: Advertisement
+      - generic [ref=e2594]:
+        - iframe [ref=e2597]:
+          - link [ref=f114e2] [cursor=pointer]:
+            - /url: https://googleads.g.doubleclick.net/pcs/click?xai=AKAOjsup11WXy01Nqi2xTMkI74MoaMLmrKoQdPkOPd_WNtmRO9ubYjb3vuLNRps8vJ09m_v4r43NtfZL6LVwe-dXiv-oRg9WxoBAxhPdfFZUNcQD-9bY2-VBHXkBgKcZflu4oCwaQdV0cxDKPU-u3jsA9cFJpM3V5u7ATGs6GCixxKrzYKnfLXp2O5ErnkTB8YiiXQ_oA-lon2l3xtw8nczIhI581Ywh6olu_bi04pDsaahJm8HDW5rGLiOVqWjpf-Zzd7EvSpVcXYHb_1cP5IrUL9Zqsc43eVu8jZvpIlDkCB8gGMW2wqVJdl6PmNL3V3awVuvT2-KT1NdTK5CTyHs6Jf7bZisfJ-hGgNNMzuGXdXKudw9NffTC2lZ5m2hbExKDG8WON426QV-qnQynOJFrUgmhD1Or0ySGE5x2kSb9posujk61e6Ft_fsUJSxwY5W2OvKNxqQDiBquCA&sai=AMfl-YS2TlARqEeusFj9C06w5uf0KE55Yp9mrGipumxgwxR8WxsXoz7AjxGrE8u-GdnO2qunrsmFEhHjaISLiH4-P3atmsvc142w_KOlF1hYvFP89xhVXTnTFoFuOdKwJe0ncDnQ0fp3c1KnE-mF69AxPzV3DUNxsmOf8jpN7Y9xCgKJaz2unzkxCYNUyMphswt3Z4lP8avvXrJXDJguI5owbpxz8GM1pmKbW77UnSTvwqL4V91DtNXzuUE_-9WBgT_AHbYHNQ89s-YUENona-KmXxlRNpbIfhCdoIbdbMqrchq0U68lT7aBvEOk6sDw5Tx17_O6toUomX8i8ruZYJUaiZzGb82Ci5qQZ9pqKn2dTgMFTWDeM8oJwW1NHq7TfXcNIEq8ftwRAk8qyg&sig=Cg0ArKJSzE_-toGg047B&fbs_aeid=%5Bgw_fbsaeid%5D&adurl=http://fandom.com
+        - generic [ref=e2598]: Advertisement
+    - contentinfo [ref=e2599]:
+      - generic [ref=e2600]:
+        - generic [ref=e2601]:
+          - heading "Fandom homepage" [level=2] [ref=e2602]:
+            - link "Fandom homepage" [ref=e2603] [cursor=pointer]:
+              - /url: https://www.fandom.com/
+              - img "Fandom logo" [ref=e2604]
+          - generic [ref=e2605]:
+            - heading "Explore properties" [level=3] [ref=e2606]
+            - list [ref=e2607]:
+              - listitem [ref=e2608]:
+                - link "Fandom" [ref=e2609] [cursor=pointer]:
+                  - /url: https://www.fandom.com/
+              - listitem [ref=e2610]:
+                - link "Fanatical" [ref=e2611] [cursor=pointer]:
+                  - /url: https://www.fanatical.com/
+              - listitem [ref=e2612]:
+                - link "GameSpot" [ref=e2613] [cursor=pointer]:
+                  - /url: https://www.gamespot.com/
+              - listitem [ref=e2614]:
+                - link "Metacritic" [ref=e2615] [cursor=pointer]:
+                  - /url: https://www.metacritic.com/
+              - listitem [ref=e2616]:
+                - link "TV Guide" [ref=e2617] [cursor=pointer]:
+                  - /url: https://www.tvguide.com/
+              - listitem [ref=e2618]:
+                - link "Honest Entertainment" [ref=e2619] [cursor=pointer]:
+                  - /url: https://www.youtube.com/user/screenjunkies
+          - generic [ref=e2620]:
+            - heading "Follow Us" [level=3] [ref=e2621]
+            - list [ref=e2622]:
+              - listitem [ref=e2623]:
+                - link "Follow Fandom on Facebook" [ref=e2624] [cursor=pointer]:
+                  - /url: https://www.facebook.com/getfandom
+                  - img [ref=e2625]
+              - listitem [ref=e2627]:
+                - link "Follow Fandom on Twitter" [ref=e2628] [cursor=pointer]:
+                  - /url: https://twitter.com/getfandom
+                  - img [ref=e2629]
+              - listitem [ref=e2631]:
+                - link "Follow Fandom on Youtube" [ref=e2632] [cursor=pointer]:
+                  - /url: https://www.youtube.com/fandomentertainment
+                  - img [ref=e2633]
+              - listitem [ref=e2635]:
+                - link "Follow Fandom on Instagram" [ref=e2636] [cursor=pointer]:
+                  - /url: https://www.instagram.com/getfandom/
+                  - img [ref=e2637]
+              - listitem [ref=e2639]:
+                - link "Follow Fandom on LinkedIn" [ref=e2640] [cursor=pointer]:
+                  - /url: https://www.linkedin.com/company/157252
+                  - img [ref=e2641]
+        - generic [ref=e2644]:
+          - heading "Overview" [level=3] [ref=e2645]
+          - list [ref=e2646]:
+            - listitem [ref=e2647]:
+              - link "What is Fandom?" [ref=e2648] [cursor=pointer]:
+                - /url: https://www.fandom.com/what-is-fandom
+            - listitem [ref=e2649]:
+              - link "Essentials" [ref=e2650] [cursor=pointer]:
+                - /url: https://www.fandom.com/essentials
+            - listitem [ref=e2651]:
+              - link "About" [ref=e2652] [cursor=pointer]:
+                - /url: https://www.fandom.com/about
+            - listitem [ref=e2653]:
+              - link "Careers" [ref=e2654] [cursor=pointer]:
+                - /url: https://www.fandom.com/careers
+            - listitem [ref=e2655]:
+              - link "Press" [ref=e2656] [cursor=pointer]:
+                - /url: https://www.fandom.com/press
+            - listitem [ref=e2657]:
+              - link "Contact" [ref=e2658] [cursor=pointer]:
+                - /url: https://www.fandom.com/about#contact
+            - listitem [ref=e2659]:
+              - link "Terms of Use" [ref=e2660] [cursor=pointer]:
+                - /url: https://www.fandom.com/terms-of-use
+            - listitem [ref=e2661]:
+              - link "Privacy Policy" [ref=e2662] [cursor=pointer]:
+                - /url: https://www.fandom.com/privacy-policy
+            - listitem [ref=e2663]:
+              - link "Digital Services Act" [ref=e2664] [cursor=pointer]:
+                - /url: https://www.fandom.com/digital-services-act
+            - listitem [ref=e2665]:
+              - link "Global Sitemap" [ref=e2666] [cursor=pointer]:
+                - /url: //community.fandom.com/Sitemap
+            - listitem [ref=e2667]:
+              - link "Local Sitemap" [ref=e2668] [cursor=pointer]:
+                - /url: /wiki/Local_Sitemap
+            - listitem [ref=e2669]:
+              - button "Cookies Settings" [ref=e2670]
+        - generic [ref=e2671]:
+          - generic [ref=e2672]:
+            - heading "Community" [level=3] [ref=e2673]
+            - list [ref=e2674]:
+              - listitem [ref=e2675]:
+                - link "Community Central" [ref=e2676] [cursor=pointer]:
+                  - /url: //community.fandom.com/wiki/Community_Central
+              - listitem [ref=e2677]:
+                - link "Support" [ref=e2678] [cursor=pointer]:
+                  - /url: https://fandom.zendesk.com/
+              - listitem [ref=e2679]:
+                - link "Help" [ref=e2680] [cursor=pointer]:
+                  - /url: //community.fandom.com/wiki/Help:Contents
+          - generic [ref=e2681]:
+            - heading "Advertise" [level=3] [ref=e2682]
+            - list [ref=e2683]:
+              - listitem [ref=e2684]:
+                - link "Media Kit" [ref=e2685] [cursor=pointer]:
+                  - /url: https://about.fandom.com/mediakit
+              - listitem [ref=e2686]:
+                - link "Contact" [ref=e2687] [cursor=pointer]:
+                  - /url: https://about.fandom.com/mediakit#contact
+        - generic [ref=e2688]:
+          - generic [ref=e2689]:
+            - heading "Fandom Apps" [level=3] [ref=e2690]
+            - text: Take your favorite fandoms with you and never miss a beat.
+          - generic [ref=e2691]:
+            - img "Fandom App logo" [ref=e2692]
+            - list [ref=e2693]:
+              - listitem [ref=e2694]:
+                - link "Fandom's Apple Store" [ref=e2695] [cursor=pointer]:
+                  - /url: https://apps.apple.com/us/app/fandom-videos-news-reviews/id1230063803
+                  - img "Store icon" [ref=e2696]
+              - listitem [ref=e2697]:
+                - link "Fandom's Google Play" [ref=e2698] [cursor=pointer]:
+                  - /url: https://play.google.com/store/apps/details?id=com.fandom.app&referrer=utm_source%3Dwikia%26utm_medium%3Dglobalfooter
+                  - img "Store icon" [ref=e2699]
+      - generic [ref=e2700]:
+        - generic [ref=e2701]: "Mobile Legends: Bang Bang Wiki is a Fandom Games Community."
+        - button "View Mobile Site" [ref=e2703]
+  - generic: Cookies Settings

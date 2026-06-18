@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="../../../shared/css/common.css">
+    <style>
+        .stat-val { color: white; font-size: 24px; text-shadow: 1px 1px 2px black; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div id="val" class="stat-val">0</div>
+    <script src="../../../shared/js/socket.js"></script>
+    <script>
+        window.addEventListener('mlbb_live_data', (e) => {
+            const stats = e.detail.matchData;
+            if (stats) document.getElementById('val').innerText = stats.teamB.towers;
+        });
+    </script>
+</body>
+</html>

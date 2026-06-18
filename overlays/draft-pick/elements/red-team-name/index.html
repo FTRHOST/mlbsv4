@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="../../../shared/css/common.css">
+    <style>
+        .team-section {
+            display: flex;
+            align-items: center;
+            position: relative;
+            width: 473px;
+            height: 72px;
+        }
+        .bg-name { position: absolute; width: 100%; height: 100%; }
+        .str-nama-team {
+            color: #ffffff;
+            text-align: center;
+            font-size: 36px;
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="team-section">
+        <img class="bg-name" src="../../../assets/component/bg-name-red0.svg" />
+        <div id="red-name" class="str-nama-team">RED TEAM</div>
+    </div>
+    <script src="../../../shared/js/socket.js"></script>
+    <script>
+        const el = document.getElementById('red-name');
+        window.addEventListener('mlbb_live_data', (e) => {
+            const t = e.detail.tournament;
+            if (t) { el.innerText = t.red.name || "RED TEAM"; adjustFontSize(el); }
+        });
+    </script>
+</body>
+</html>

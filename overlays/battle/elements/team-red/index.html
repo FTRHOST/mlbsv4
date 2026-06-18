@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="../../../shared/css/common.css">
+    <style>
+        .container { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .name { color: white; font-size: 32px; text-shadow: 2px 2px 4px black; text-transform: uppercase; }
+        .kills { font-size: 64px; color: white; font-weight: bold; text-shadow: 3px 3px 6px black; }
+        .score-dots { display: flex; gap: 8px; flex-direction: row-reverse; }
+        .rect-score { width: 12px; height: 32px; transform: skewX(20deg); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="red-name" class="name">RED TEAM</div>
+        <div id="red-kills" class="kills">0</div>
+        <div id="red-score-dots" class="score-dots"></div>
+    </div>
+
+    <script src="../../../shared/js/socket.js"></script>
+    <script>
+        window.addEventListener('mlbb_live_data', (e) => {
+            const payload = e.detail;
+            const stats = payload.matchData;
+            const tourney = payload.tournament;
+            if (tourney) {
+                document.getElementById('red-name').innerText = payload.currentActiveNames ? payload.currentActiveNames.red : tourney.red.name;
+                const winsNeeded = Math.ceil((parseInt(tourney.red.bo.replace("BO", "")) || 3) / 2);
+                const dots = document.getElementById('red-score-dots');
+                dots.innerHTML = '';
+                for (let i = 0; i < winsNeeded; i++) {
+                    const dot = document.createElement('div');
+                    dot.className = 'rect-score';
+                    dot.style.backgroundColor = i < tourney.red.wins ? '#ef4444' : '#1e293b';
+                    dots.appendChild(dot);
+                }
+            }
+            if (stats) document.getElementById('red-kills').innerText = stats.teamB.kills;
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="../../../shared/css/common.css">
+    <style>
+        .container { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .name { color: white; font-size: 32px; text-shadow: 2px 2px 4px black; text-transform: uppercase; }
+        .kills { font-size: 64px; color: white; font-weight: bold; text-shadow: 3px 3px 6px black; }
+        .score-dots { display: flex; gap: 8px; }
+        .rect-score { width: 12px; height: 32px; transform: skewX(-20deg); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="blue-name" class="name">BLUE TEAM</div>
+        <div id="blue-kills" class="kills">0</div>
+        <div id="blue-score-dots" class="score-dots"></div>
+    </div>
+
+    <script src="../../../shared/js/socket.js"></script>
+    <script>
+        window.addEventListener('mlbb_live_data', (e) => {
+            const payload = e.detail;
+            const stats = payload.matchData;
+            const tourney = payload.tournament;
+            if (tourney) {
+                document.getElementById('blue-name').innerText = payload.currentActiveNames ? payload.currentActiveNames.blue : tourney.blue.name;
+                const winsNeeded = Math.ceil((parseInt(tourney.blue.bo.replace("BO", "")) || 3) / 2);
+                const dots = document.getElementById('blue-score-dots');
+                dots.innerHTML = '';
+                for (let i = 0; i < winsNeeded; i++) {
+                    const dot = document.createElement('div');
+                    dot.className = 'rect-score';
+                    dot.style.backgroundColor = i < tourney.blue.wins ? '#22d3ee' : '#1e293b';
+                    dots.appendChild(dot);
+                }
+            }
+            if (stats) document.getElementById('blue-kills').innerText = stats.teamA.kills;
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="../../../shared/css/common.css">
+    <style>
+        .stats-values {
+            display: flex;
+            gap: 25px;
+            color: white;
+            font-size: 24px;
+            text-shadow: 1px 1px 2px black;
+        }
+        .val-item { min-width: 40px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="stats-values">
+        <div id="red-gold" class="val-item">0.00 k</div>
+        <div id="red-tower" class="val-item">0</div>
+        <div id="red-lord" class="val-item">0</div>
+        <div id="red-turtle" class="val-item">0</div>
+    </div>
+
+    <script src="../../../shared/js/socket.js"></script>
+    <script>
+        const formatGold = (gold) => (gold / 1000).toFixed(2) + ' k';
+        window.addEventListener('mlbb_live_data', (e) => {
+            const stats = e.detail.matchData;
+            if (stats) {
+                document.getElementById('red-gold').innerText = formatGold(stats.teamB.gold);
+                document.getElementById('red-tower').innerText = stats.teamB.towers;
+                document.getElementById('red-lord').innerText = stats.teamB.lords;
+                document.getElementById('red-turtle').innerText = stats.teamB.turtles;
+            }
+        });
+    </script>
+</body>
+</html>

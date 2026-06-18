@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="../../../shared/css/common.css">
+    <style> .score-dots { display: flex; gap: 5px; } </style>
+</head>
+<body>
+    <div id="red-dots" class="score-dots"></div>
+    <script src="../../../shared/js/socket.js"></script>
+    <script>
+        const container = document.getElementById('red-dots');
+        window.addEventListener('mlbb_live_data', (e) => {
+            const t = e.detail.tournament;
+            if (t) {
+                const total = Math.ceil((parseInt(t.red.bo.replace("BO", "")) || 3) / 2);
+                container.innerHTML = '';
+                for (let i = 0; i < total; i++) {
+                    const dot = document.createElement('span');
+                    dot.className = 'dot' + (i < t.red.wins ? ' won' : '');
+                    container.appendChild(dot);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

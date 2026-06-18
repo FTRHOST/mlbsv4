@@ -1,0 +1,35 @@
+[  -30430ms] [ERROR] Attestation check for Shared Storage on https://www.googleadservices.com failed. @ https://www.googleadservices.com/pagead/managed/js/activeview/current/reach_worklet.html:0
+[  -30275ms] [ERROR] Attestation check for Shared Storage on https://www.googleadservices.com failed. @ https://www.googleadservices.com/pagead/managed/js/activeview/current/reach_worklet.html:0
+[  -28388ms] [ERROR] Attestation check for Shared Storage on https://www.googleadservices.com failed. @ https://www.googleadservices.com/pagead/managed/js/activeview/current/reach_worklet.html:0
+[  -28312ms] [ERROR] Attestation check for Shared Storage on https://www.googleadservices.com failed. @ https://www.googleadservices.com/pagead/managed/js/activeview/current/reach_worklet.html:0
+[     815ms] [LOG] Error in fetch URL : https://cdn.cookielaw.org/consent/dea70a1b-c82d-4fe0-86ff-5e164b0a6022/019e8d6f-87d7-789b-a1be-154538564ce0/en.json Exception :TypeError: Failed to fetch @ https://cdn.cookielaw.org/scripttemplates/202510.1.0/otBannerSdk.js:6
+[    1368ms] [INFO] exp_bucket cookie is not set or has an invalid value. DTNR observability will not be initialized. @ https://mobile-legends.fandom.com/__cb4762987340393519/resources-ucp/mw143/dist/scripts/dtnr-observability.js:0
+[    2224ms] [WARNING] This page is using the deprecated ResourceLoader module "skin.fandomdesktop.styles".
+[1.43] The use of the `interface-message-box` feature with SkinModule is deprecated in favor of CodexModule. Please remove this feature.More information can be found at [[mw:Manual:ResourceLoaderSkinModule]].  @ https://mobile-legends.fandom.com/wiki/List_of_heroes:7523
+[    4093ms] [WARNING] [GPT] PubAdsService.setTargeting is deprecated, use googletag.setConfig({targeting: ...}) instead.
+https://goo.gle/gpt-message#170 @ https://securepubads.g.doubleclick.net/pagead/managed/js/gpt/m202606110101/pubads_impl.js:18
+[    4606ms] [WARNING] [GPT] Slot.clearTargeting is deprecated, use Slot.setConfig({targeting: ...}) instead.
+https://goo.gle/gpt-message#171 @ https://securepubads.g.doubleclick.net/pagead/managed/js/gpt/m202606110101/pubads_impl.js:18
+[    6197ms] [LOG] PLSUB init called 17816038569227368 @ https://cdn-gl.imrworldwide.com/novms/js/2/nlsSDK600.bundle.min.js:5
+[   24179ms] [ERROR] Attestation check for Shared Storage on https://www.googleadservices.com failed. @ https://www.googleadservices.com/pagead/managed/js/activeview/current/reach_worklet.html:0
+[   24295ms] [ERROR] Attestation check for Shared Storage on https://www.googleadservices.com failed. @ https://www.googleadservices.com/pagead/managed/js/activeview/current/reach_worklet.html:0
+[   24305ms] [ERROR] %cSilverSurfer | 24.2846s | Cross domain timeout background-color: silver;;padding: 2px 4px;border-radius: 2px;color: #300 @ https://static.wikia.nocookie.net/silversurfer/prod/latest/sdk.js:0
+[   24179ms] [ERROR] Attestation check for Shared Storage on https://www.googleadservices.com failed. @ https://www.googleadservices.com/pagead/managed/js/activeview/current/reach_worklet.html:0
+[   24295ms] [ERROR] Attestation check for Shared Storage on https://www.googleadservices.com failed. @ https://www.googleadservices.com/pagead/managed/js/activeview/current/reach_worklet.html:0
+[   25790ms] [ERROR] Attestation check for Shared Storage on https://www.googleadservices.com failed. @ https://www.googleadservices.com/pagead/managed/js/activeview/current/reach_worklet.html:0
+[   27766ms] [LOG] %cPathfinder | 27.7396s | Rendered modules color: #fff;padding: 2px 4px;border-radius: 2px;background-color: #334 [marketing-notifications] @ https://static.wikia.nocookie.net/silversurfer/prod/latest/pathfinder.js:0
+[   27789ms] [LOG] PHQ=false @ https://static.wikia.nocookie.net/silversurfer/prod/latest/pathfinder.js:0
+[   27946ms] [ERROR] Attestation check for Shared Storage on https://www.googleadservices.com failed. @ https://www.googleadservices.com/pagead/managed/js/activeview/current/reach_worklet.html:0
+[   31427ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://services.fandom.com/galactus-user-profile/profiles/k1bV6gbdlQ:0
+[   32630ms] [WARNING] This page is using the deprecated ResourceLoader module "mediawiki.Uri".
+[1.43] Please use browser native URL. See https://www.mediawiki.org/wiki/Migrating_mw.Uri_to_URL @ https://mobile-legends.fandom.com/load.php?cb=20260312081556&lang=en&modules=startup&only=scripts&raw=1&skin=fandomdesktop:0
+[   32902ms] [ERROR] Parse error: Unexpected } on line 5 @ https://mobile-legends.fandom.com/load.php?lang=en&modules=ext.fandom.site&skin=fandomdesktop&version=l0en9:0
+[   33296ms] [WARNING] Use of "mw.RegExp.escape" is deprecated. Use mw.util.escapeRegExp() instead. @ https://mobile-legends.fandom.com/load.php?lang=en&modules=mediawiki.base&skin=fandomdesktop&version=1mqfb:1
+[   39245ms] [WARNING] This page is using the deprecated ResourceLoader module "jquery.ui".
+Please use Codex instead. @ https://mobile-legends.fandom.com/load.php?cb=20260312081556&lang=en&modules=startup&only=scripts&raw=1&skin=fandomdesktop:0
+[   42832ms] [LOG] Nielsen Log: Info - Max retry reached for sending sync ping: https://loadus.exelator.com/getid?p=1480&g=1&j=0&asid=P26086A07-C7FB-4124-A679-8AC404198BA7 @ https://cdn-gl.imrworldwide.com/novms/html/ls.html:139
+[   55076ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://mobile-legends.fandom.com/wiki/JWPlayer.js:0
+[   58856ms] [WARNING] The resource https://services.fandom.com/icbm/api/config?app=fandomdesktop&compact=true was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://mobile-legends.fandom.com/wiki/List_of_heroes:0
+[   58857ms] [WARNING] The resource https://services.fandom.com/icbm/api/config?app=fandomnoads&compact=true was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://mobile-legends.fandom.com/wiki/List_of_heroes:0
+[   64391ms] [WARNING] The resource https://services.fandom.com/icbm/api/config?app=fandomdesktop&compact=true was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://mobile-legends.fandom.com/wiki/List_of_heroes:0
+[   64391ms] [WARNING] The resource https://services.fandom.com/icbm/api/config?app=fandomnoads&compact=true was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://mobile-legends.fandom.com/wiki/List_of_heroes:0

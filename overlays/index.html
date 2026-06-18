@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MLBB Overlay Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs/loader.min.js"></script>
+    <style>
+        :root { --primary: #FFD700; --bg: #0f0f0f; --card-bg: #1a1a1a; --text: #eee; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 40px; }
+        h1 { font-family: 'Lilita One', cursive; color: var(--primary); margin: 0; font-size: 2.5rem; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        
+        .search-input { width: 100%; max-width: 400px; padding: 10px 18px; border-radius: 20px; border: 1px solid #333; background: #1a1a1a; color: #fff; outline: none; }
+        .search-input:focus { border-color: var(--primary); }
+
+        .category { margin-bottom: 40px; }
+        .category-title { font-family: 'Lilita One'; font-size: 1.4rem; color: var(--primary); margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; border-left: 4px solid var(--primary); padding-left: 12px; }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+        .card { background: var(--card-bg); padding: 12px 16px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; position: relative; transition: transform 0.1s; }
+        .card:hover { background: #222; }
+        .info { overflow: hidden; margin-right: 10px; }
+        .name { font-weight: 600; font-size: 0.95rem; text-transform: capitalize; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        /* Dropdown Menu */
+        .menu-container { position: relative; }
+        .btn-dots { background: none; border: none; color: #888; font-size: 1.5rem; cursor: pointer; padding: 5px 10px; line-height: 1; border-radius: 4px; }
+        .btn-dots:hover { color: #fff; background: #333; }
+        
+        .dropdown { position: absolute; right: 0; top: 100%; background: #252525; border: 1px solid #333; border-radius: 6px; width: 140px; display: none; flex-direction: column; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+        .dropdown.show { display: flex; }
+        .dropdown-item { padding: 10px 15px; font-size: 0.85rem; color: #ccc; cursor: pointer; text-align: left; background: none; border: none; width: 100%; }
+        .dropdown-item:hover { background: #333; color: #fff; }
+        .dropdown-item.delete { color: #ff4444; border-top: 1px solid #333; }
+        .dropdown-item.delete:hover { background: #441111; }
+
+        /* General Buttons */
+        .btn-add { background: var(--primary); color: #000; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        
+        /* Modal & Editor */
+        #editor-modal, #create-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; z-index: 1000; align-items: center; justify-content: center; }
+        #editor-modal { flex-direction: column; }
+        .modal-content { background: #1e1e1e; padding: 25px; border-radius: 12px; width: 400px; border: 1px solid #333; }
+        #monaco-container { flex-grow: 1; width: 100%; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 15px; background: #1e1e1e; width: 100%; box-sizing: border-box; }
+        .btn-save { background: #4CAF50; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+        .btn-cancel { background: #444; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+
+        #toast { position: fixed; bottom: 20px; right: 20px; background: #4CAF50; color: white; padding: 10px 20px; border-radius: 5px; display: none; z-index: 2000; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Overlays</h1>
+            <button class="btn-add" onclick="openCreateModal()">+ Elemen</button>
+        </div>
+        
+        <div style="margin-bottom: 30px;">
+            <input type="text" class="search-input" placeholder="Cari elemen..." oninput="filterOverlays(this.value)">
+        </div>
+
+        <div id="categories-container"></div>
+    </div>
+
+    <!-- Modal Create -->
+    <div id="create-modal">
+        <div class="modal-content">
+            <h2 style="margin-top:0; font-family:'Lilita One'; color:var(--primary);">Tambah Elemen</h2>
+            <div style="margin-bottom:15px;">
+                <label style="display:block; margin-bottom:5px; font-size:0.8rem;">Kategori</label>
+                <select id="new-category" style="width:100%; padding:10px; background:#2a2a2a; color:#fff; border:1px solid #444; border-radius:4px;">
+                    <option value="battle">Battle</option>
+                    <option value="draft-pick">Draft Pick</option>
+                    <option value="next-match">Next Match</option>
+                    <option value="victory">Victory</option>
+                </select>
+            </div>
+            <div style="margin-bottom:20px;">
+                <label style="display:block; margin-bottom:5px; font-size:0.8rem;">Nama Elemen</label>
+                <input type="text" id="new-name" placeholder="Misal: Blue Gold" style="width:100%; padding:10px; background:#2a2a2a; color:#fff; border:1px solid #444; border-radius:4px;">
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:10px;">
+                <button class="btn-cancel" onclick="closeCreateModal()">Batal</button>
+                <button class="btn-save" onclick="createOverlay()">Buat</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Rename -->
+    <div id="rename-modal" style="position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; z-index: 1000; align-items: center; justify-content: center;">
+        <div class="modal-content">
+            <h2 style="margin-top:0; font-family:'Lilita One'; color:var(--primary);">Ubah Nama</h2>
+            <div style="margin-bottom:20px;">
+                <label style="display:block; margin-bottom:5px; font-size:0.8rem;">Nama Baru:</label>
+                <input type="text" id="rename-input" style="width:100%; padding:10px; background:#2a2a2a; color:#fff; border:1px solid #444; border-radius:4px;">
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:10px;">
+                <button class="btn-cancel" onclick="closeRenameModal()">Batal</button>
+                <button class="btn-save" onclick="renameOverlay()">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Editor -->
+    <div id="editor-modal">
+        <div style="width:100%; background:#1e1e1e; padding:15px 20px; border-bottom:1px solid #333; display:flex; justify-content:space-between;">
+            <div id="editing-filename" style="color:var(--primary); font-weight:600;">index.html</div>
+            <div style="color:#666;">Live Editor</div>
+        </div>
+        <div id="monaco-container"></div>
+        <div class="modal-footer">
+            <button class="btn-cancel" onclick="closeEditor()">Batal</button>
+            <button class="btn-save" onclick="saveFile()">Simpan</button>
+        </div>
+    </div>
+
+    <div id="toast">Berhasil!</div>
+
+    <script>
+        let allOverlays = [];
+        let currentEditingPath = "";
+        let editor;
+
+        require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs' }});
+        require(['vs/editor/editor.main'], function() {
+            editor = monaco.editor.create(document.getElementById('monaco-container'), {
+                value: "", language: 'html', theme: 'vs-dark', automaticLayout: true
+            });
+        });
+
+        async function fetchOverlays() {
+            const res = await fetch('/api/overlays');
+            allOverlays = await res.json();
+            renderOverlays(allOverlays);
+        }
+
+        function renderOverlays(overlays) {
+            const container = document.getElementById('categories-container');
+            container.innerHTML = "";
+            const grouped = overlays.reduce((acc, item) => {
+                const root = item.path.split('/')[1] || 'other';
+                if (!acc[root]) acc[root] = [];
+                acc[root].push(item);
+                return acc;
+            }, {});
+
+            for (const cat in grouped) {
+                const sec = document.createElement('div');
+                sec.className = 'category';
+                sec.innerHTML = `<div class="category-title">${cat.replace(/-/g, ' ')}</div><div class="grid"></div>`;
+                const grid = sec.querySelector('.grid');
+                grouped[cat].forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.innerHTML = `
+                        <div class="info"><div class="name">${item.name.replace(/-/g, ' ')}</div></div>
+                        <div class="menu-container">
+                            <button class="btn-dots" onclick="toggleDropdown(event, this)">⋮</button>
+                            <div class="dropdown">
+                                <div class="dropdown-item" onclick="openUrl('/${item.path}')">Buka</div>
+                                <div class="dropdown-item" onclick="openEditor('${item.path}')">Edit Kode</div>
+                                <div class="dropdown-item" onclick="openRenameModal('${item.path}', '${item.name}')">Ubah Nama</div>
+                                <div class="dropdown-item" onclick="copyLink('${item.path}')">Salin Link</div>
+                                <div class="dropdown-item delete" onclick="deleteOverlay('${item.path}')">Hapus</div>
+                            </div>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+                container.appendChild(sec);
+            }
+        }
+
+        function toggleDropdown(e, btn) {
+            e.stopPropagation();
+            document.querySelectorAll('.dropdown').forEach(d => {
+                if (d !== btn.nextElementSibling) d.classList.remove('show');
+            });
+            btn.nextElementSibling.classList.toggle('show');
+        }
+
+        window.onclick = () => document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('show'));
+
+        function openUrl(url) { window.open(url, '_blank'); }
+        function openCreateModal() { document.getElementById('create-modal').style.display = 'flex'; }
+        function closeCreateModal() { document.getElementById('create-modal').style.display = 'none'; }
+
+        function openRenameModal(path, oldName) {
+            currentEditingPath = path;
+            document.getElementById('rename-input').value = oldName.replace(/-/g, ' ');
+            document.getElementById('rename-modal').style.display = 'flex';
+        }
+
+        function closeRenameModal() {
+            document.getElementById('rename-modal').style.display = 'none';
+        }
+
+        async function renameOverlay() {
+            const newName = document.getElementById('rename-input').value;
+            if (!newName) return;
+            const res = await fetch('/api/rename-overlay', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: currentEditingPath, newName })
+            });
+            if (res.ok) { showToast("Berhasil Diubah!"); closeRenameModal(); fetchOverlays(); }
+            else { const err = await res.json(); alert(err.error); }
+        }
+
+        async function createOverlay() {
+            const category = document.getElementById('new-category').value;
+            const name = document.getElementById('new-name').value;
+            if (!name) return;
+            const res = await fetch('/api/create-overlay', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ category, name })
+            });
+            if (res.ok) { showToast("Dibuat!"); closeCreateModal(); fetchOverlays(); }
+        }
+
+        async function deleteOverlay(path) {
+            if (!confirm("Hapus elemen ini selamanya?")) return;
+            const res = await fetch('/api/delete-overlay', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path })
+            });
+            if (res.ok) { showToast("Dihapus!"); fetchOverlays(); }
+        }
+
+        async function openEditor(path) {
+            currentEditingPath = path;
+            document.getElementById('editing-filename').innerText = path;
+            const res = await fetch(`/api/get-file?path=${path}`);
+            editor.setValue(await res.text());
+            document.getElementById('editor-modal').style.display = 'flex';
+        }
+
+        function closeEditor() { document.getElementById('editor-modal').style.display = 'none'; }
+
+        async function saveFile() {
+            const res = await fetch('/api/save-file', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: currentEditingPath, content: editor.getValue() })
+            });
+            if (res.ok) { showToast("Tersimpan!"); closeEditor(); }
+        }
+
+        function copyLink(path) {
+            navigator.clipboard.writeText(window.location.origin + "/" + path);
+            showToast("Link Disalin!");
+        }
+
+        function showToast(m) {
+            const t = document.getElementById('toast');
+            t.innerText = m; t.style.display = 'block';
+            setTimeout(() => t.style.display = 'none', 2000);
+        }
+
+        function filterOverlays(q) {
+            const filtered = allOverlays.filter(i => i.name.toLowerCase().includes(q.toLowerCase()));
+            renderOverlays(filtered);
+        }
+
+        fetchOverlays();
+    </script>
+</body>
+</html>

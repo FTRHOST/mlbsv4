@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="../../../shared/css/common.css">
+    <style>
+        .timer-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .phase-section {
+            position: relative;
+            width: 477px;
+            height: 54px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .bg-phase-draft-title {
+            background: linear-gradient(89.95deg, rgba(0, 0, 0, 0) 0%, rgba(0, 83, 199, 1) 33.17%, rgba(0, 83, 199, 1) 52.88%, rgba(0, 0, 0, 0) 100%);
+            width: 100%;
+            height: 100%;
+            position: absolute;
+        }
+        .draft-phase {
+            color: #ffffff;
+            font-size: 36px;
+            position: relative;
+            z-index: 1;
+        }
+        .timer-section {
+            position: relative;
+            width: 589px;
+            height: 150px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .bg-time-draft {
+            background: linear-gradient(89.95deg, rgba(0, 0, 0, 0) 0%, rgba(0, 83, 199, 1) 42.62%, rgba(0, 0, 0, 0) 100%);
+            width: 100%;
+            height: 100%;
+            position: absolute;
+        }
+        .draft-timer {
+            color: #ffffff;
+            font-size: 128px;
+            position: relative;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="timer-container">
+        <!-- Timer -->
+        <div class="timer-section">
+            <div class="bg-time-draft"></div>
+            <div class="draft-timer">30</div>
+        </div>
+        <!-- Phase -->
+        <div class="phase-section">
+            <div class="bg-phase-draft-title"></div>
+            <div class="draft-phase">BANNING</div>
+        </div>
+    </div>
+
+    <script src="../../../shared/js/socket.js"></script>
+    <script>
+        const timerEl = document.querySelector('.draft-timer');
+        const phaseTextEl = document.querySelector('.draft-phase');
+
+        window.addEventListener('mlbb_live_data', (e) => {
+            const payload = e.detail;
+            timerEl.innerText = payload.draftTimer || "0";
+            phaseTextEl.innerText = (payload.draftPhase || "IDLE").replace("BLUE ", "").replace("RED ", "");
+        });
+    </script>
+</body>
+</html>
