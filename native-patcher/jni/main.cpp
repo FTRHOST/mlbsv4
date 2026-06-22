@@ -77,7 +77,7 @@ __attribute__((used)) void __force_stl_linking_dummy() {
 namespace std {
     inline namespace __ndk1 {
         __attribute__((visibility("default"))) __attribute__((noreturn))
-        void __libcpp_verbose_abort(const char* format, ...) {
+        void __libcpp_verbose_abort(const char* format, ...) noexcept {
             abort();
         }
     }
