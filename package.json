@@ -18,7 +18,7 @@
   "author": "petwir",
   "license": "ISC",
   "devDependencies": {
-    "frida-compile": "^16.4.3"
+    "frida-compile": "^19.0.5"
   },
   "dependencies": {
     "cors": "^2.8.5",
