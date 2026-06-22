@@ -19,7 +19,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
       - name: Install Node Dependencies
         run: npm install
@@ -47,7 +47,7 @@ jobs:
       - name: Build Native Patch (NDK)
         run: |
           cd native-patcher
-          ndk-build -C jni
+          ./build.sh --all
 
       - name: Build and Sign OTA Files
         run: |
