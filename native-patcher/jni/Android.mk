@@ -10,7 +10,7 @@ include $(PREBUILT_STATIC_LIBRARY)
 include $(CLEAR_VARS)
 LOCAL_MODULE := frida-gumjs
 LOCAL_WHOLE_STATIC_LIBRARIES := frida-gumjs-static
-LOCAL_LDLIBS := -llog -landroid -lz -lm -ldl -lc++_shared
+LOCAL_LDLIBS := -llog -landroid -lz -lm -ldl -lc++_static
 include $(BUILD_SHARED_LIBRARY)
 
 # 3. Build our shared library (libmypatch.so)
