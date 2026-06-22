@@ -1,0 +1,74 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install Node Dependencies
+        run: npm install
+
+      - name: Set up NDK
+        uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r25c
+          add-to-path: true
+
+      - name: Setup Secrets
+        run: |
+          mkdir -p keys
+          echo "${{ secrets.PRIVATE_KEY }}" > keys/private_key.pem
+          echo "${{ secrets.PUBLIC_KEY }}" > keys/public_key.der
+          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" > firebase_service_account.json
+
+      - name: Build JS Hook & Encrypt
+        run: |
+          npm run build
+          cd native-patcher
+          python3 encrypt.py
+
+      - name: Build Native Patch (NDK)
+        run: |
+          cd native-patcher
+          ndk-build -C jni
+
+      - name: Build and Sign OTA Files
+        run: |
+          npm run sign-ota
+          npm run sign-lib
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: built-binaries
+          path: |
+            public/
+            native-patcher/libs/
+
+      - name: Deploy to Vercel
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          npm install -g vercel
+          vercel pull --yes --environment=production --token=$VERCEL_TOKEN
+          vercel build --prod --token=$VERCEL_TOKEN
+          vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN
