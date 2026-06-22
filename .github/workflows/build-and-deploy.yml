@@ -32,11 +32,15 @@ jobs:
           add-to-path: true
 
       - name: Setup Secrets
+        env:
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          PUBLIC_KEY: ${{ secrets.PUBLIC_KEY }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
           mkdir -p keys
-          echo "${{ secrets.PRIVATE_KEY }}" > keys/private_key.pem
-          echo "${{ secrets.PUBLIC_KEY }}" > keys/public_key.der
-          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" > firebase_service_account.json
+          echo "$PRIVATE_KEY" > keys/private_key.pem
+          echo "$PUBLIC_KEY" > keys/public_key.der
+          echo "$FIREBASE_SERVICE_ACCOUNT" > firebase_service_account.json
 
       - name: Build JS Hook & Encrypt
         run: |
