@@ -157,6 +157,24 @@ std::string download_url(JNIEnv *env, const std::string &url_str, int timeout_ms
     if (set_read_timeout) env->CallVoidMethod(conn_obj, set_read_timeout, timeout_ms);
     check_and_clear_exceptions(env);
     
+    jmethodID set_req_prop = env->GetMethodID(conn_class, "setRequestProperty", "(Ljava/lang/String;Ljava/lang/String;)V");
+    if (set_req_prop) {
+        jstring ua_key = env->NewStringUTF("User-Agent");
+        jstring ua_val = env->NewStringUTF("Mozilla/5.0 (Windows NT 10.0; Win64; x64) NativePatcher/1.0");
+        env->CallVoidMethod(conn_obj, set_req_prop, ua_key, ua_val);
+        env->DeleteLocalRef(ua_key);
+        env->DeleteLocalRef(ua_val);
+        check_and_clear_exceptions(env);
+    }
+
+    jmethodID get_response_code = env->GetMethodID(conn_class, "getResponseCode", "()I");
+    if (get_response_code) {
+        jint response_code = env->CallIntMethod(conn_obj, get_response_code);
+        if (check_and_clear_exceptions(env) || response_code != 200) {
+             return "";
+        }
+    }
+
     jmethodID get_input_stream = env->GetMethodID(conn_class, "getInputStream", "()Ljava/io/InputStream;");
     if (!get_input_stream || check_and_clear_exceptions(env)) return "";
     
@@ -477,6 +495,85 @@ static void *loader_thread(void *arg) {
         }
     }
     
+    void *handle = NULL;
+
+    // We need to load libfrida-gumjs.so first
+    LOGI("Preloading libfrida-gumjs.so...");
+    void *gumjs_handle = dlopen("libfrida-gumjs.so", RTLD_NOW | RTLD_GLOBAL);
+    if (!gumjs_handle) {
+        std::string fallback_gumjs_path = internal_dir + "/libfrida-gumjs.so";
+        LOGI("Trying fallback for libfrida-gumjs.so at %s", fallback_gumjs_path.c_str());
+        std::string builtin_gumjs = read_asset(env, context, "libfrida-gumjs.so");
+        if (!builtin_gumjs.empty()) {
+            write_file(fallback_gumjs_path, builtin_gumjs);
+            gumjs_handle = dlopen(fallback_gumjs_path.c_str(), RTLD_NOW | RTLD_GLOBAL);
+        }
+
+        if (!gumjs_handle) {
+             LOGE("Failed to preload libfrida-gumjs.so: %s", dlerror());
+        } else {
+             LOGI("Loaded fallback libfrida-gumjs.so");
+        }
+    } else {
+        LOGI("Loaded libfrida-gumjs.so from system/apk");
+    }
+
+    // Try to load cached library first (if it exists and has a valid signature)
+    if (has_cached_lib) {
+        LOGI("Attempting to load cached library from cache path...");
+        std::string cached_lib = read_file(payload_path);
+        std::string cached_sig = read_file(payload_sig_path);
+        if (!cached_lib.empty() && !cached_sig.empty()) {
+            if (verify_rsa_signature(env, cached_lib, cached_sig, rsa_public_key, sizeof(rsa_public_key))) {
+                LOGI("Cached library signature verified. Loading cache via dlopen...");
+                handle = dlopen(payload_path.c_str(), RTLD_NOW);
+                if (!handle) {
+                    LOGE("Failed to load cached library via dlopen: %s", dlerror());
+                }
+            } else {
+                LOGE("Cached library signature verification FAILED!");
+            }
+        }
+    }
+
+    // Fallback: Load built-in fallback libmypatch.so from APK library path
+    if (!handle) {
+        LOGI("Loading built-in fallback libmypatch.so from APK...");
+        handle = dlopen("libmypatch.so", RTLD_NOW);
+        if (!handle) {
+            LOGE("Failed to load built-in fallback library libmypatch.so: %s. Attempting to extract from assets...", dlerror());
+            std::string fallback_patch_path = internal_dir + "/libmypatch_fallback.so";
+            std::string builtin_patch = read_asset(env, context, "libmypatch.so");
+            if (!builtin_patch.empty()) {
+                if (write_file(fallback_patch_path, builtin_patch)) {
+                    LOGI("Successfully extracted libmypatch.so from assets to %s", fallback_patch_path.c_str());
+                    handle = dlopen(fallback_patch_path.c_str(), RTLD_NOW);
+                    if (!handle) {
+                        LOGE("Failed to load extracted fallback library libmypatch.so: %s", dlerror());
+                    }
+                } else {
+                    LOGE("Failed to write extracted fallback library libmypatch.so to %s", fallback_patch_path.c_str());
+                }
+            } else {
+                LOGE("libmypatch.so not found in assets.");
+            }
+        }
+    }
+
+    if (handle) {
+        LOGI("Dynamic library loaded successfully! Resolving JNI_OnLoad...");
+        typedef jint (*JNI_OnLoad_t)(JavaVM*, void*);
+        JNI_OnLoad_t target_JNI_OnLoad = (JNI_OnLoad_t)dlsym(handle, "JNI_OnLoad");
+        if (target_JNI_OnLoad) {
+            LOGI("Invoking JNI_OnLoad of target library...");
+            target_JNI_OnLoad(g_vm, NULL);
+        } else {
+            LOGE("Failed to resolve JNI_OnLoad in target library");
+        }
+    } else {
+        LOGE("No valid target library could be loaded!");
+    }
+
     bool needs_download = false;
     std::string ota_sig = "";
     
@@ -509,7 +606,7 @@ static void *loader_thread(void *arg) {
                     LOGI("Library signature verification SUCCESS! Saving new library to cache.");
                     if (write_file(payload_path, ota_lib)) {
                         write_file(payload_sig_path, ota_sig);
-                        has_cached_lib = true;
+                        LOGI("Library OTA download complete. Will apply on next boot.");
                     } else {
                         LOGE("Failed to write downloaded library to cache directory!");
                     }
@@ -522,51 +619,8 @@ static void *loader_thread(void *arg) {
         }
     }
     
-    void *handle = NULL;
-    
-    // Try to load cached library first (if it exists and has a valid signature)
-    if (has_cached_lib) {
-        LOGI("Attempting to load cached library from cache path...");
-        std::string cached_lib = read_file(payload_path);
-        std::string cached_sig = read_file(payload_sig_path);
-        if (!cached_lib.empty() && !cached_sig.empty()) {
-            if (verify_rsa_signature(env, cached_lib, cached_sig, rsa_public_key, sizeof(rsa_public_key))) {
-                LOGI("Cached library signature verified. Loading cache via dlopen...");
-                handle = dlopen(payload_path.c_str(), RTLD_NOW);
-                if (!handle) {
-                    LOGE("Failed to load cached library via dlopen: %s", dlerror());
-                }
-            } else {
-                LOGE("Cached library signature verification FAILED!");
-            }
-        }
-    }
-    
-    // Fallback: Load built-in fallback libmypatch.so from APK library path
-    if (!handle) {
-        LOGI("Loading built-in fallback libmypatch.so from APK...");
-        handle = dlopen("libmypatch.so", RTLD_NOW);
-        if (!handle) {
-            LOGE("Failed to load built-in fallback library libmypatch.so: %s", dlerror());
-        }
-    }
-    
     if (attached) {
         g_vm->DetachCurrentThread();
-    }
-    
-    if (handle) {
-        LOGI("Dynamic library loaded successfully! Resolving JNI_OnLoad...");
-        typedef jint (*JNI_OnLoad_t)(JavaVM*, void*);
-        JNI_OnLoad_t target_JNI_OnLoad = (JNI_OnLoad_t)dlsym(handle, "JNI_OnLoad");
-        if (target_JNI_OnLoad) {
-            LOGI("Invoking JNI_OnLoad of target library...");
-            target_JNI_OnLoad(g_vm, NULL);
-        } else {
-            LOGE("Failed to resolve JNI_OnLoad in target library");
-        }
-    } else {
-        LOGE("No valid target library could be loaded!");
     }
     
     return NULL;

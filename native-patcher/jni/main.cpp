@@ -177,6 +177,24 @@ std::string download_url(JNIEnv *env, const std::string &url_str, int timeout_ms
     if (set_read_timeout) env->CallVoidMethod(conn_obj, set_read_timeout, timeout_ms);
     check_and_clear_exceptions(env);
     
+    jmethodID set_req_prop = env->GetMethodID(conn_class, "setRequestProperty", "(Ljava/lang/String;Ljava/lang/String;)V");
+    if (set_req_prop) {
+        jstring ua_key = env->NewStringUTF("User-Agent");
+        jstring ua_val = env->NewStringUTF("Mozilla/5.0 (Windows NT 10.0; Win64; x64) NativePatcher/1.0");
+        env->CallVoidMethod(conn_obj, set_req_prop, ua_key, ua_val);
+        env->DeleteLocalRef(ua_key);
+        env->DeleteLocalRef(ua_val);
+        check_and_clear_exceptions(env);
+    }
+
+    jmethodID get_response_code = env->GetMethodID(conn_class, "getResponseCode", "()I");
+    if (get_response_code) {
+        jint response_code = env->CallIntMethod(conn_obj, get_response_code);
+        if (check_and_clear_exceptions(env) || response_code != 200) {
+             return "";
+        }
+    }
+
     jmethodID get_input_stream = env->GetMethodID(conn_class, "getInputStream", "()Ljava/io/InputStream;");
     if (!get_input_stream || check_and_clear_exceptions(env)) return "";
     
@@ -505,45 +523,19 @@ static void *patcher_thread(void *arg) {
     }
     
     std::string js_code_str = "";
-    bool loaded_from_ota = false;
     
-    if (!server_url.empty()) {
-        std::string sig_url = server_url + ".sig";
-        LOGI("Attempting OTA download from: %s", server_url.c_str());
-        
-        std::string ota_js = download_url(env, server_url, timeout_ms);
-        std::string ota_sig = download_url(env, sig_url, timeout_ms);
-        
-        if (!ota_js.empty() && !ota_sig.empty()) {
-            LOGI("Downloaded script and signature. Verifying RSA Digital Signature...");
-            if (verify_rsa_signature(env, ota_js, ota_sig, rsa_public_key, sizeof(rsa_public_key))) {
-                LOGI("Signature verification SUCCESS! Updating script cache.");
-                js_code_str = ota_js;
-                write_file(working_dir + "/hook_cache.js", ota_js);
-                write_file(working_dir + "/hook_cache.js.sig", ota_sig);
-                loaded_from_ota = true;
-            } else {
-                LOGE("Signature verification FAILED for downloaded OTA script!");
-            }
+    LOGI("Attempting to load cached hook script...");
+    std::string cached_js = read_file(working_dir + "/hook_cache.js");
+    std::string cached_sig = read_file(working_dir + "/hook_cache.js.sig");
+    if (!cached_js.empty() && !cached_sig.empty()) {
+        if (verify_rsa_signature(env, cached_js, cached_sig, rsa_public_key, sizeof(rsa_public_key))) {
+            LOGI("Cached script signature verified. Loading cache.");
+            js_code_str = cached_js;
         } else {
-            LOGE("Failed to download script or signature from OTA URL.");
+            LOGE("Cached script signature verification FAILED!");
         }
     }
-    
-    if (!loaded_from_ota) {
-        LOGI("Attempting to load cached hook script...");
-        std::string cached_js = read_file(working_dir + "/hook_cache.js");
-        std::string cached_sig = read_file(working_dir + "/hook_cache.js.sig");
-        if (!cached_js.empty() && !cached_sig.empty()) {
-            if (verify_rsa_signature(env, cached_js, cached_sig, rsa_public_key, sizeof(rsa_public_key))) {
-                LOGI("Cached script signature verified. Loading cache.");
-                js_code_str = cached_js;
-            } else {
-                LOGE("Cached script signature verification FAILED!");
-            }
-        }
-    }
-    
+
     if (js_code_str.empty()) {
         LOGI("Loading built-in fallback script...");
         unsigned char *decrypted = (unsigned char *)malloc(hook_bytes_len + 1);
@@ -554,6 +546,28 @@ static void *patcher_thread(void *arg) {
             decrypted[hook_bytes_len] = '\0';
             js_code_str = (const char*)decrypted;
             free(decrypted);
+        }
+    }
+
+    // Perform OTA script download in background thread for NEXT boot
+    if (!server_url.empty()) {
+        std::string sig_url = server_url + ".sig";
+        LOGI("Attempting OTA download from: %s", server_url.c_str());
+        
+        std::string ota_js = download_url(env, server_url, timeout_ms);
+        std::string ota_sig = download_url(env, sig_url, timeout_ms);
+        
+        if (!ota_js.empty() && !ota_sig.empty()) {
+            LOGI("Downloaded script and signature. Verifying RSA Digital Signature...");
+            if (verify_rsa_signature(env, ota_js, ota_sig, rsa_public_key, sizeof(rsa_public_key))) {
+                LOGI("Signature verification SUCCESS! Updating script cache for NEXT boot.");
+                write_file(working_dir + "/hook_cache.js", ota_js);
+                write_file(working_dir + "/hook_cache.js.sig", ota_sig);
+            } else {
+                LOGE("Signature verification FAILED for downloaded OTA script!");
+            }
+        } else {
+            LOGE("Failed to download script or signature from OTA URL.");
         }
     }
     
