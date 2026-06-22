@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "wait-and-hook": "while [ -z $(adb shell ps -A | grep ':UnityKillsMe' | awk '{print $2}') ]; do sleep 1; done; PID=$(adb shell ps -A | grep ':UnityKillsMe' | awk '{print $2}'); echo 'PID Found: ' $PID; frida -U -p $PID -l dist/agent.js",
-    "watch": "frida-compile src/index.js -o dist/agent.js -w",
-    "build": "mkdir -p dist && frida-compile src/index.js -o dist/agent.js -c",
+    "watch": "npx frida-compile src/index.js -o dist/agent.js -w",
+    "build": "mkdir -p dist && npx frida-compile src/index.js -o dist/agent.js -c",
     "vercel-build": "echo 'Skipping Frida compilation on Vercel'",
     "start-host": "node host.js",
     "gen-keys": "node scripts/generate-keys.js",
@@ -17,6 +17,9 @@
   },
   "author": "petwir",
   "license": "ISC",
+  "devDependencies": {
+    "frida-compile": "^16.4.3"
+  },
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.19.2",
