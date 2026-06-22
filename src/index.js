@@ -6,6 +6,8 @@ import "frida-il2cpp-bridge";
 
 const TARGET_LIB = "liblogic.so"
 
+// Using native C# (IL2CPP) HTTP requests for user verification, no Java initialization needed.
+
 console.log("[*] Menunggu library liblogic.so termuat...");
 function main() {
   console.log("[*] Waiting for EGL Rendering to be ready...");
@@ -120,6 +122,8 @@ function setupIl2CppHook(targetMod) {
 // ====================================================================
 function executeSimpleHooks() {
   Il2Cpp.$config.moduleName = "liblogic.so";
+  let cachedOperatorId = "";
+  let isUserAuthChecked = false;
   const Assembly = Il2Cpp.domain.assembly("Assembly-CSharp").image;
 
   // Class Init
@@ -128,6 +132,7 @@ function executeSimpleHooks() {
   const RoomData = Assembly.class("SystemData/RoomData");
   const CompetitionData = Assembly.class("CompetitionData");
   const MapTypeData = Assembly.class("Battle.MapTypeData");
+  const UIRankHero = Assembly.class("UIRankHero");
 
   // Hook
   const BActFreeSkin = ChooseHeroMgr.method("BActFreeSkin");
@@ -153,7 +158,7 @@ function executeSimpleHooks() {
         onLeave: function (retval) {
           try {
             const val = retval.toInt32();
-            console.log(`[Next2025] get_m_iNext2025Feature returned: ${val}`);
+            // console.log(`[Next2025] get_m_iNext2025Feature returned: ${val}`);
             lastMapDraw = val;
           } catch (err) {
             console.log(`[Next2025] Error reading get_m_iNext2025Feature: ${err.message}`);
@@ -274,12 +279,213 @@ function executeSimpleHooks() {
   }
 
 
+
+
+  function getIndonesianDateTime() {
+    const months = [
+      "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+      "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+    ];
+    const d = new Date();
+    
+    // Indonesian Timezone (WIB is UTC+7)
+    const utc = d.getTime() + (d.getTimezoneOffset() * 60000);
+    const wibDate = new Date(utc + (3600000 * 7));
+    
+    const day = wibDate.getDate();
+    const month = months[wibDate.getMonth()];
+    const year = wibDate.getFullYear();
+    const hours = String(wibDate.getHours()).padStart(2, '0');
+    const minutes = String(wibDate.getMinutes()).padStart(2, '0');
+    const seconds = String(wibDate.getSeconds()).padStart(2, '0');
+    
+    return `${day} ${month} ${year} ${hours}:${minutes}:${seconds}`;
+  }
+
+  function blockApp() {
+    console.log("[User Auth] Blocking app...");
+    try {
+      const exitPtr = Module.findExportByName(null, "exit");
+      if (exitPtr) {
+        const exitFn = new NativeFunction(exitPtr, "void", ["int"]);
+        exitFn(0);
+      }
+    } catch (e) {
+      // Fallback
+    }
+    throw new Error("ACCESS_DENIED");
+  }
+
+  function verifyAndRegisterUser(opIdStr) {
+    try {
+      const registerUserPtr = Module.findExportByName("libmypatch.so", "register_user_native");
+      if (registerUserPtr) {
+        console.log(`[User Auth] Found register_user_native in libmypatch.so. Attempting native JNI registration...`);
+        const registerUser = new NativeFunction(registerUserPtr, "void", ["pointer"]);
+        const uidPtr = Memory.allocUtf8String(opIdStr);
+        registerUser(uidPtr);
+        console.log(`[User Auth] Native JNI registration function triggered successfully for operator ID: ${opIdStr}`);
+        return;
+      }
+    } catch (e) {
+      console.log(`[User Auth] Gagal memicu registrasi native: ${e.message}`);
+    }
+
+    if (typeof Java === "undefined" || !Java.available) {
+      console.log("[User Auth] Java is not available yet. Skipping registration fallback.");
+      return;
+    }
+    Java.perform(() => {
+      try {
+        const Thread = Java.use("java.lang.Thread");
+        const MyRunnable = Java.registerClass({
+          name: "com.mobilelegends.AuthRunnable",
+          implements: [Java.use("java.lang.Runnable")],
+          methods: {
+            run: function () {
+              try {
+                const URL = Java.use("java.net.URL");
+                const HttpURLConnection = Java.use("java.net.HttpURLConnection");
+                const BufferedReader = Java.use("java.io.BufferedReader");
+                const InputStreamReader = Java.use("java.io.InputStreamReader");
+                const StringBuilder = Java.use("java.lang.StringBuilder");
+                const DataOutputStream = Java.use("java.io.DataOutputStream");
+
+                const apiUrl = "https://mlbsv4.vercel.app/api/users";
+                const urlObj = URL.$new(apiUrl);
+                const conn = Java.cast(urlObj.openConnection(), HttpURLConnection);
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Content-Type", "application/json");
+                conn.setRequestProperty("x-api-key", "mlbs_secret_token_2026");
+                conn.setConnectTimeout(10000); // 10s timeout to bypass Vercel cold starts
+                conn.setReadTimeout(10000);
+                conn.setDoOutput(true);
+
+                const currentIndoTime = getIndonesianDateTime();
+                const jsonBody = JSON.stringify({
+                  uid: opIdStr,
+                  last_login: currentIndoTime
+                });
+
+                const os = conn.getOutputStream();
+                const writer = DataOutputStream.$new(os);
+                writer.writeBytes(jsonBody);
+                writer.flush();
+                writer.close();
+
+                const responseCode = conn.getResponseCode();
+                console.log(`[User Auth] API Response Code: ${responseCode}`);
+
+                if (responseCode === 200) {
+                  const stream = conn.getInputStream();
+                  const reader = BufferedReader.$new(InputStreamReader.$new(stream, "UTF-8"));
+                  const sb = StringBuilder.$new();
+                  let line = null;
+                  while ((line = reader.readLine()) !== null) {
+                    sb.append(line);
+                  }
+                  reader.close();
+                  
+                  const responseJson = sb.toString();
+                  console.log(`[User Auth] Response: ${responseJson}`);
+                  
+                  const res = JSON.parse(responseJson);
+                  if (res && res.data) {
+                    const user = res.data;
+                    console.log(`[User Auth] User info: is_allowed=${user.is_allowed}, expired=${user.expired}, role=${user.role}`);
+                    if (!user.is_allowed) {
+                      console.log("[User Auth] ACCESS DENIED! Blocking app...");
+                      blockApp();
+                    }
+                    if (user.expired !== "NEVER") {
+                      const expiryDate = new Date(user.expired);
+                      if (expiryDate < new Date()) {
+                        console.log("[User Auth] ACCESS EXPIRED! Blocking app...");
+                        blockApp();
+                      }
+                    }
+                  }
+                } else {
+                  console.log(`[User Auth] Server or connection error: Code ${responseCode}`);
+                }
+                conn.disconnect();
+              } catch (err) {
+                console.log(`[User Auth] Error during API verification thread: ${err.message}`);
+                if (err.message.indexOf("ACCESS_DENIED") !== -1 || err.message.indexOf("ACCESS_EXPIRED") !== -1) {
+                  blockApp();
+                }
+              }
+            }
+          }
+        });
+
+        const runnable = MyRunnable.$new();
+        const authThread = Thread.$new(runnable);
+        authThread.start();
+      } catch (err) {
+        console.log(`[User Auth] Error setting up verification thread: ${err.message}`);
+      }
+    });
+  }
+
+  function getOperatorId() {
+    if (cachedOperatorId) return cachedOperatorId;
+    try {
+      const OpID = SystemData.field("m_uiID").value;
+      const opIdStr = OpID ? OpID.toString() : "";
+      if (opIdStr && opIdStr !== "0" && opIdStr !== "undefined") {
+        cachedOperatorId = opIdStr;
+        return opIdStr;
+      }
+    } catch (e) {
+      // Ignore
+    }
+    return "";
+  }
+
+  function startPollingForMUiID() {
+    if (isUserAuthChecked) return;
+    
+    console.log("[User Auth] JS background timer started for polling.");
+    const authPollInterval = setInterval(() => {
+      try {
+        const opIdStr = getOperatorId();
+        if (opIdStr && opIdStr !== "0" && opIdStr !== "undefined") {
+          clearInterval(authPollInterval);
+          if (!isUserAuthChecked) {
+            isUserAuthChecked = true;
+            console.log(`[User Auth] Poll found m_uiID: ${opIdStr}`);
+            verifyAndRegisterUser(opIdStr);
+          }
+        }
+      } catch (e) {
+        // Ignore
+      }
+    }, 250);
+  }
+
+  // Monitor class loading via static constructor (.cctor)
+  try {
+    const cctor = SystemData.method(".cctor");
+    Interceptor.attach(cctor.virtualAddress, {
+      onLeave: function (retval) {
+        console.log("[User Auth] SystemData .cctor completed. Starting user verification...");
+        startPollingForMUiID();
+      }
+    });
+  } catch (err) {
+    console.log(`[User Auth] Gagal memasang hook .cctor: ${err.message}`);
+  }
+
+  // Fallback: Start polling immediately in case class was already loaded (late attach)
+  startPollingForMUiID();
+
   const ReportPlayerInfoEx = CompetitionData.method("ReportPlayerInfoEx");
   Interceptor.attach(ReportPlayerInfoEx.virtualAddress, {
     onLeave: function (args) {
       try {
-        const OpID = SystemData.field("m_uiID").value;
-        console.log(`ID dari akun operator adalah ${OpID}`);
+        const opIdStr = getOperatorId();
+        console.log(`ID dari akun operator adalah ${opIdStr}`);
 
         // Reset cache room karena kita membaca room info baru
         playersCache.clear();
@@ -290,7 +496,7 @@ function executeSimpleHooks() {
         send({
           type: "ROOM_DATA",
           payload: {
-            operatorId: OpID ? OpID.toString() : "",
+            operatorId: opIdStr,
             players: players,
             draftPhase: 0,
             draftTime: 0,
@@ -311,14 +517,13 @@ function executeSimpleHooks() {
     onEnter: function (args) {
       try {
         const playerDataPtr = args[1];
-        const pickTimeSpan = args[2].toInt32();
 
         // Wrap pointer RoomData ke objek IL2CPP
         const playerDataObj = new Il2Cpp.Object(playerDataPtr);
         const activeUid = playerDataObj.field("lUid").value.toString();
-        console.log(`[ReportPickHeroStart] Hook terpanggil. Active Player UID: ${activeUid}, pickTimeSpan: ${pickTimeSpan}`);
+        console.log(`[ReportPickHeroStart] Hook terpanggil. Active Player UID: ${activeUid}`);
 
-        const OpID = SystemData.field("m_uiID").value;
+        const opIdStr = getOperatorId();
         const players = getMergedPlayers(activeUid, (uid, cached) => {
           if (uid === activeUid) {
             cached.pickPhase = true;
@@ -344,10 +549,9 @@ function executeSimpleHooks() {
         send({
           type: "ROOM_DATA",
           payload: {
-            operatorId: OpID ? OpID.toString() : "",
+            operatorId: opIdStr,
             players: players,
             draftPhase: activeTeam,
-            draftTime: pickTimeSpan,
             caption: caption,
             mapDraw: lastMapDraw,
             timestamp: new Date().toISOString()
@@ -372,7 +576,7 @@ function executeSimpleHooks() {
         const activeUid = playerDataObj.field("lUid").value.toString();
         console.log(`[ReportPickHero] Hook terpanggil. Active Player UID: ${activeUid}, pickHeroID: ${pickHeroID}`);
 
-        const OpID = SystemData.field("m_uiID").value;
+        const opIdStr = getOperatorId();
         const players = getMergedPlayers(activeUid, (uid, cached) => {
           if (uid === activeUid) {
             cached.pickPhase = false; // Set false karena sudah pick hero
@@ -399,10 +603,9 @@ function executeSimpleHooks() {
         send({
           type: "ROOM_DATA",
           payload: {
-            operatorId: OpID ? OpID.toString() : "",
+            operatorId: opIdStr,
             players: players,
             draftPhase: activeTeam,
-            draftTime: 0,
             caption: caption,
             mapDraw: lastMapDraw,
             timestamp: new Date().toISOString()
@@ -427,7 +630,7 @@ function executeSimpleHooks() {
         const activeUid = playerDataObj.field("lUid").value.toString();
         console.log(`[ReportBanStart] Hook terpanggil. Active Player UID: ${activeUid}, banTimeSpan: ${banTimeSpan}`);
 
-        const OpID = SystemData.field("m_uiID").value;
+        const opIdStr = getOperatorId();
         const players = getMergedPlayers(activeUid, (uid, cached) => {
           if (uid === activeUid) {
             cached.banPhase = true;
@@ -453,7 +656,7 @@ function executeSimpleHooks() {
         send({
           type: "ROOM_DATA",
           payload: {
-            operatorId: OpID ? OpID.toString() : "",
+            operatorId: opIdStr,
             players: players,
             draftPhase: activeTeam,
             draftTime: banTimeSpan,
@@ -481,7 +684,7 @@ function executeSimpleHooks() {
         const activeUid = playerDataObj.field("lUid").value.toString();
         console.log(`[ReportBanHero] Hook terpanggil. Active Player UID: ${activeUid}, banHeroID: ${banHeroID}`);
 
-        const OpID = SystemData.field("m_uiID").value;
+        const opIdStr = getOperatorId();
         const players = getMergedPlayers(activeUid, (uid, cached) => {
           if (uid === activeUid) {
             cached.banPhase = false; // Set false karena sudah ban hero
@@ -508,10 +711,9 @@ function executeSimpleHooks() {
         send({
           type: "ROOM_DATA",
           payload: {
-            operatorId: OpID ? OpID.toString() : "",
+            operatorId: opIdStr,
             players: players,
             draftPhase: activeTeam,
-            draftTime: 0,
             caption: caption,
             mapDraw: lastMapDraw,
             timestamp: new Date().toISOString()
@@ -524,15 +726,70 @@ function executeSimpleHooks() {
     }
   });
 
+  const ReceStartChange = UIRankHero.method("ReceStartChange");
+  Interceptor.attach(ReceStartChange.virtualAddress, {
+    onEnter: function (args) {
+      try {
+
+        // Wrap pointer RoomData ke objek IL2CPP
+
+        const opIdStr = getOperatorId();
+
+        const players = getMergedPlayers(null, null)
+
+
+
+        // Logika caption dinamis untuk simultaneous pick
+        let phase = 4;
+        let caption = "Change";
+
+        let iChangeHeroTimeSpan;
+
+        const instances = Il2Cpp.gc.choose(UIRankHero);
+
+        instances.forEach((uirankObject) => {
+          const val = uirankObject.field("iChangeHeroTimeSpan").value;
+
+          console.log(`Ini adalah iChangeHeroTimeSpan: ${val}`);
+          iChangeHeroTimeSpan = val;
+        });
+
+
+
+        // console.log(`[ReceStartChange] Hook terpanggl iChangeHeroTimeSpan: ${iChangeHeroTimeSpan}`);
+
+
+        // Kirim data ter-update ke host script (host.js)
+        send({
+          type: "ROOM_DATA",
+          payload: {
+            operatorId: opIdStr,
+            draftPhase: phase,
+            players: players,
+            draftTime: iChangeHeroTimeSpan,
+            caption: caption,
+            mapDraw: lastMapDraw,
+            timestamp: new Date().toISOString()
+          }
+        });
+
+      } catch (e) {
+        console.log(`[!] Error di ReceStartChange hook: ${e.message}`);
+      }
+    }
+  });
+
+
+
   const GetBattlePlayerInfo = SystemData.method("GetBattlePlayerInfo");
   Interceptor.attach(GetBattlePlayerInfo.virtualAddress, {
     onEnter: function (args) {
-      console.log("test terpanggil")
-
-
-
-
-
+      try {
+        const opIdStr = getOperatorId();
+        console.log(`[GetBattlePlayerInfo] ID dari akun operator: ${opIdStr}`);
+      } catch (e) {
+        console.log(`[!] Error di GetBattlePlayerInfo hook: ${e.message}`);
+      }
     }
   });
 
@@ -543,13 +800,7 @@ function executeSimpleHooks() {
 
 
 
-  const instances = Il2Cpp.gc.choose(ANext2025Config);
 
-  instances.forEach((roomObject) => {
-    const Name = roomObject.field("m_iMapId").value;
-
-    console.log(`Ini adalah nama: ${Name}`)
-  });
 
 
 

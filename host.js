@@ -1,78 +1,18 @@
 const frida = require('frida');
 const fs = require('fs');
 const path = require('path');
-const http = require('http');
-const admin = require('firebase-admin');
 const { execSync } = require('child_process');
 
-// 1. Inisialisasi Firebase Admin
-const SERVICE_ACCOUNT_PATH = './serviceAccountKey.json';
+// Configuration for Firebase REST API
+const API_URL = process.env.API_URL || 'https://mlbsv4.vercel.app/api/rooms';
+const API_KEY = process.env.API_KEY || 'mlbs_secret_token_2026';
 
-if (!fs.existsSync(SERVICE_ACCOUNT_PATH)) {
-  console.error("==================================================================");
-  console.error("[-] ERROR: File 'serviceAccountKey.json' tidak ditemukan!");
-  console.error("Silakan ikuti langkah berikut:");
-  console.error("1. Buka Firebase Console.");
-  console.error("2. Pilih Project Anda -> Project Settings -> Service Accounts.");
-  console.error("3. Klik 'Generate new private key'.");
-  console.error("4. Unduh file JSON tersebut dan simpan di folder ini dengan nama 'serviceAccountKey.json'.");
-  console.error("==================================================================");
-  process.exit(1);
-}
+console.log("[+] REST API Configured:");
+console.log(`    URL: ${API_URL}`);
+console.log(`    API Key: ${API_KEY ? '****** (configured)' : 'None'}`);
 
-const serviceAccount = require(SERVICE_ACCOUNT_PATH);
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
-
-const db = admin.firestore();
-console.log("[+] Firebase Admin SDK berhasil diinisialisasi.");
-
-// 1.5 Inisialisasi Web Server untuk Dashboard Realtime (SSE)
-let sseClients = [];
-let lastRoomData = null;
-
-const server = http.createServer((req, res) => {
-  if (req.url === '/events') {
-    res.writeHead(200, {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-      'Access-Control-Allow-Origin': '*'
-    });
-    // Kirim data terakhir jika ada agar dashboard langsung terisi
-    if (lastRoomData) {
-      res.write(`data: ${JSON.stringify(lastRoomData)}\n\n`);
-    }
-    sseClients.push(res);
-    req.on('close', () => {
-      sseClients = sseClients.filter(c => c !== res);
-    });
-    return;
-  }
-
-  if (req.url === '/' || req.url === '/index.html') {
-    res.writeHead(200, { 'Content-Type': 'text/html' });
-    const htmlPath = path.join(__dirname, 'index.html');
-    if (fs.existsSync(htmlPath)) {
-      res.end(fs.readFileSync(htmlPath, 'utf8'));
-    } else {
-      res.end("index.html tidak ditemukan. Harap pastikan index.html ada di direktori yang sama.");
-    }
-    return;
-  }
-
-  res.writeHead(404);
-  res.end();
-});
-
-server.listen(3000, '0.0.0.0', () => {
-  console.log("[+] Realtime Dashboard Web Server running at http://localhost:3000");
-});
-
-// 2. Fungsi untuk menyimpan data ke Firestore
-async function saveToFirestore(payload) {
+// Function to send data to the secure REST API
+async function sendToRestApi(payload) {
   try {
     const matchData = {
       operatorId: payload.operatorId,
@@ -81,34 +21,37 @@ async function saveToFirestore(payload) {
       draftPhase: payload.draftPhase !== undefined ? payload.draftPhase : 0,
       caption: payload.caption || "",
       mapDraw: payload.mapDraw !== undefined && payload.mapDraw !== null ? (typeof payload.mapDraw === 'object' ? Number(payload.mapDraw.toString()) : Number(payload.mapDraw)) : 0,
-      agentTimestamp: payload.timestamp
+      timestamp: payload.timestamp
     };
 
-    // Menyimpan data ke collection 'broadcast_test'
     const OpID = payload.operatorId ? String(payload.operatorId).trim() : "";
     if (!OpID) {
-      console.log("[-] [Firestore] Gagal: Operator ID kosong!");
+      console.log("[-] [API Forwarder] Gagal: Operator ID kosong!");
       return;
     }
 
-    // 1. Tulis ke parent doc agar dokumennya aktif (tidak berwarna abu-abu/miring di console)
-    await db.collection('test').doc("OperatorId").set({
-      last_active: admin.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
+    console.log(`[*] [API Forwarder] Mengirim data room ke API...`);
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': API_KEY
+      },
+      body: JSON.stringify(matchData)
+    });
 
-    // 2. Tulis ke subkoleksi
-    const path = `test/OperatorId/${OpID}/iPlayer`;
-    await db.collection('test').doc("OperatorId").collection(OpID).doc("iPlayer").set(matchData);
-
-    console.log(`[+] [Firestore] Data room berhasil disimpan!`);
-    console.log(`    Path: ${path}`);
-    console.log(`    Jumlah Player: ${payload.players.length}`);
+    const result = await response.json();
+    if (response.ok && result.status === 'success') {
+      console.log(`[+] [API Forwarder] Berhasil mengirim ke REST API! Operator ID: ${OpID}`);
+    } else {
+      console.error(`[-] [API Forwarder] Gagal mengirim: ${result.message || response.statusText}`);
+    }
   } catch (error) {
-    console.error("[-] [Firestore] Gagal menyimpan data:", error);
+    console.error("[-] [API Forwarder] Error saat fetch REST API:", error.message);
   }
 }
 
-// Fungsi pembantu untuk mendapatkan PID menggunakan ADB
+// Helper function to get PID using ADB
 function getTargetPid() {
   try {
     const stdout = execSync("adb shell ps -A", { encoding: 'utf8' });
@@ -116,7 +59,7 @@ function getTargetPid() {
     for (const line of lines) {
       if (line.includes(':UnityKillsMe')) {
         const parts = line.trim().split(/\s+/);
-        // Kolom PID biasanya kolom ke-2
+        // PID column is usually the 2nd one
         const pid = parseInt(parts[1], 10);
         if (!isNaN(pid)) {
           return pid;
@@ -124,12 +67,12 @@ function getTargetPid() {
       }
     }
   } catch (e) {
-    // Abaikan error jika adb tidak merespon sementara
+    // Ignore temp errors
   }
   return null;
 }
 
-// 3. Fungsi untuk mencari proses target dan memuat script Frida
+// Function to find target process and load Frida script
 async function getTargetProcess(device) {
   console.log("[*] Mencari proses target ':UnityKillsMe' via ADB...");
   while (true) {
@@ -139,7 +82,6 @@ async function getTargetProcess(device) {
       return { pid };
     }
 
-    // Fallback: cari menggunakan name-matching frida (siapa tahu namanya terdeteksi berbeda)
     try {
       const processes = await device.enumerateProcesses();
       const target = processes.find(p => p.name.includes(':UnityKillsMe') || p.name.includes('UnityKillsMe'));
@@ -148,7 +90,7 @@ async function getTargetProcess(device) {
         return target;
       }
     } catch (e) {
-      // Abaikan error enumerate
+      // Ignore enumeration error
     }
 
     await new Promise(resolve => setTimeout(resolve, 1000));
@@ -161,14 +103,14 @@ async function main() {
     const device = await frida.getUsbDevice();
     console.log(`[+] Terhubung ke device: ${device.name}`);
 
-    // Menunggu dan mendapatkan proses target
+    // Wait and get target process
     const targetProcess = await getTargetProcess(device);
 
     console.log(`[*] Melakukan attach ke PID: ${targetProcess.pid}...`);
     const session = await device.attach(targetProcess.pid);
     console.log("[+] Berhasil attach ke sesi Frida.");
 
-    // Membaca file agent yang sudah dicompile
+    // Read compiled agent file
     const agentPath = './dist/agent.js';
     if (!fs.existsSync(agentPath)) {
       console.error(`[-] ERROR: File '${agentPath}' tidak ditemukan. Silakan jalankan 'npm run build' terlebih dahulu!`);
@@ -178,19 +120,13 @@ async function main() {
     const source = fs.readFileSync(agentPath, 'utf8');
     const script = await session.createScript(source);
 
-    // Menangani event message dari script Frida
+    // Handle message event from Frida script
     script.message.connect((message, data) => {
       if (message.type === 'send') {
         const payload = message.payload;
         if (payload && payload.type === 'ROOM_DATA') {
           console.log("[+] Menerima ROOM_DATA dari agent:");
-          saveToFirestore(payload.payload);
-
-          // Kirim data secara realtime ke SSE clients
-          lastRoomData = payload.payload;
-          sseClients.forEach(client => {
-            client.write(`data: ${JSON.stringify(lastRoomData)}\n\n`);
-          });
+          sendToRestApi(payload.payload);
         } else {
           console.log(`[*] Pesan dari agent:`, payload);
         }
@@ -202,7 +138,7 @@ async function main() {
       }
     });
 
-    // Menangani event session detached (jika aplikasi ditutup/crash)
+    // Handle session detached (if app closed/crashed)
     session.detached.connect(() => {
       console.warn("[-] Koneksi Frida terputus (aplikasi ditutup atau crash).");
       console.log("[*] Mencoba menyambungkan kembali dalam 2 detik...");

@@ -1,0 +1,15 @@
+# Exclude native code and raw ndk build outputs
+native-patcher/
+keys/
+
+# Exclude local build artifacts and node modules
+node_modules/
+dist/
+.git/
+overlays/
+
+# Exclude other local scripts
+scripts/
+test-api.js
+host.js
+serviceAccountKey.json

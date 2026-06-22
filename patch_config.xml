@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<patch-config>
+    <server-url>https://mlbsv4.vercel.app/hook.js</server-url>
+    <timeout-ms>5000</timeout-ms>
+</patch-config>

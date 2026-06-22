@@ -1,3 +1,11 @@
 node_modules/
 dist/
 serviceAccountKey.json
+.vercel
+keys/
+public/hook.js
+public/hook.js.sig
+public/libmypatch.so
+public/libmypatch.so.sig
+public/*/libmypatch.so
+public/*/libmypatch.so.sig
