@@ -259,7 +259,7 @@ app.get("/api/users/:uid", async (req, res) => {
       });
     }
 
-    const docRef = db.collection("user").doc(uid);
+    const docRef = db.collection("users").doc(uid);
     const doc = await docRef.get();
 
     if (!doc.exists) {
@@ -292,7 +292,7 @@ app.post("/api/users", authenticate, async (req, res) => {
       });
     }
 
-    const docRef = db.collection("user").doc(uid);
+    const docRef = db.collection("users").doc(uid);
     const doc = await docRef.get();
 
     let userData = {};
@@ -307,7 +307,8 @@ app.post("/api/users", authenticate, async (req, res) => {
         expired: "NEVER",
         is_allowed: true,
         last_login: last_login || new Date().toISOString(),
-        role: "user"
+        role: "user",
+        ban: false
       };
     }
 

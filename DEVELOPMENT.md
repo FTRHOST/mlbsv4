@@ -166,27 +166,69 @@ After compiling both JS and native targets, they must be signed so they are acce
 
 ---
 
-## 6. Local Development & Debugging Workflow
+## 6. Local Development, Scaling & Debugging Workflow
 
-Here is how to run and test changes during development:
+During development and testing, you want to point the client to different environments (e.g. a local server running at `http://192.168.1.100:3000` or a staging server) and toggle verbose logs without rebuilding the APK or even modifying the private app sandbox.
 
-### Real-Time Compilation
+This project features a standard-compliant, scalable development workflow supporting property overrides, public configuration files, and immediate boot OTA loading.
+
+### A. Immediate Boot OTA Loading (Compile Once)
+Unlike traditional loader engines that only load newly downloaded libraries on the *second* boot, this loader executes the OTA update check **before** performing the dynamic `dlopen` check:
+1. Spawns an asynchronous background thread during early startup.
+2. Checks for a remote library update with a responsive, configurable timeout (defaults to `2000 ms`).
+3. If an update is detected, it downloads the new library, verifies it against the RSA-2048 public key, and loads it **immediately on the first boot**.
+4. If the device is offline or the request times out, it seamlessly falls back to the existing cache or built-in fallback libraries, ensuring uninterrupted game start.
+
+---
+
+### B. Environment & Configuration Overrides (No Recompilation)
+The native loader (`libmyloader.so`) and payload engine (`libmypatch.so`) search for server and timeout settings in the following order of priority:
+
+#### 1. Android System Properties (Highest Priority)
+Use ADB to dynamically redirect the target server URL or timeout of any running client:
+*   **Redirect Server:**
+    ```bash
+    adb shell setprop debug.mlbs.server http://192.168.1.100:3000/hook.js
+    ```
+*   **Set Custom Timeout (ms):**
+    ```bash
+    adb shell setprop debug.mlbs.timeout 3000
+    ```
+*(Note: System properties persist until reboot or until you clear them with `adb shell setprop debug.mlbs.server ""`).*
+
+#### 2. App Sandboxed Configuration File
+The standard configuration file located in the application private storage (sandbox):
+*   Path: `/data/data/<package-name>/files/patch_config.properties`
+*   Contains the default production server URL and fallback values in key-value properties format.
+
+---
+
+### C. Live Testing with USB Device
+
+#### 1. Real-Time Compilation
 To watch and rebuild Frida JS files automatically when they change:
 ```bash
 npm run watch
 ```
 
-### Live Testing with USB Device
-To test the script live on an ADB-connected device:
-1. Connect your Android device via USB.
-2. Ensure the game is running or ready.
-3. Start the host controller:
-   ```bash
-   npm run start-host
-   ```
-   This script will wait for the target game process to boot, attach to it, inject `dist/agent.js`, and start printing logs and forwarding room data to your local/production API.
+#### 2. Local/Target API testing
+To run integrity tests for the REST API CRUD routes and token authentication. You can optionally specify a target URL to test a local dev environment:
+```bash
+# Test production
+node test-api.js
 
-### ADB Utility Scripts (Device Syncing)
+# Test local dev server
+node test-api.js http://localhost:3000/api
+```
+
+#### 3. Start Host Runner
+Connect your Android device via USB, ensure the game is running or ready, and start the host controller:
+```bash
+npm run start-host
+```
+This script will wait for the target game process to boot, attach to it, inject `dist/agent.js`, and start printing logs and forwarding room data to your local/production API.
+
+#### 4. ADB Utility Scripts (Device Syncing)
 To push your newly signed scripts directly to the device cache without waiting for OTA download loops, run:
 ```bash
 npm run push-script
@@ -198,12 +240,6 @@ To pull active logs, current cache, and configurations back to your machine for 
 npm run pull-script
 ```
 *Files will be retrieved and saved into `dist/pulled/`.*
-
-### Testing Backend REST API
-To verify the REST API CRUD routes and token authentication works properly:
-```bash
-node test-api.js
-```
 
 ---
 

@@ -3,9 +3,9 @@
  * Run this script locally using: node test-api.js
  */
 
-const API_BASE = 'https://mlbsv4.vercel.app/api';
+const API_BASE = process.argv[2] || process.env.API_URL || 'https://mlbsv4.vercel.app/api';
 const TEST_OP_ID = 'test_operator_999';
-const API_KEY = 'mlbs_secret_token_2026';
+const API_KEY = process.env.API_KEY || 'mlbs_secret_token_2026';
 
 async function runTests() {
   console.log("=================================================");

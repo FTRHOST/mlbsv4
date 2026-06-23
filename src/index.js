@@ -408,6 +408,47 @@ function executeSimpleHooks() {
     });
   }
 
+  function verifyUserWithRestApi(uid) {
+    console.log(`[REST API User] Verifying operator ID ${uid} using native call...`);
+    try {
+      const register_user_native_ptr = Module.findExportByName(null, "register_user_native");
+      if (register_user_native_ptr) {
+        const registerUser = new NativeFunction(register_user_native_ptr, 'pointer', ['pointer']);
+        const uidPtr = Memory.allocUtf8String(uid);
+        
+        // Run verification in a separate native helper thread, or directly if called from a background thread
+        // Note: register_user_native performs network requests, so calling it directly from JS running in target
+        // could block. However, index.js hooks usually run on game threads.
+        // Let's call it. Since it uses Java HttpURLConnection internally via Attached thread, it performs I/O.
+        // Let's spawn a quick native thread if we want to be safe, or just run it synchronously if we are in a non-UI thread.
+        // The game loop calls ReportPlayerInfoEx/GetBattlePlayerInfo on threads that can usually tolerate small lags,
+        // but to be absolutely safe, let's execute the network I/O.
+        // Wait, FridaJS has the Thread/NativeFunction capabilities.
+        // Let's invoke the function.
+        const resPtr = registerUser(uidPtr);
+        if (!resPtr.isNull()) {
+          const responseJson = resPtr.readUtf8String();
+          console.log(`[REST API User] User Data from Native: ${responseJson}`);
+          if (responseJson) {
+            if (responseJson.indexOf('"ban":true') !== -1 || responseJson.indexOf('"ban": true') !== -1) {
+              console.log(`[REST API User] WARNING: User ${uid} is BANNED!`);
+            } else {
+              console.log(`[REST API User] User ${uid} verification successful.`);
+            }
+          } else {
+            console.log(`[REST API User] Empty user info response from Native.`);
+          }
+        } else {
+          console.log(`[REST API User] Null response from Native verification.`);
+        }
+      } else {
+        console.log("[REST API User] Error: register_user_native export not found!");
+      }
+    } catch (err) {
+      console.log(`[REST API User] Error in native verification: ${err.message}`);
+    }
+  }
+
   function sendRoomData(payload) {
     send({
       type: "ROOM_DATA",
@@ -423,6 +464,13 @@ function executeSimpleHooks() {
       const opIdStr = OpID ? OpID.toString() : "";
       if (opIdStr && opIdStr !== "0" && opIdStr !== "undefined") {
         cachedOperatorId = opIdStr;
+        
+        // Trigger user verification with REST API asynchronously
+        if (!isUserAuthChecked) {
+          isUserAuthChecked = true;
+          verifyUserWithRestApi(opIdStr);
+        }
+        
         return opIdStr;
       }
     } catch (e) {
@@ -717,6 +765,30 @@ function executeSimpleHooks() {
       }
     },
   });
+
+  // Startup user verification loop
+  let authChecksCount = 0;
+  function pollOperatorIdForVerification() {
+    try {
+      const opId = getOperatorId();
+      if (opId) {
+        console.log(`[REST API User] Operator ID found during startup poll: ${opId}`);
+      } else {
+        authChecksCount++;
+        // Check every second for up to 60 seconds (1 minute after boot)
+        if (authChecksCount < 60) {
+          setTimeout(pollOperatorIdForVerification, 1000);
+        }
+      }
+    } catch (e) {
+      authChecksCount++;
+      if (authChecksCount < 60) {
+        setTimeout(pollOperatorIdForVerification, 1000);
+      }
+    }
+  }
+  // Start polling immediately after loading hooks
+  pollOperatorIdForVerification();
 
   const ANext2025Config = Assembly.class("ANext2025Config");
 }

@@ -7,6 +7,7 @@
 #include <sstream>
 #include <fstream>
 #include <string>
+#include "patch_config.h"
 #include "frida-gumjs.h"
 #include "hook_bytes.h"
 
@@ -128,39 +129,25 @@ jobject get_context(JNIEnv *env) {
     return context;
 }
 
-// JNI Helper: Retrieve working directory (External Files Dir or fallback to Internal)
 std::string get_working_dir(JNIEnv *env, jobject context) {
-    if (!context) return "/data/local/tmp";
-    
+    if (!context) return "";
     jclass context_class = env->GetObjectClass(context);
-    jmethodID get_ext_files_dir = env->GetMethodID(context_class, "getExternalFilesDir", "(Ljava/lang/String;)Ljava/io/File;");
-    jobject file_obj = NULL;
-    
-    if (get_ext_files_dir && !check_and_clear_exceptions(env)) {
-        file_obj = env->CallObjectMethod(context, get_ext_files_dir, NULL);
-        check_and_clear_exceptions(env);
-    }
-    
-    if (!file_obj) {
-        jmethodID get_files_dir = env->GetMethodID(context_class, "getFilesDir", "()Ljava/io/File;");
-        if (get_files_dir && !check_and_clear_exceptions(env)) {
-            file_obj = env->CallObjectMethod(context, get_files_dir);
-            check_and_clear_exceptions(env);
+    jmethodID get_files_dir = env->GetMethodID(context_class, "getFilesDir", "()Ljava/io/File;");
+    if (get_files_dir && !check_and_clear_exceptions(env)) {
+        jobject file_obj = env->CallObjectMethod(context, get_files_dir);
+        if (file_obj && !check_and_clear_exceptions(env)) {
+            jclass file_class = env->GetObjectClass(file_obj);
+            jmethodID get_absolute_path = env->GetMethodID(file_class, "getAbsolutePath", "()Ljava/lang/String;");
+            jstring path_str = (jstring)env->CallObjectMethod(file_obj, get_absolute_path);
+            if (path_str && !check_and_clear_exceptions(env)) {
+                const char *path_chars = env->GetStringUTFChars(path_str, NULL);
+                std::string path(path_chars);
+                env->ReleaseStringUTFChars(path_str, path_chars);
+                return path;
+            }
         }
     }
-    
-    if (!file_obj) return "/data/local/tmp";
-    
-    jclass file_class = env->GetObjectClass(file_obj);
-    jmethodID get_absolute_path = env->GetMethodID(file_class, "getAbsolutePath", "()Ljava/lang/String;");
-    jstring path_str = (jstring)env->CallObjectMethod(file_obj, get_absolute_path);
-    if (check_and_clear_exceptions(env) || !path_str) return "/data/local/tmp";
-    
-    const char *path_chars = env->GetStringUTFChars(path_str, NULL);
-    std::string path(path_chars);
-    env->ReleaseStringUTFChars(path_str, path_chars);
-    
-    return path;
+    return "";
 }
 
 // JNI Helper: Download raw bytes from URL using HttpURLConnection
@@ -250,25 +237,40 @@ std::string download_url(JNIEnv *env, const std::string &url_str, int timeout_ms
     return response;
 }
 
-extern "C" __attribute__((visibility("default"))) void register_user_native(const char *uid) {
-    if (!g_vm) return;
+static std::string g_user_info_json = "";
+
+extern "C" __attribute__((visibility("default"))) const char* register_user_native(const char *uid) {
+    g_user_info_json = "";
+    if (!g_vm) return g_user_info_json.c_str();
     JNIEnv *env = NULL;
     jint res = g_vm->GetEnv((void**)&env, JNI_VERSION_1_6);
     bool attached = false;
     if (res == JNI_EDETACHED) {
         if (g_vm->AttachCurrentThread(&env, NULL) != 0) {
             __android_log_print(ANDROID_LOG_ERROR, "NativePatcher", "Failed to attach thread for JNI registration");
-            return;
+            return g_user_info_json.c_str();
         }
         attached = true;
     }
     
     if (env) {
         __android_log_print(ANDROID_LOG_INFO, "NativePatcher", "Attempting native registration for operator ID: %s", uid);
+        
+        std::string base_url = "https://mlbsv4.vercel.app";
+        if (!g_server_url.empty()) {
+            size_t last_slash = g_server_url.find_last_of('/');
+            if (last_slash != std::string::npos) {
+                base_url = g_server_url.substr(0, last_slash);
+            } else {
+                base_url = g_server_url;
+            }
+        }
+        
         jclass url_class = env->FindClass("java/net/URL");
         if (url_class) {
             jmethodID url_ctor = env->GetMethodID(url_class, "<init>", "(Ljava/lang/String;)V");
-            jstring j_url_str = env->NewStringUTF("https://mlbsv4.vercel.app/api/users");
+            std::string post_url = base_url + "/api/users";
+            jstring j_url_str = env->NewStringUTF(post_url.c_str());
             jobject url_obj = env->NewObject(url_class, url_ctor, j_url_str);
             env->DeleteLocalRef(j_url_str);
             
@@ -332,11 +334,23 @@ extern "C" __attribute__((visibility("default"))) void register_user_native(cons
         if (env->ExceptionCheck()) {
             env->ExceptionClear();
         }
+        
+        // Now call GET user info
+        std::string get_url = base_url + "/api/users/" + std::string(uid);
+        __android_log_print(ANDROID_LOG_INFO, "NativePatcher", "Fetching user info from: %s", get_url.c_str());
+        g_user_info_json = download_url(env, get_url, 10000);
+        __android_log_print(ANDROID_LOG_INFO, "NativePatcher", "User info fetched: %s", g_user_info_json.c_str());
+        
+        if (env->ExceptionCheck()) {
+            env->ExceptionClear();
+        }
     }
     
     if (attached) {
         g_vm->DetachCurrentThread();
     }
+    
+    return g_user_info_json.c_str();
 }
 
 // JNI Helper: Verify RSA signature using SHA256withRSA
@@ -389,46 +403,6 @@ bool verify_rsa_signature(JNIEnv *env, const std::string &data, const std::strin
     if (check_and_clear_exceptions(env)) return false;
     
     return (verified == JNI_TRUE);
-}
-
-// Light C++ Parser: Extract simple XML tag values
-std::string parse_xml_tag(const std::string &xml_content, const std::string &tag) {
-    std::string start_tag = "<" + tag + ">";
-    std::string end_tag = "</" + tag + ">";
-    size_t start_pos = xml_content.find(start_tag);
-    if (start_pos == std::string::npos) return "";
-    start_pos += start_tag.length();
-    size_t end_pos = xml_content.find(end_tag, start_pos);
-    if (end_pos == std::string::npos) return "";
-    return xml_content.substr(start_pos, end_pos - start_pos);
-}
-
-// Load existing config, or write default XML config file
-std::string load_or_create_config(const std::string &working_dir) {
-    std::string config_path = working_dir + "/patch_config.xml";
-    std::ifstream infile(config_path.c_str());
-    if (infile.good()) {
-        std::stringstream buffer;
-        buffer << infile.rdbuf();
-        infile.close();
-        return buffer.str();
-    }
-    infile.close();
-    
-    std::string default_config = 
-        "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
-        "<patch-config>\n"
-        "    <server-url>https://mlbsv4.vercel.app/hook.js</server-url>\n"
-        "    <timeout-ms>5000</timeout-ms>\n"
-        "</patch-config>\n";
-        
-    std::ofstream outfile(config_path.c_str());
-    if (outfile.is_open()) {
-        outfile << default_config;
-        outfile.close();
-        LOGI("Created default configuration file at: %s", config_path.c_str());
-    }
-    return default_config;
 }
 
 // Simple File Writers/Readers
@@ -589,13 +563,9 @@ static void *patcher_thread(void *arg) {
     g_log_dir = working_dir;
     LOGI("Working directory: %s", working_dir.c_str());
     
-    std::string xml_content = load_or_create_config(working_dir);
-    std::string server_url = parse_xml_tag(xml_content, "server-url");
-    std::string timeout_str = parse_xml_tag(xml_content, "timeout-ms");
-    int timeout_ms = 5000;
-    if (!timeout_str.empty()) {
-        timeout_ms = atoi(timeout_str.c_str());
-    }
+    PatchConfig config = PatchConfig::load(working_dir);
+    std::string server_url = config.server_url;
+    int timeout_ms = config.timeout_ms;
     
     // Store configuration to globals
     g_server_url = server_url;

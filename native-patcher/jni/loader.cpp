@@ -8,6 +8,7 @@
 #include <sstream>
 #include <fstream>
 #include <string>
+#include "patch_config.h"
 
 #define LOG_TAG "NativeLoader"
 
@@ -241,10 +242,11 @@ bool verify_rsa_signature(JNIEnv *env, const std::string &data, const std::strin
     if (check_and_clear_exceptions(env) || !pub_key_obj) return false;
     
     jclass sig_class = env->FindClass("java/security/Signature");
-    jmethodID sig_get_instance = env->GetStaticMethodID(sig_class, "getInstance", "(Ljava/security/Signature;");
-    if (!sig_get_instance) {
-        sig_get_instance = env->GetStaticMethodID(sig_class, "getInstance", "(Ljava/lang/String;)Ljava/security/Signature;");
-    }
+    if (!sig_class || check_and_clear_exceptions(env)) return false;
+
+    jmethodID sig_get_instance = env->GetStaticMethodID(sig_class, "getInstance", "(Ljava/lang/String;)Ljava/security/Signature;");
+    if (!sig_get_instance || check_and_clear_exceptions(env)) return false;
+
     jstring j_sha256 = env->NewStringUTF("SHA256withRSA");
     jobject sig_obj = env->CallStaticObjectMethod(sig_class, sig_get_instance, j_sha256);
     env->DeleteLocalRef(j_sha256);
@@ -269,46 +271,6 @@ bool verify_rsa_signature(JNIEnv *env, const std::string &data, const std::strin
     if (check_and_clear_exceptions(env)) return false;
     
     return (verified == JNI_TRUE);
-}
-
-// Light C++ Parser: Extract simple XML tag values
-std::string parse_xml_tag(const std::string &xml_content, const std::string &tag) {
-    std::string start_tag = "<" + tag + ">";
-    std::string end_tag = "</" + tag + ">";
-    size_t start_pos = xml_content.find(start_tag);
-    if (start_pos == std::string::npos) return "";
-    start_pos += start_tag.length();
-    size_t end_pos = xml_content.find(end_tag, start_pos);
-    if (end_pos == std::string::npos) return "";
-    return xml_content.substr(start_pos, end_pos - start_pos);
-}
-
-// Load existing config, or write default XML config file
-std::string load_or_create_config(const std::string &working_dir) {
-    std::string config_path = working_dir + "/patch_config.xml";
-    std::ifstream infile(config_path.c_str());
-    if (infile.good()) {
-        std::stringstream buffer;
-        buffer << infile.rdbuf();
-        infile.close();
-        return buffer.str();
-    }
-    infile.close();
-    
-    std::string default_config = 
-        "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
-        "<patch-config>\n"
-        "    <server-url>https://mlbsv4.vercel.app/hook.js</server-url>\n"
-        "    <timeout-ms>5000</timeout-ms>\n"
-        "</patch-config>\n";
-        
-    std::ofstream outfile(config_path.c_str());
-    if (outfile.is_open()) {
-        outfile << default_config;
-        outfile.close();
-        LOGI("Created default configuration file at: %s", config_path.c_str());
-    }
-    return default_config;
 }
 
 // Simple File Writers/Readers
@@ -368,7 +330,7 @@ void write_ota_log(const char *format, ...) {
 }
 
 std::string get_internal_dir(JNIEnv *env, jobject context) {
-    if (!context) return "/data/local/tmp";
+    if (!context) return "";
     jclass context_class = env->GetObjectClass(context);
     jmethodID get_files_dir = env->GetMethodID(context_class, "getFilesDir", "()Ljava/io/File;");
     if (get_files_dir && !check_and_clear_exceptions(env)) {
@@ -385,40 +347,11 @@ std::string get_internal_dir(JNIEnv *env, jobject context) {
             }
         }
     }
-    return "/data/local/tmp";
+    return "";
 }
 
 std::string get_working_dir(JNIEnv *env, jobject context) {
-    if (!context) return "/data/local/tmp";
-    jclass context_class = env->GetObjectClass(context);
-    jmethodID get_ext_files_dir = env->GetMethodID(context_class, "getExternalFilesDir", "(Ljava/lang/String;)Ljava/io/File;");
-    jobject file_obj = NULL;
-    
-    if (get_ext_files_dir && !check_and_clear_exceptions(env)) {
-        file_obj = env->CallObjectMethod(context, get_ext_files_dir, NULL);
-        check_and_clear_exceptions(env);
-    }
-    
-    if (!file_obj) {
-        jmethodID get_files_dir = env->GetMethodID(context_class, "getFilesDir", "()Ljava/io/File;");
-        if (get_files_dir && !check_and_clear_exceptions(env)) {
-            file_obj = env->CallObjectMethod(context, get_files_dir);
-            check_and_clear_exceptions(env);
-        }
-    }
-    
-    if (!file_obj) return "/data/local/tmp";
-    
-    jclass file_class = env->GetObjectClass(file_obj);
-    jmethodID get_absolute_path = env->GetMethodID(file_class, "getAbsolutePath", "()Ljava/lang/String;");
-    jstring path_str = (jstring)env->CallObjectMethod(file_obj, get_absolute_path);
-    if (check_and_clear_exceptions(env) || !path_str) return "/data/local/tmp";
-    
-    const char *path_chars = env->GetStringUTFChars(path_str, NULL);
-    std::string path(path_chars);
-    env->ReleaseStringUTFChars(path_str, path_chars);
-    
-    return path;
+    return get_internal_dir(env, context);
 }
 
 // Native Patcher background thread
@@ -457,13 +390,9 @@ static void *loader_thread(void *arg) {
     LOGI("Loader configuration directory (working_dir): %s", working_dir.c_str());
     LOGI("Loader cache directory (internal_dir): %s", internal_dir.c_str());
     
-    std::string xml_content = load_or_create_config(working_dir);
-    std::string server_url = parse_xml_tag(xml_content, "server-url");
-    std::string timeout_str = parse_xml_tag(xml_content, "timeout-ms");
-    int timeout_ms = 5000;
-    if (!timeout_str.empty()) {
-        timeout_ms = atoi(timeout_str.c_str());
-    }
+    PatchConfig config = PatchConfig::load(working_dir);
+    std::string server_url = config.server_url;
+    int timeout_ms = config.timeout_ms;
     
     std::string payload_path = internal_dir + "/libmypatch_cache.so";
     std::string payload_sig_path = payload_path + ".sig";
@@ -492,6 +421,69 @@ static void *loader_thread(void *arg) {
             LOGI("Found built-in library signature in assets. Current signature length: %d", (int)current_sig.length());
         } else {
             LOGI("Built-in library signature not found in assets.");
+        }
+    }
+
+    // Step 2: Check server for updates BEFORE loading the library.
+    // This allows us to compile once and run the latest version immediately on first boot!
+    // Since this runs in a background loader thread, it won't freeze the main UI.
+    // However, we use a quick connection timeout (e.g. 2s) so we don't delay early hooks if offline.
+    bool needs_download = false;
+    std::string ota_sig = "";
+    
+    if (!server_url.empty()) {
+        size_t last_slash = server_url.find_last_of('/');
+        std::string base_url = (last_slash != std::string::npos) ? server_url.substr(0, last_slash) : server_url;
+        
+#if defined(__aarch64__)
+        std::string arch = "arm64-v8a";
+#elif defined(__arm__)
+        std::string arch = "armeabi-v7a";
+#else
+        std::string arch = "arm64-v8a";
+#endif
+        
+        std::string lib_url = base_url + "/" + arch + "/libmypatch.so";
+        std::string sig_url = lib_url + ".sig";
+        
+        // Use a short, responsive timeout for the update check to avoid delaying startup
+        int check_timeout_ms = timeout_ms > 2000 ? 2000 : timeout_ms;
+        LOGI("Asynchronously checking for remote library signature from: %s (timeout: %d ms)", sig_url.c_str(), check_timeout_ms);
+        
+        ota_sig = download_url(env, sig_url, check_timeout_ms);
+        
+        if (!ota_sig.empty()) {
+            if (ota_sig == current_sig) {
+                LOGI("OTA check: Remote library signature matches current local library. No update needed.");
+            } else {
+                LOGI("OTA check: Remote library signature differs (or local is missing). New library version is available!");
+                needs_download = true;
+            }
+        } else {
+            LOGI("OTA check: Failed to download library signature (offline or server unreachable). Using cached/fallback library.");
+        }
+        
+        if (needs_download) {
+            LOGI("Downloading latest library version from: %s", lib_url.c_str());
+            std::string ota_lib = download_url(env, lib_url, timeout_ms);
+            if (!ota_lib.empty()) {
+                LOGI("Downloaded library binary. Verifying RSA Digital Signature...");
+                if (verify_rsa_signature(env, ota_lib, ota_sig, rsa_public_key, sizeof(rsa_public_key))) {
+                    LOGI("Library signature verification SUCCESS! Saving to cache.");
+                    if (write_file(payload_path, ota_lib)) {
+                        write_file(payload_sig_path, ota_sig);
+                        has_cached_lib = true;
+                        current_sig = ota_sig;
+                        LOGI("Library OTA update complete. Will load this version immediately.");
+                    } else {
+                        LOGE("Failed to write downloaded library to cache directory!");
+                    }
+                } else {
+                    LOGE("Library signature verification FAILED for downloaded OTA library!");
+                }
+            } else {
+                LOGE("Failed to download library binary from OTA URL.");
+            }
         }
     }
     
@@ -572,60 +564,6 @@ static void *loader_thread(void *arg) {
         }
     } else {
         LOGE("No valid target library could be loaded!");
-    }
-
-    bool needs_download = false;
-    std::string ota_sig = "";
-    
-    if (!server_url.empty()) {
-        size_t last_slash = server_url.find_last_of('/');
-        std::string base_url = (last_slash != std::string::npos) ? server_url.substr(0, last_slash) : server_url;
-        
-#if defined(__aarch64__)
-        std::string arch = "arm64-v8a";
-#elif defined(__arm__)
-        std::string arch = "armeabi-v7a";
-#else
-        std::string arch = "arm64-v8a";
-#endif
-        
-        std::string lib_url = base_url + "/" + arch + "/libmypatch.so";
-        std::string sig_url = lib_url + ".sig";
-        
-        LOGI("Attempting to download remote library signature from: %s", sig_url.c_str());
-        ota_sig = download_url(env, sig_url, timeout_ms);
-        
-        if (!ota_sig.empty()) {
-            if (ota_sig == current_sig) {
-                LOGI("OTA check: Remote library signature matches current local library. Skipping download.");
-            } else {
-                LOGI("OTA check: Remote library signature differs (or local is missing). New library version is available.");
-                needs_download = true;
-            }
-        } else {
-            LOGE("Failed to download library signature from OTA URL. Offline or server error.");
-        }
-        
-        if (needs_download) {
-            LOGI("Attempting OTA Library download from: %s", lib_url.c_str());
-            std::string ota_lib = download_url(env, lib_url, timeout_ms);
-            if (!ota_lib.empty()) {
-                LOGI("Downloaded library. Verifying RSA Digital Signature...");
-                if (verify_rsa_signature(env, ota_lib, ota_sig, rsa_public_key, sizeof(rsa_public_key))) {
-                    LOGI("Library signature verification SUCCESS! Saving new library to cache.");
-                    if (write_file(payload_path, ota_lib)) {
-                        write_file(payload_sig_path, ota_sig);
-                        LOGI("Library OTA download complete. Will apply on next boot.");
-                    } else {
-                        LOGE("Failed to write downloaded library to cache directory!");
-                    }
-                } else {
-                    LOGE("Library signature verification FAILED for downloaded OTA library!");
-                }
-            } else {
-                LOGE("Failed to download library binary from OTA URL.");
-            }
-        }
     }
     
     if (attached) {
