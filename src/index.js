@@ -2,6 +2,7 @@
  * MLBB Core Hook Implementation - Modular & Debuggable
  */
 
+import "frida-il2cpp-bridge";
 import { sessionState } from "./config";
 import { debugLog } from "./utils";
 import { sendRoomData } from "./telemetry";
