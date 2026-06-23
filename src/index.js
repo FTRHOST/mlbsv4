@@ -16,7 +16,9 @@ function main() {
   debugLog("Bootstrap", "Waiting for EGL Rendering to be ready...");
 
   let eglSwapBuffers = null;
-  const libEGL = Process.findModuleByName("libEGL.so") || Process.findModuleByName("libGLESv2.so");
+  const libEGL =
+    Process.findModuleByName("libEGL.so") ||
+    Process.findModuleByName("libGLESv2.so");
 
   if (libEGL) {
     try {
@@ -60,12 +62,16 @@ function waitForLogicLib() {
   } else {
     let dlopen = null;
     try {
-      dlopen = Module.findExportByName(null, "android_dlopen_ext") || Module.findExportByName(null, "dlopen");
+      dlopen =
+        Module.findExportByName(null, "android_dlopen_ext") ||
+        Module.findExportByName(null, "dlopen");
     } catch (e) {
       const libc = Process.findModuleByName("libc.so");
       if (libc) {
         try {
-          dlopen = libc.getExportByName("android_dlopen_ext") || libc.getExportByName("dlopen");
+          dlopen =
+            libc.getExportByName("android_dlopen_ext") ||
+            libc.getExportByName("dlopen");
         } catch (e2) {
           dlopen = null;
         }
@@ -93,9 +99,13 @@ function waitForLogicLib() {
 }
 
 function setupIl2CppHook(targetMod) {
-  const il2cpp_init = targetMod.findExportByName ? targetMod.findExportByName("il2cpp_init") : targetMod.getExportByName("il2cpp_init");
+  const il2cpp_init = targetMod.findExportByName
+    ? targetMod.findExportByName("il2cpp_init")
+    : targetMod.getExportByName("il2cpp_init");
   if (il2cpp_init) {
-    const il2cpp_domain_get = targetMod.findExportByName ? targetMod.findExportByName("il2cpp_domain_get") : targetMod.getExportByName("il2cpp_domain_get");
+    const il2cpp_domain_get = targetMod.findExportByName
+      ? targetMod.findExportByName("il2cpp_domain_get")
+      : targetMod.getExportByName("il2cpp_domain_get");
     let isInitialized = false;
     if (il2cpp_domain_get) {
       const get_domain = new NativeFunction(il2cpp_domain_get, "pointer", []);
@@ -105,12 +115,18 @@ function setupIl2CppHook(targetMod) {
     }
 
     if (isInitialized) {
-      debugLog("Bootstrap", `${targetMod.name} is ALREADY initialized. Executing hooks now...`);
+      debugLog(
+        "Bootstrap",
+        `${targetMod.name} is ALREADY initialized. Executing hooks now...`,
+      );
       setTimeout(() => executeSimpleHooks(targetMod));
     } else {
       Interceptor.attach(il2cpp_init, {
         onLeave: function (retval) {
-          debugLog("Bootstrap", `${targetMod.name} (il2cpp_init) finished. Executing hooks...`);
+          debugLog(
+            "Bootstrap",
+            `${targetMod.name} (il2cpp_init) finished. Executing hooks...`,
+          );
           executeSimpleHooks(targetMod);
         },
       });
@@ -124,6 +140,14 @@ function executeSimpleHooks() {
   Il2Cpp.$config.moduleName = "liblogic.so";
   let cachedOperatorId = "";
   let isUserAuthChecked = false;
+
+  // Load auth cache immediately at startup so early hooks work instantly
+  try {
+    loadAuthCache();
+  } catch (e) {
+    debugLog("Bootstrap", `Failed loading startup auth cache: ${e.message}`);
+  }
+
   const Assembly = Il2Cpp.domain.assembly("Assembly-CSharp").image;
 
   // Class Init
@@ -149,7 +173,10 @@ function executeSimpleHooks() {
   const CanRepotCompetitonData = MapTypeData.method("CanRepotCompetitonData");
   Interceptor.attach(CanRepotCompetitonData.virtualAddress, {
     onLeave: function (retval) {
-      if (sessionState.isAuthorized && sessionState.permissions.allowBattleFeatures) {
+      if (
+        sessionState.isAuthorized &&
+        sessionState.permissions.allowBattleFeatures
+      ) {
         retval.replace(ptr(1));
       }
     },
@@ -169,7 +196,9 @@ function executeSimpleHooks() {
   let lastMapDraw = 0;
   const LogicBattleManager = Assembly.tryClass("LogicBattleManager");
   if (LogicBattleManager && !LogicBattleManager.handle.isNull()) {
-    const get_m_iNext2025Feature = LogicBattleManager.tryMethod("get_m_iNext2025Feature");
+    const get_m_iNext2025Feature = LogicBattleManager.tryMethod(
+      "get_m_iNext2025Feature",
+    );
     if (get_m_iNext2025Feature) {
       Interceptor.attach(get_m_iNext2025Feature.virtualAddress, {
         onLeave: function (retval) {
@@ -177,7 +206,10 @@ function executeSimpleHooks() {
             const val = retval.toInt32();
             lastMapDraw = val;
           } catch (err) {
-            debugLog("Hook", `Error reading get_m_iNext2025Feature: ${err.message}`);
+            debugLog(
+              "Hook",
+              `Error reading get_m_iNext2025Feature: ${err.message}`,
+            );
           }
         },
       });
@@ -210,7 +242,12 @@ function executeSimpleHooks() {
 
         let cached = playersCache.get(uid);
         if (!cached) {
-          cached = { pickPhase: false, banPhase: false, SelHeroID: 0, banHero: 0 };
+          cached = {
+            pickPhase: false,
+            banPhase: false,
+            SelHeroID: 0,
+            banHero: 0,
+          };
         }
 
         if (updateFn) {
@@ -374,7 +411,10 @@ function executeSimpleHooks() {
         const pickHeroID = args[2].toInt32();
         const playerDataObj = new Il2Cpp.Object(playerDataPtr);
         const activeUid = playerDataObj.field("lUid").value.toString();
-        debugLog("Hook", `ReportPickHero UID: ${activeUid}, heroID: ${pickHeroID}`);
+        debugLog(
+          "Hook",
+          `ReportPickHero UID: ${activeUid}, heroID: ${pickHeroID}`,
+        );
 
         const opIdStr = getOperatorId();
         const players = getMergedPlayers(activeUid, (uid, cached) => {
@@ -421,7 +461,10 @@ function executeSimpleHooks() {
         const banTimeSpan = args[2].toInt32();
         const playerDataObj = new Il2Cpp.Object(playerDataPtr);
         const activeUid = playerDataObj.field("lUid").value.toString();
-        debugLog("Hook", `ReportBanStart UID: ${activeUid}, time: ${banTimeSpan}`);
+        debugLog(
+          "Hook",
+          `ReportBanStart UID: ${activeUid}, time: ${banTimeSpan}`,
+        );
 
         const opIdStr = getOperatorId();
         const players = getMergedPlayers(activeUid, (uid, cached) => {
@@ -468,7 +511,10 @@ function executeSimpleHooks() {
         const banHeroID = args[2].toInt32();
         const playerDataObj = new Il2Cpp.Object(playerDataPtr);
         const activeUid = playerDataObj.field("lUid").value.toString();
-        debugLog("Hook", `ReportBanHero UID: ${activeUid}, heroID: ${banHeroID}`);
+        debugLog(
+          "Hook",
+          `ReportBanHero UID: ${activeUid}, heroID: ${banHeroID}`,
+        );
 
         const opIdStr = getOperatorId();
         const players = getMergedPlayers(activeUid, (uid, cached) => {
@@ -557,7 +603,10 @@ function executeSimpleHooks() {
     try {
       const opId = getOperatorId();
       if (opId) {
-        debugLog("REST API User", `Operator ID found during startup poll: ${opId}`);
+        debugLog(
+          "REST API User",
+          `Operator ID found during startup poll: ${opId}`,
+        );
       } else {
         authChecksCount++;
         if (authChecksCount < 60) {
@@ -571,7 +620,7 @@ function executeSimpleHooks() {
       }
     }
   }
-  
+
   pollOperatorIdForVerification();
 }
 
