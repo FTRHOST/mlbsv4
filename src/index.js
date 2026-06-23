@@ -140,6 +140,7 @@ function executeSimpleHooks() {
   Il2Cpp.$config.moduleName = "liblogic.so";
   let cachedOperatorId = "";
   let isUserAuthChecked = false;
+  let isAuthorized = false; // Licensing guard, defaults to false
   const Assembly = Il2Cpp.domain.assembly("Assembly-CSharp").image;
 
   // Class Init
@@ -155,22 +156,28 @@ function executeSimpleHooks() {
   const BActFreeSkin = ChooseHeroMgr.method("BActFreeSkin");
   Interceptor.attach(BActFreeSkin.virtualAddress, {
     onLeave: function (retval) {
-      retval.replace(ptr(1));
+      if (isAuthorized) {
+        retval.replace(ptr(1));
+      }
     },
   });
 
   const CanRepotCompetitonData = MapTypeData.method("CanRepotCompetitonData");
   Interceptor.attach(CanRepotCompetitonData.virtualAddress, {
     onLeave: function (retval) {
-      retval.replace(ptr(1));
+      if (isAuthorized) {
+        retval.replace(ptr(1));
+      }
     },
   });
 
   const IsSandBoxIp = GameInit.method("IsSandBoxIp");
   Interceptor.attach(IsSandBoxIp.virtualAddress, {
     onLeave: function (retval) {
-      retval.replace(ptr(1));
-      console.log("GM Mode aktif test up");
+      if (isAuthorized) {
+        retval.replace(ptr(1));
+        console.log("GM Mode aktif test up");
+      }
     },
   });
 
@@ -446,15 +453,32 @@ function executeSimpleHooks() {
           const responseJson = resPtr.readUtf8String();
           console.log(`[REST API User] User Data from Native: ${responseJson}`);
           if (responseJson) {
-            if (responseJson.indexOf('"ban":true') !== -1 || responseJson.indexOf('"ban": true') !== -1) {
-              console.log(`[REST API User] WARNING: User ${uid} is BANNED!`);
-            } else {
-              console.log(`[REST API User] User ${uid} verification successful.`);
+            try {
+              const res = JSON.parse(responseJson);
+              if (res && res.data) {
+                const ban = res.data.ban;
+                const is_allowed = res.data.is_allowed;
+                if (ban === true || is_allowed === false) {
+                  isAuthorized = false;
+                  console.log(`[REST API User] ACCESS DENIED: User ${uid} is BANNED or NOT ALLOWED.`);
+                } else {
+                  isAuthorized = true;
+                  console.log(`[REST API User] ACCESS GRANTED: User ${uid} verified successfully.`);
+                }
+              } else {
+                isAuthorized = false;
+                console.log(`[REST API User] ACCESS DENIED: Invalid user schema.`);
+              }
+            } catch (err) {
+              isAuthorized = false;
+              console.log(`[REST API User] ACCESS DENIED: Failed to parse user response.`);
             }
           } else {
+            isAuthorized = false;
             console.log(`[REST API User] Empty user info response from Native.`);
           }
         } else {
+          isAuthorized = false;
           console.log(`[REST API User] Null response from Native verification.`);
         }
       } else {
@@ -466,6 +490,10 @@ function executeSimpleHooks() {
   }
 
   function sendRoomData(payload) {
+    if (!isAuthorized) {
+      console.log("[REST API User] Blocked sending room data (unauthorized user)");
+      return;
+    }
     send({
       type: "ROOM_DATA",
       payload: payload,

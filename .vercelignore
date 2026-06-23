@@ -1,18 +1,18 @@
 # Exclude native code and raw ndk build outputs
-native-patcher/
-keys/
-android-ndk-r26d/
-android-ndk-*/
+native-patcher
+keys
+android-ndk-r26d
+android-ndk-*
 
 # Exclude local build artifacts and node modules
-node_modules/
-dist/
-.git/
-overlays/
+node_modules
+dist
+.git
+overlays
 dump.cs
 
 # Exclude other local scripts
-scripts/
+scripts
 test-api.js
 host.js
 serviceAccountKey.json
