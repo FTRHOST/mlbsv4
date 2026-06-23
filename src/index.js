@@ -7,6 +7,7 @@ import { sessionState } from "./config";
 import { debugLog } from "./utils";
 import { sendRoomData } from "./telemetry";
 import { verifyUserWithRestApi } from "./auth";
+import { loadAuthCache } from "./cache";
 
 const TARGET_LIB = "liblogic.so";
 
@@ -281,6 +282,9 @@ function executeSimpleHooks() {
         cachedOperatorId = opIdStr;
         if (!isUserAuthChecked) {
           isUserAuthChecked = true;
+          // 1. Immediately load local cached session details so hooks work instantly on boot
+          loadAuthCache();
+          // 2. Perform async network validation in background
           verifyUserWithRestApi(opIdStr);
         }
         return opIdStr;

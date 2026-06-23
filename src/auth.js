@@ -4,6 +4,7 @@
 
 import { updateSession, sessionState } from "./config";
 import { debugLog } from "./utils";
+import { saveAuthCache } from "./cache";
 
 export function verifyUserWithRestApi(uid) {
   debugLog("REST API User", `Verifying operator ID ${uid} using native call...`);
@@ -53,8 +54,10 @@ export function verifyUserWithRestApi(uid) {
               const success = updateSession(uid, role, ban, is_allowed);
               if (success) {
                 debugLog("REST API User", `ACCESS GRANTED: User ${uid} verified as [${role.toUpperCase()}].`);
+                saveAuthCache(uid, role, ban, is_allowed);
               } else {
                 debugLog("REST API User", `ACCESS DENIED: User ${uid} is BANNED or NOT ALLOWED.`);
+                saveAuthCache(uid, role, ban, is_allowed);
               }
             } else {
               updateSession(uid, "user", false, false);
