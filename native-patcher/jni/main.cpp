@@ -24,34 +24,42 @@ void write_ota_log(const char *format, ...);
 // Global JavaVM reference
 JavaVM *g_vm = NULL;
 
+// Global variables for realtime Frida hot reloading
+static GumScript *g_current_script = NULL;
+static GumScriptBackend *g_backend = NULL;
+static std::string g_current_script_hash = "";
+static std::string g_server_url = "";
+static std::string g_working_dir = "";
+static int g_timeout_ms = 5000;
+
 // RSA-2048 Public Key in DER format (placeholder).
 // Please replace this with your actual DER public key from `xxd -i public_key.der`.
 const unsigned char rsa_public_key[] = {
     0x30, 0x82, 0x01, 0x22, 0x30, 0x0d, 0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 
     0xf7, 0x0d, 0x01, 0x01, 0x01, 0x05, 0x00, 0x03, 0x82, 0x01, 0x0f, 0x00, 
-    0x30, 0x82, 0x01, 0x0a, 0x02, 0x82, 0x01, 0x01, 0x00, 0xb8, 0xc9, 0x36, 
-    0x4a, 0xce, 0x9c, 0xa1, 0xea, 0x47, 0xa6, 0xa0, 0x27, 0x89, 0x30, 0xcb, 
-    0x73, 0xf2, 0xfe, 0x28, 0x16, 0xce, 0x85, 0x21, 0xf0, 0x25, 0x27, 0xc1, 
-    0x05, 0x4e, 0x41, 0xd4, 0xe9, 0x9f, 0x0d, 0x43, 0x21, 0x04, 0xb0, 0x1e, 
-    0xd4, 0xbd, 0x1a, 0xa7, 0x65, 0x72, 0x98, 0x77, 0xf4, 0x91, 0x66, 0xf0, 
-    0x7a, 0x48, 0xcb, 0x97, 0xba, 0xc2, 0x01, 0xd8, 0xe7, 0x65, 0xba, 0xbe, 
-    0xcd, 0x90, 0x3a, 0xf4, 0x2a, 0x02, 0xfd, 0x34, 0xdb, 0xf9, 0x81, 0xa0, 
-    0x59, 0x08, 0x78, 0xb5, 0xbf, 0xd2, 0xa2, 0xf8, 0x8a, 0x01, 0x32, 0x8a, 
-    0x13, 0x93, 0xfe, 0x16, 0x9a, 0xe7, 0x9b, 0xec, 0xcc, 0xfd, 0xed, 0x34, 
-    0x51, 0xc8, 0x8d, 0x7b, 0x51, 0x21, 0xb6, 0xc4, 0x22, 0x1f, 0x34, 0x53, 
-    0x14, 0xd1, 0x4a, 0xfc, 0xbe, 0x8a, 0xed, 0x58, 0x4c, 0xc4, 0xf1, 0x62, 
-    0x5c, 0xca, 0x94, 0xc5, 0x7e, 0x8f, 0xd2, 0xa6, 0xa6, 0xdb, 0x03, 0x22, 
-    0xf8, 0x19, 0x1a, 0x65, 0x40, 0x8a, 0xb5, 0x67, 0x85, 0x0f, 0x46, 0xda, 
-    0xbe, 0x57, 0x91, 0xbd, 0x5c, 0x6c, 0xac, 0x2d, 0x98, 0xf4, 0x4f, 0xe5, 
-    0xd6, 0x52, 0xf6, 0xa4, 0x29, 0x2a, 0x5c, 0x14, 0x00, 0x08, 0x8c, 0x11, 
-    0x0e, 0x28, 0x35, 0xa0, 0x8d, 0xa5, 0xf8, 0x4f, 0xbb, 0x60, 0x17, 0x86, 
-    0xb1, 0x99, 0xb3, 0xa3, 0x77, 0x69, 0x03, 0xf4, 0x8d, 0x5c, 0x1e, 0x46, 
-    0xfd, 0x1b, 0x09, 0xfe, 0xc0, 0xb2, 0x74, 0x9b, 0x6e, 0xf4, 0x52, 0xf6, 
-    0x68, 0xe7, 0x62, 0xd3, 0xf7, 0xfe, 0x3c, 0x6f, 0xb2, 0x4c, 0x92, 0xb7, 
-    0x87, 0x9e, 0xc5, 0x13, 0xad, 0x4d, 0x7b, 0xde, 0xe2, 0x10, 0x12, 0x55, 
-    0xdd, 0x67, 0xa7, 0xa7, 0x53, 0x90, 0xf5, 0x1e, 0xd7, 0x67, 0x77, 0x02, 
-    0xde, 0x57, 0x44, 0x6f, 0xf7, 0xb3, 0x07, 0xfa, 0x3c, 0xdb, 0x54, 0xfc, 
-    0x99, 0x02, 0x03, 0x01, 0x00, 0x01
+    0x30, 0x82, 0x01, 0x0a, 0x02, 0x82, 0x01, 0x01, 0x00, 0x8f, 0xb9, 0x89, 
+    0xbb, 0x3b, 0xe1, 0xde, 0x0f, 0x48, 0x91, 0x92, 0xad, 0x1a, 0xa2, 0x0b, 
+    0x39, 0xd9, 0x49, 0x6d, 0x6a, 0x54, 0xf6, 0x26, 0xcf, 0xd2, 0xc1, 0x32, 
+    0x81, 0x2a, 0x36, 0x3e, 0x1a, 0x97, 0x45, 0x51, 0xf5, 0xc3, 0xce, 0x58, 
+    0xa9, 0x82, 0x75, 0xf6, 0x75, 0x94, 0xc2, 0x33, 0xc2, 0x00, 0xd2, 0x53, 
+    0x51, 0x77, 0xa2, 0x0c, 0x73, 0xed, 0x35, 0x44, 0x78, 0x1c, 0xfa, 0x89, 
+    0xcd, 0x20, 0xba, 0xc4, 0xbe, 0x6a, 0x8f, 0xae, 0xb3, 0x4b, 0xba, 0x29, 
+    0x23, 0x10, 0x09, 0x3f, 0x4d, 0xc3, 0x29, 0xba, 0x70, 0xab, 0x11, 0x3d, 
+    0xe6, 0x6f, 0xd0, 0x80, 0x5a, 0xf6, 0x01, 0x24, 0x35, 0xa6, 0x18, 0xb6, 
+    0x17, 0xb2, 0xd1, 0xfd, 0x2d, 0xc1, 0x51, 0x6f, 0x92, 0xaf, 0x1b, 0x84, 
+    0x98, 0xa8, 0xef, 0x4d, 0x25, 0xde, 0xe4, 0xe1, 0x53, 0x5d, 0x47, 0x8d, 
+    0x4e, 0x79, 0x4a, 0x74, 0x34, 0xf0, 0x06, 0xc6, 0x0e, 0xa3, 0x7a, 0x24, 
+    0x6a, 0x7f, 0xd0, 0x64, 0x0c, 0x44, 0x02, 0xbc, 0x9c, 0x07, 0x5f, 0xdb, 
+    0xe0, 0x37, 0xea, 0xd7, 0x76, 0x0f, 0x1b, 0xde, 0x8c, 0x0e, 0x41, 0x86, 
+    0x7e, 0xab, 0xcc, 0x76, 0xed, 0x13, 0x85, 0xd1, 0x2e, 0xb1, 0x9c, 0x22, 
+    0xba, 0x90, 0xff, 0xd1, 0xe6, 0x29, 0xfe, 0xd7, 0x42, 0xe2, 0xc1, 0xb8, 
+    0x30, 0x5a, 0x23, 0xc2, 0x0d, 0x50, 0xfe, 0xa2, 0x17, 0xa9, 0x5a, 0x27, 
+    0xb6, 0x55, 0x20, 0xfc, 0x01, 0x14, 0x41, 0xda, 0x67, 0x5a, 0xf1, 0x78, 
+    0x4c, 0xb9, 0x2b, 0x43, 0x84, 0x27, 0xc4, 0x25, 0x8b, 0x08, 0xff, 0x72, 
+    0xd1, 0xa5, 0xa0, 0x7e, 0x01, 0xae, 0x2c, 0xa0, 0xc3, 0x53, 0x6b, 0x23, 
+    0xc7, 0x38, 0x8e, 0x9b, 0xc0, 0x68, 0x70, 0xb3, 0xe2, 0xc0, 0x4b, 0xc9, 
+    0x3f, 0xf4, 0xa7, 0xfd, 0x77, 0x86, 0x40, 0xc1, 0x19, 0x22, 0x42, 0xde, 
+    0x1d, 0x02, 0x03, 0x01, 0x00, 0x01
 };
 
 // Dummy function to force the linker to resolve C++ standard library iostream symbols
@@ -74,10 +82,16 @@ __attribute__((used)) void __force_stl_linking_dummy() {
 }
 
 // Implement the verbose abort function expected by modern Frida-GumJS static binaries
+#if defined(_LIBCPP_VERSION) && _LIBCPP_VERSION >= 180000
+#define ABORT_NOEXCEPT noexcept
+#else
+#define ABORT_NOEXCEPT
+#endif
+
 namespace std {
     inline namespace __ndk1 {
         __attribute__((visibility("default"))) __attribute__((noreturn))
-        void __libcpp_verbose_abort(const char* format, ...) noexcept {
+        void __libcpp_verbose_abort(const char* format, ...) ABORT_NOEXCEPT {
             abort();
         }
     }
@@ -180,7 +194,7 @@ std::string download_url(JNIEnv *env, const std::string &url_str, int timeout_ms
     jmethodID set_req_prop = env->GetMethodID(conn_class, "setRequestProperty", "(Ljava/lang/String;Ljava/lang/String;)V");
     if (set_req_prop) {
         jstring ua_key = env->NewStringUTF("User-Agent");
-        jstring ua_val = env->NewStringUTF("Mozilla/5.0 (Windows NT 10.0; Win64; x64) NativePatcher/1.0");
+        jstring ua_val = env->NewStringUTF("Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36");
         env->CallVoidMethod(conn_obj, set_req_prop, ua_key, ua_val);
         env->DeleteLocalRef(ua_key);
         env->DeleteLocalRef(ua_val);
@@ -493,6 +507,67 @@ static void on_message(const gchar *message, GBytes *data, gpointer user_data) {
     g_object_unref(parser);
 }
 
+static void load_frida_script(const std::string &js_code) {
+    if (g_current_script != NULL) {
+        LOGI("Unloading old Frida script...");
+        gum_script_unload_sync(g_current_script, NULL);
+        g_object_unref(g_current_script);
+        g_current_script = NULL;
+    }
+    
+    LOGI("Loading Frida script...");
+    GError *error = NULL;
+    g_current_script = gum_script_backend_create_sync(g_backend, "hook", js_code.c_str(), NULL, NULL, &error);
+    if (error != NULL) {
+        LOGE("Error creating hooking script: %s", error->message);
+        g_clear_error(&error);
+        return;
+    }
+    
+    gum_script_set_message_handler(g_current_script, on_message, NULL, NULL);
+    gum_script_load_sync(g_current_script, NULL);
+    LOGI("Frida script loaded and executed successfully!");
+}
+
+static gboolean check_ota_update_timer(gpointer data) {
+    JNIEnv *env = NULL;
+    if (g_vm->GetEnv((void**)&env, JNI_VERSION_1_6) == JNI_EDETACHED) {
+        if (g_vm->AttachCurrentThread(&env, NULL) != 0) {
+            LOGE("[OTA Timer] Failed to attach thread to JVM");
+            return TRUE;
+        }
+    }
+    
+    if (g_server_url.empty()) return TRUE;
+    
+    std::string sig_url = g_server_url + ".sig";
+    // LOGI("[OTA Timer] Checking for realtime script update...");
+    
+    std::string ota_js = download_url(env, g_server_url, g_timeout_ms);
+    std::string ota_sig = download_url(env, sig_url, g_timeout_ms);
+    
+    if (!ota_js.empty() && !ota_sig.empty()) {
+        if (ota_js != g_current_script_hash) {
+            LOGI("[OTA Timer] New update detected! Verifying signature...");
+            if (verify_rsa_signature(env, ota_js, ota_sig, rsa_public_key, sizeof(rsa_public_key))) {
+                LOGI("[OTA Timer] Signature valid. Performing HOT RELOAD!");
+                
+                // Save to cache
+                write_file(g_working_dir + "/hook_cache.js", ota_js);
+                write_file(g_working_dir + "/hook_cache.js.sig", ota_sig);
+                
+                // Hot reload!
+                load_frida_script(ota_js);
+                g_current_script_hash = ota_js;
+            } else {
+                LOGE("[OTA Timer] Signature verification FAILED for updated script!");
+            }
+        }
+    }
+    
+    return TRUE; // Continue calling this timer callback
+}
+
 // Native Patcher background thread
 static void *patcher_thread(void *arg) {
     LOGI("Patcher thread started. Waiting 1 second before initializing JNI...");
@@ -522,6 +597,11 @@ static void *patcher_thread(void *arg) {
         timeout_ms = atoi(timeout_str.c_str());
     }
     
+    // Store configuration to globals
+    g_server_url = server_url;
+    g_working_dir = working_dir;
+    g_timeout_ms = timeout_ms;
+    
     std::string js_code_str = "";
     
     LOGI("Attempting to load cached hook script...");
@@ -548,32 +628,6 @@ static void *patcher_thread(void *arg) {
             free(decrypted);
         }
     }
-
-    // Perform OTA script download in background thread for NEXT boot
-    if (!server_url.empty()) {
-        std::string sig_url = server_url + ".sig";
-        LOGI("Attempting OTA download from: %s", server_url.c_str());
-        
-        std::string ota_js = download_url(env, server_url, timeout_ms);
-        std::string ota_sig = download_url(env, sig_url, timeout_ms);
-        
-        if (!ota_js.empty() && !ota_sig.empty()) {
-            LOGI("Downloaded script and signature. Verifying RSA Digital Signature...");
-            if (verify_rsa_signature(env, ota_js, ota_sig, rsa_public_key, sizeof(rsa_public_key))) {
-                LOGI("Signature verification SUCCESS! Updating script cache for NEXT boot.");
-                write_file(working_dir + "/hook_cache.js", ota_js);
-                write_file(working_dir + "/hook_cache.js.sig", ota_sig);
-            } else {
-                LOGE("Signature verification FAILED for downloaded OTA script!");
-            }
-        } else {
-            LOGE("Failed to download script or signature from OTA URL.");
-        }
-    }
-    
-    if (attached) {
-        g_vm->DetachCurrentThread();
-    }
     
     if (js_code_str.empty()) {
         LOGE("No valid hook script available to execute!");
@@ -583,24 +637,17 @@ static void *patcher_thread(void *arg) {
     LOGI("Initializing Frida-Gum runtime...");
     gum_init_embedded();
     
-    GumScriptBackend *backend = gum_script_backend_obtain_qjs();
-    if (!backend) {
+    g_backend = gum_script_backend_obtain_qjs();
+    if (!g_backend) {
         LOGE("Failed to load QuickJS backend engine");
         return NULL;
     }
     
-    GError *error = NULL;
-    GumScript *script = gum_script_backend_create_sync(backend, "hook", js_code_str.c_str(), NULL, NULL, &error);
+    g_current_script_hash = js_code_str;
+    load_frida_script(js_code_str);
     
-    if (error != NULL) {
-        LOGE("Error creating hooking script: %s", error->message);
-        g_clear_error(&error);
-        return NULL;
-    }
-    
-    gum_script_set_message_handler(script, on_message, NULL, NULL);
-    gum_script_load_sync(script, NULL);
-    LOGI("Frida-Gum script loaded and executed successfully!");
+    // Check for realtime updates every 10 seconds
+    g_timeout_add(10000, check_ota_update_timer, NULL);
     
     GMainLoop *loop = g_main_loop_new(NULL, FALSE);
     g_main_loop_run(loop);

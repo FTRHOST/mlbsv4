@@ -9,8 +9,9 @@ include $(PREBUILT_STATIC_LIBRARY)
 # 2. Build shared frida engine (the big one)
 include $(CLEAR_VARS)
 LOCAL_MODULE := frida-gumjs
+LOCAL_SRC_FILES := dummy.cpp
 LOCAL_WHOLE_STATIC_LIBRARIES := frida-gumjs-static
-LOCAL_LDLIBS := -llog -landroid -lz -lm -ldl -lc++_shared
+LOCAL_LDLIBS := -llog -landroid -lz -lm -ldl
 include $(BUILD_SHARED_LIBRARY)
 
 # 3. Build our shared library (libmypatch.so)
@@ -28,7 +29,7 @@ LOCAL_C_INCLUDES := $(LOCAL_PATH)/sdk
 LOCAL_SHARED_LIBRARIES := frida-gumjs
 
 # Specify Android system libraries needed by Frida-Gum
-LOCAL_LDLIBS := -llog -landroid -lz -lm -ldl -lc++_shared
+LOCAL_LDLIBS := -llog -landroid -lz -lm -ldl
 
 include $(BUILD_SHARED_LIBRARY)
 
@@ -41,6 +42,6 @@ LOCAL_SRC_FILES := loader.cpp
 LOCAL_CPPFLAGS := -fexceptions -frtti
 
 # Specify Android system libraries needed by Loader
-LOCAL_LDLIBS := -llog -landroid -lz -lm -ldl -lc++_shared
+LOCAL_LDLIBS := -llog -landroid -lz -lm -ldl
 
 include $(BUILD_SHARED_LIBRARY)

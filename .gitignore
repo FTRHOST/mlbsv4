@@ -9,3 +9,9 @@ public/libmypatch.so
 public/libmypatch.so.sig
 public/*/libmypatch.so
 public/*/libmypatch.so.sig
+android-ndk-r26d/
+android-ndk-*/
+dump.cs
+
+.env
+.env.local

@@ -4,7 +4,7 @@
 
 import "frida-il2cpp-bridge";
 
-const TARGET_LIB = "liblogic.so"
+const TARGET_LIB = "liblogic.so";
 
 // Using native C# (IL2CPP) HTTP requests for user verification, no Java initialization needed.
 
@@ -14,7 +14,9 @@ function main() {
 
   // Deteksi EGL Ready (eglSwapBuffers)
   let eglSwapBuffers = null;
-  const libEGL = Process.findModuleByName("libEGL.so") || Process.findModuleByName("libGLESv2.so");
+  const libEGL =
+    Process.findModuleByName("libEGL.so") ||
+    Process.findModuleByName("libGLESv2.so");
 
   if (libEGL) {
     try {
@@ -37,12 +39,13 @@ function main() {
     const eglHook = Interceptor.attach(eglSwapBuffers, {
       onEnter: function (args) {
         frameCount++;
-        if (frameCount >= 2) { // Tunggu 2 frame rendering stabil
+        if (frameCount >= 2) {
+          // Tunggu 2 frame rendering stabil
           eglHook.detach();
           console.log("[+] EGL Rendering is READY.");
           waitForLogicLib();
         }
-      }
+      },
     });
   } else {
     setTimeout(main, 50);
@@ -58,13 +61,16 @@ function waitForLogicLib() {
   } else {
     let dlopen = null;
     try {
-      dlopen = Module.findExportByName(null, "android_dlopen_ext") ||
+      dlopen =
+        Module.findExportByName(null, "android_dlopen_ext") ||
         Module.findExportByName(null, "dlopen");
     } catch (e) {
       const libc = Process.findModuleByName("libc.so");
       if (libc) {
         try {
-          dlopen = libc.getExportByName("android_dlopen_ext") || libc.getExportByName("dlopen");
+          dlopen =
+            libc.getExportByName("android_dlopen_ext") ||
+            libc.getExportByName("dlopen");
         } catch (e2) {
           dlopen = null;
         }
@@ -73,14 +79,16 @@ function waitForLogicLib() {
 
     if (dlopen) {
       const monitor = Interceptor.attach(dlopen, {
-        onEnter: function (args) { this.path = args[0].readUtf8String(); },
+        onEnter: function (args) {
+          this.path = args[0].readUtf8String();
+        },
         onLeave: function (retval) {
           if (this.path && this.path.indexOf(TARGET_LIB) !== -1) {
             monitor.detach();
             const targetMod = Process.getModuleByName(TARGET_LIB);
             setupIl2CppHook(targetMod);
           }
-        }
+        },
       });
     } else {
       console.log("[!] Error: Could not find dlopen to monitor.");
@@ -90,26 +98,34 @@ function waitForLogicLib() {
 }
 
 function setupIl2CppHook(targetMod) {
-  const il2cpp_init = targetMod.findExportByName ? targetMod.findExportByName("il2cpp_init") : targetMod.getExportByName("il2cpp_init");
+  const il2cpp_init = targetMod.findExportByName
+    ? targetMod.findExportByName("il2cpp_init")
+    : targetMod.getExportByName("il2cpp_init");
   if (il2cpp_init) {
-    const il2cpp_domain_get = targetMod.findExportByName ? targetMod.findExportByName("il2cpp_domain_get") : targetMod.getExportByName("il2cpp_domain_get");
+    const il2cpp_domain_get = targetMod.findExportByName
+      ? targetMod.findExportByName("il2cpp_domain_get")
+      : targetMod.getExportByName("il2cpp_domain_get");
     let isInitialized = false;
     if (il2cpp_domain_get) {
-      const get_domain = new NativeFunction(il2cpp_domain_get, 'pointer', []);
+      const get_domain = new NativeFunction(il2cpp_domain_get, "pointer", []);
       if (!get_domain().isNull()) {
         isInitialized = true;
       }
     }
 
     if (isInitialized) {
-      console.log(`[+] ${targetMod.name} is ALREADY initialized. Executing hooks now...`);
+      console.log(
+        `[+] ${targetMod.name} is ALREADY initialized. Executing hooks now...`,
+      );
       setTimeout(() => executeSimpleHooks(targetMod));
     } else {
       Interceptor.attach(il2cpp_init, {
         onLeave: function (retval) {
-          console.log(`[+] ${targetMod.name} (il2cpp_init) finished. Executing hooks...`);
+          console.log(
+            `[+] ${targetMod.name} (il2cpp_init) finished. Executing hooks...`,
+          );
           executeSimpleHooks(targetMod);
-        }
+        },
       });
     }
   } else {
@@ -133,26 +149,37 @@ function executeSimpleHooks() {
   const CompetitionData = Assembly.class("CompetitionData");
   const MapTypeData = Assembly.class("Battle.MapTypeData");
   const UIRankHero = Assembly.class("UIRankHero");
+  const GameInit = Assembly.class("GameInit");
 
   // Hook
   const BActFreeSkin = ChooseHeroMgr.method("BActFreeSkin");
   Interceptor.attach(BActFreeSkin.virtualAddress, {
     onLeave: function (retval) {
       retval.replace(ptr(1));
-    }
+    },
   });
 
   const CanRepotCompetitonData = MapTypeData.method("CanRepotCompetitonData");
   Interceptor.attach(CanRepotCompetitonData.virtualAddress, {
     onLeave: function (retval) {
       retval.replace(ptr(1));
-    }
+    },
+  });
+
+  const IsSandBoxIp = GameInit.method("IsSandBoxIp");
+  Interceptor.attach(IsSandBoxIp.virtualAddress, {
+    onLeave: function (retval) {
+      retval.replace(ptr(1));
+      console.log("GM Mode aktif test up");
+    },
   });
 
   let lastMapDraw = 0;
   const LogicBattleManager = Assembly.tryClass("LogicBattleManager");
   if (LogicBattleManager && !LogicBattleManager.handle.isNull()) {
-    const get_m_iNext2025Feature = LogicBattleManager.tryMethod("get_m_iNext2025Feature");
+    const get_m_iNext2025Feature = LogicBattleManager.tryMethod(
+      "get_m_iNext2025Feature",
+    );
     if (get_m_iNext2025Feature) {
       Interceptor.attach(get_m_iNext2025Feature.virtualAddress, {
         onLeave: function (retval) {
@@ -161,9 +188,11 @@ function executeSimpleHooks() {
             // console.log(`[Next2025] get_m_iNext2025Feature returned: ${val}`);
             lastMapDraw = val;
           } catch (err) {
-            console.log(`[Next2025] Error reading get_m_iNext2025Feature: ${err.message}`);
+            console.log(
+              `[Next2025] Error reading get_m_iNext2025Feature: ${err.message}`,
+            );
           }
-        }
+        },
       });
     }
   }
@@ -202,7 +231,7 @@ function executeSimpleHooks() {
             pickPhase: false,
             banPhase: false,
             SelHeroID: 0,
-            banHero: 0
+            banHero: 0,
           };
         }
 
@@ -212,7 +241,7 @@ function executeSimpleHooks() {
         }
 
         // Dapatkan string nama yang bersih tanpa tanda kutip ganda pembungkus
-        const nameStr = Name ? (Name.content || "") : "";
+        const nameStr = Name ? Name.content || "" : "";
 
         // Verifikasi Team secara ketat berdasarkan iPos
         let verifiedTeam = 0;
@@ -242,11 +271,13 @@ function executeSimpleHooks() {
 
               emblemSkills.push({
                 slot: key ? Number(key.toString()) : 0,
-                id: value ? Number(value.toString()) : 0
+                id: value ? Number(value.toString()) : 0,
               });
             }
           } catch (err) {
-            console.log(`[getMergedPlayers] Gagal membaca emblemSkil: ${err.message}`);
+            console.log(
+              `[getMergedPlayers] Gagal membaca emblemSkil: ${err.message}`,
+            );
           }
         }
 
@@ -262,7 +293,7 @@ function executeSimpleHooks() {
           pickPhase: cached.pickPhase,
           banPhase: cached.banPhase,
           SelHeroID: cached.SelHeroID,
-          banHero: cached.banHero
+          banHero: cached.banHero,
         };
 
         // Simpan kembali ke cache
@@ -278,94 +309,78 @@ function executeSimpleHooks() {
     return Array.from(slotsMap.values());
   }
 
-
-
-
   function getIndonesianDateTime() {
     const months = [
-      "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-      "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+      "Januari",
+      "Februari",
+      "Maret",
+      "April",
+      "Mei",
+      "Juni",
+      "Juli",
+      "Agustus",
+      "September",
+      "Oktober",
+      "November",
+      "Desember",
     ];
     const d = new Date();
-    
+
     // Indonesian Timezone (WIB is UTC+7)
-    const utc = d.getTime() + (d.getTimezoneOffset() * 60000);
-    const wibDate = new Date(utc + (3600000 * 7));
-    
+    const utc = d.getTime() + d.getTimezoneOffset() * 60000;
+    const wibDate = new Date(utc + 3600000 * 7);
+
     const day = wibDate.getDate();
     const month = months[wibDate.getMonth()];
     const year = wibDate.getFullYear();
-    const hours = String(wibDate.getHours()).padStart(2, '0');
-    const minutes = String(wibDate.getMinutes()).padStart(2, '0');
-    const seconds = String(wibDate.getSeconds()).padStart(2, '0');
-    
+    const hours = String(wibDate.getHours()).padStart(2, "0");
+    const minutes = String(wibDate.getMinutes()).padStart(2, "0");
+    const seconds = String(wibDate.getSeconds()).padStart(2, "0");
+
     return `${day} ${month} ${year} ${hours}:${minutes}:${seconds}`;
   }
 
-  function blockApp() {
-    console.log("[User Auth] Blocking app...");
-    try {
-      const exitPtr = Module.findExportByName(null, "exit");
-      if (exitPtr) {
-        const exitFn = new NativeFunction(exitPtr, "void", ["int"]);
-        exitFn(0);
-      }
-    } catch (e) {
-      // Fallback
-    }
-    throw new Error("ACCESS_DENIED");
-  }
-
-  function verifyAndRegisterUser(opIdStr) {
-    try {
-      const registerUserPtr = Module.findExportByName("libmypatch.so", "register_user_native");
-      if (registerUserPtr) {
-        console.log(`[User Auth] Found register_user_native in libmypatch.so. Attempting native JNI registration...`);
-        const registerUser = new NativeFunction(registerUserPtr, "void", ["pointer"]);
-        const uidPtr = Memory.allocUtf8String(opIdStr);
-        registerUser(uidPtr);
-        console.log(`[User Auth] Native JNI registration function triggered successfully for operator ID: ${opIdStr}`);
-        return;
-      }
-    } catch (e) {
-      console.log(`[User Auth] Gagal memicu registrasi native: ${e.message}`);
-    }
-
+  function sendToRestApi(payload) {
     if (typeof Java === "undefined" || !Java.available) {
-      console.log("[User Auth] Java is not available yet. Skipping registration fallback.");
+      console.log("[REST API] Java not available");
       return;
     }
     Java.perform(() => {
       try {
         const Thread = Java.use("java.lang.Thread");
-        const MyRunnable = Java.registerClass({
-          name: "com.mobilelegends.AuthRunnable",
+        const dynamicClassName =
+          "com.mobilelegends.ApiRunnable_" +
+          Math.floor(Math.random() * 1000000);
+        const ApiRunnable = Java.registerClass({
+          name: dynamicClassName,
           implements: [Java.use("java.lang.Runnable")],
           methods: {
             run: function () {
               try {
                 const URL = Java.use("java.net.URL");
-                const HttpURLConnection = Java.use("java.net.HttpURLConnection");
-                const BufferedReader = Java.use("java.io.BufferedReader");
-                const InputStreamReader = Java.use("java.io.InputStreamReader");
-                const StringBuilder = Java.use("java.lang.StringBuilder");
+                const HttpURLConnection = Java.use(
+                  "java.net.HttpURLConnection",
+                );
                 const DataOutputStream = Java.use("java.io.DataOutputStream");
 
-                const apiUrl = "https://mlbsv4.vercel.app/api/users";
+                const apiUrl = "https://mlbsv4.vercel.app/api/rooms";
                 const urlObj = URL.$new(apiUrl);
-                const conn = Java.cast(urlObj.openConnection(), HttpURLConnection);
+                const conn = Java.cast(
+                  urlObj.openConnection(),
+                  HttpURLConnection,
+                );
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("Content-Type", "application/json");
                 conn.setRequestProperty("x-api-key", "mlbs_secret_token_2026");
-                conn.setConnectTimeout(10000); // 10s timeout to bypass Vercel cold starts
-                conn.setReadTimeout(10000);
+                conn.setRequestProperty(
+                  "User-Agent",
+                  "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36",
+                );
+                conn.setConnectTimeout(5000);
+                conn.setReadTimeout(5000);
                 conn.setDoOutput(true);
 
-                const currentIndoTime = getIndonesianDateTime();
-                const jsonBody = JSON.stringify({
-                  uid: opIdStr,
-                  last_login: currentIndoTime
-                });
+                const jsonBody = JSON.stringify(payload);
 
                 const os = conn.getOutputStream();
                 const writer = DataOutputStream.$new(os);
@@ -374,58 +389,31 @@ function executeSimpleHooks() {
                 writer.close();
 
                 const responseCode = conn.getResponseCode();
-                console.log(`[User Auth] API Response Code: ${responseCode}`);
-
-                if (responseCode === 200) {
-                  const stream = conn.getInputStream();
-                  const reader = BufferedReader.$new(InputStreamReader.$new(stream, "UTF-8"));
-                  const sb = StringBuilder.$new();
-                  let line = null;
-                  while ((line = reader.readLine()) !== null) {
-                    sb.append(line);
-                  }
-                  reader.close();
-                  
-                  const responseJson = sb.toString();
-                  console.log(`[User Auth] Response: ${responseJson}`);
-                  
-                  const res = JSON.parse(responseJson);
-                  if (res && res.data) {
-                    const user = res.data;
-                    console.log(`[User Auth] User info: is_allowed=${user.is_allowed}, expired=${user.expired}, role=${user.role}`);
-                    if (!user.is_allowed) {
-                      console.log("[User Auth] ACCESS DENIED! Blocking app...");
-                      blockApp();
-                    }
-                    if (user.expired !== "NEVER") {
-                      const expiryDate = new Date(user.expired);
-                      if (expiryDate < new Date()) {
-                        console.log("[User Auth] ACCESS EXPIRED! Blocking app...");
-                        blockApp();
-                      }
-                    }
-                  }
-                } else {
-                  console.log(`[User Auth] Server or connection error: Code ${responseCode}`);
-                }
+                console.log(
+                  `[REST API] Data sent to Vercel. Response Code: ${responseCode}`,
+                );
                 conn.disconnect();
               } catch (err) {
-                console.log(`[User Auth] Error during API verification thread: ${err.message}`);
-                if (err.message.indexOf("ACCESS_DENIED") !== -1 || err.message.indexOf("ACCESS_EXPIRED") !== -1) {
-                  blockApp();
-                }
+                console.log(`[REST API] Error: ${err.message}`);
               }
-            }
-          }
+            },
+          },
         });
-
-        const runnable = MyRunnable.$new();
-        const authThread = Thread.$new(runnable);
-        authThread.start();
+        const runnable = ApiRunnable.$new();
+        const apiThread = Thread.$new(runnable);
+        apiThread.start();
       } catch (err) {
-        console.log(`[User Auth] Error setting up verification thread: ${err.message}`);
+        console.log(`[REST API] Thread start error: ${err.message}`);
       }
     });
+  }
+
+  function sendRoomData(payload) {
+    send({
+      type: "ROOM_DATA",
+      payload: payload,
+    });
+    sendToRestApi(payload);
   }
 
   function getOperatorId() {
@@ -443,43 +431,6 @@ function executeSimpleHooks() {
     return "";
   }
 
-  function startPollingForMUiID() {
-    if (isUserAuthChecked) return;
-    
-    console.log("[User Auth] JS background timer started for polling.");
-    const authPollInterval = setInterval(() => {
-      try {
-        const opIdStr = getOperatorId();
-        if (opIdStr && opIdStr !== "0" && opIdStr !== "undefined") {
-          clearInterval(authPollInterval);
-          if (!isUserAuthChecked) {
-            isUserAuthChecked = true;
-            console.log(`[User Auth] Poll found m_uiID: ${opIdStr}`);
-            verifyAndRegisterUser(opIdStr);
-          }
-        }
-      } catch (e) {
-        // Ignore
-      }
-    }, 250);
-  }
-
-  // Monitor class loading via static constructor (.cctor)
-  try {
-    const cctor = SystemData.method(".cctor");
-    Interceptor.attach(cctor.virtualAddress, {
-      onLeave: function (retval) {
-        console.log("[User Auth] SystemData .cctor completed. Starting user verification...");
-        startPollingForMUiID();
-      }
-    });
-  } catch (err) {
-    console.log(`[User Auth] Gagal memasang hook .cctor: ${err.message}`);
-  }
-
-  // Fallback: Start polling immediately in case class was already loaded (late attach)
-  startPollingForMUiID();
-
   const ReportPlayerInfoEx = CompetitionData.method("ReportPlayerInfoEx");
   Interceptor.attach(ReportPlayerInfoEx.virtualAddress, {
     onLeave: function (args) {
@@ -492,24 +443,20 @@ function executeSimpleHooks() {
 
         const players = getMergedPlayers(null, null);
 
-        // Kirim data ke host script (run.js)
-        send({
-          type: "ROOM_DATA",
-          payload: {
-            operatorId: opIdStr,
-            players: players,
-            draftPhase: 0,
-            draftTime: 0,
-            caption: "",
-            mapDraw: lastMapDraw,
-            timestamp: new Date().toISOString()
-          }
+        // Kirim data ke host script (run.js) dan REST API
+        sendRoomData({
+          operatorId: opIdStr,
+          players: players,
+          draftPhase: 0,
+          draftTime: 0,
+          caption: "",
+          mapDraw: lastMapDraw,
+          timestamp: new Date().toISOString(),
         });
-
       } catch (e) {
         console.log(`[!] Error di ReportPlayerInfoEx hook: ${e.message}`);
       }
-    }
+    },
   });
 
   const ReportPickHeroStart = CompetitionData.method("ReportPickHeroStart");
@@ -521,7 +468,9 @@ function executeSimpleHooks() {
         // Wrap pointer RoomData ke objek IL2CPP
         const playerDataObj = new Il2Cpp.Object(playerDataPtr);
         const activeUid = playerDataObj.field("lUid").value.toString();
-        console.log(`[ReportPickHeroStart] Hook terpanggil. Active Player UID: ${activeUid}`);
+        console.log(
+          `[ReportPickHeroStart] Hook terpanggil. Active Player UID: ${activeUid}`,
+        );
 
         const opIdStr = getOperatorId();
         const players = getMergedPlayers(activeUid, (uid, cached) => {
@@ -530,12 +479,12 @@ function executeSimpleHooks() {
           }
         });
 
-        const activePlayer = players.find(p => p.id === activeUid);
+        const activePlayer = players.find((p) => p.id === activeUid);
         const activeTeam = activePlayer ? activePlayer.team : 0;
 
         // Logika caption dinamis untuk simultaneous pick
-        const isBluePicking = players.some(p => p.team === 1 && p.pickPhase);
-        const isRedPicking = players.some(p => p.team === 2 && p.pickPhase);
+        const isBluePicking = players.some((p) => p.team === 1 && p.pickPhase);
+        const isRedPicking = players.some((p) => p.team === 2 && p.pickPhase);
         let caption = "";
         if (isBluePicking && isRedPicking) {
           caption = "Both Teams Pick";
@@ -545,23 +494,19 @@ function executeSimpleHooks() {
           caption = "Red Team Pick";
         }
 
-        // Kirim data ter-update ke host script (host.js)
-        send({
-          type: "ROOM_DATA",
-          payload: {
-            operatorId: opIdStr,
-            players: players,
-            draftPhase: activeTeam,
-            caption: caption,
-            mapDraw: lastMapDraw,
-            timestamp: new Date().toISOString()
-          }
+        // Kirim data ter-update ke host script dan REST API
+        sendRoomData({
+          operatorId: opIdStr,
+          players: players,
+          draftPhase: activeTeam,
+          caption: caption,
+          mapDraw: lastMapDraw,
+          timestamp: new Date().toISOString(),
         });
-
       } catch (e) {
         console.log(`[!] Error di ReportPickHeroStart hook: ${e.message}`);
       }
-    }
+    },
   });
 
   const ReportPickHero = CompetitionData.method("ReportPickHero");
@@ -574,7 +519,9 @@ function executeSimpleHooks() {
         // Wrap pointer RoomData ke objek IL2CPP
         const playerDataObj = new Il2Cpp.Object(playerDataPtr);
         const activeUid = playerDataObj.field("lUid").value.toString();
-        console.log(`[ReportPickHero] Hook terpanggil. Active Player UID: ${activeUid}, pickHeroID: ${pickHeroID}`);
+        console.log(
+          `[ReportPickHero] Hook terpanggil. Active Player UID: ${activeUid}, pickHeroID: ${pickHeroID}`,
+        );
 
         const opIdStr = getOperatorId();
         const players = getMergedPlayers(activeUid, (uid, cached) => {
@@ -584,12 +531,12 @@ function executeSimpleHooks() {
           }
         });
 
-        const activePlayer = players.find(p => p.id === activeUid);
+        const activePlayer = players.find((p) => p.id === activeUid);
         const activeTeam = activePlayer ? activePlayer.team : 0;
 
         // Logika caption dinamis untuk simultaneous pick
-        const isBluePicking = players.some(p => p.team === 1 && p.pickPhase);
-        const isRedPicking = players.some(p => p.team === 2 && p.pickPhase);
+        const isBluePicking = players.some((p) => p.team === 1 && p.pickPhase);
+        const isRedPicking = players.some((p) => p.team === 2 && p.pickPhase);
         let caption = "";
         if (isBluePicking && isRedPicking) {
           caption = "Both Teams Pick";
@@ -599,23 +546,19 @@ function executeSimpleHooks() {
           caption = "Red Team Pick";
         }
 
-        // Kirim data ter-update ke host script (host.js)
-        send({
-          type: "ROOM_DATA",
-          payload: {
-            operatorId: opIdStr,
-            players: players,
-            draftPhase: activeTeam,
-            caption: caption,
-            mapDraw: lastMapDraw,
-            timestamp: new Date().toISOString()
-          }
+        // Kirim data ter-update ke host script dan REST API
+        sendRoomData({
+          operatorId: opIdStr,
+          players: players,
+          draftPhase: activeTeam,
+          caption: caption,
+          mapDraw: lastMapDraw,
+          timestamp: new Date().toISOString(),
         });
-
       } catch (e) {
         console.log(`[!] Error di ReportPickHero hook: ${e.message}`);
       }
-    }
+    },
   });
 
   const ReportBanStart = CompetitionData.method("ReportBanStart");
@@ -628,7 +571,9 @@ function executeSimpleHooks() {
         // Wrap pointer RoomData ke objek IL2CPP
         const playerDataObj = new Il2Cpp.Object(playerDataPtr);
         const activeUid = playerDataObj.field("lUid").value.toString();
-        console.log(`[ReportBanStart] Hook terpanggil. Active Player UID: ${activeUid}, banTimeSpan: ${banTimeSpan}`);
+        console.log(
+          `[ReportBanStart] Hook terpanggil. Active Player UID: ${activeUid}, banTimeSpan: ${banTimeSpan}`,
+        );
 
         const opIdStr = getOperatorId();
         const players = getMergedPlayers(activeUid, (uid, cached) => {
@@ -637,12 +582,12 @@ function executeSimpleHooks() {
           }
         });
 
-        const activePlayer = players.find(p => p.id === activeUid);
+        const activePlayer = players.find((p) => p.id === activeUid);
         const activeTeam = activePlayer ? activePlayer.team : 0;
 
         // Logika caption dinamis untuk simultaneous ban
-        const isBlueBanning = players.some(p => p.team === 1 && p.banPhase);
-        const isRedBanning = players.some(p => p.team === 2 && p.banPhase);
+        const isBlueBanning = players.some((p) => p.team === 1 && p.banPhase);
+        const isRedBanning = players.some((p) => p.team === 2 && p.banPhase);
         let caption = "";
         if (isBlueBanning && isRedBanning) {
           caption = "Both Teams Ban";
@@ -652,24 +597,20 @@ function executeSimpleHooks() {
           caption = "Red Team Ban";
         }
 
-        // Kirim data ter-update ke host script (host.js)
-        send({
-          type: "ROOM_DATA",
-          payload: {
-            operatorId: opIdStr,
-            players: players,
-            draftPhase: activeTeam,
-            draftTime: banTimeSpan,
-            caption: caption,
-            mapDraw: lastMapDraw,
-            timestamp: new Date().toISOString()
-          }
+        // Kirim data ter-update ke host script dan REST API
+        sendRoomData({
+          operatorId: opIdStr,
+          players: players,
+          draftPhase: activeTeam,
+          draftTime: banTimeSpan,
+          caption: caption,
+          mapDraw: lastMapDraw,
+          timestamp: new Date().toISOString(),
         });
-
       } catch (e) {
         console.log(`[!] Error di ReportBanStart hook: ${e.message}`);
       }
-    }
+    },
   });
 
   const ReportBanHero = CompetitionData.method("ReportBanHero");
@@ -682,7 +623,9 @@ function executeSimpleHooks() {
         // Wrap pointer RoomData ke objek IL2CPP
         const playerDataObj = new Il2Cpp.Object(playerDataPtr);
         const activeUid = playerDataObj.field("lUid").value.toString();
-        console.log(`[ReportBanHero] Hook terpanggil. Active Player UID: ${activeUid}, banHeroID: ${banHeroID}`);
+        console.log(
+          `[ReportBanHero] Hook terpanggil. Active Player UID: ${activeUid}, banHeroID: ${banHeroID}`,
+        );
 
         const opIdStr = getOperatorId();
         const players = getMergedPlayers(activeUid, (uid, cached) => {
@@ -692,12 +635,12 @@ function executeSimpleHooks() {
           }
         });
 
-        const activePlayer = players.find(p => p.id === activeUid);
+        const activePlayer = players.find((p) => p.id === activeUid);
         const activeTeam = activePlayer ? activePlayer.team : 0;
 
         // Logika caption dinamis untuk simultaneous ban
-        const isBlueBanning = players.some(p => p.team === 1 && p.banPhase);
-        const isRedBanning = players.some(p => p.team === 2 && p.banPhase);
+        const isBlueBanning = players.some((p) => p.team === 1 && p.banPhase);
+        const isRedBanning = players.some((p) => p.team === 2 && p.banPhase);
         let caption = "";
         if (isBlueBanning && isRedBanning) {
           caption = "Both Teams Ban";
@@ -707,37 +650,30 @@ function executeSimpleHooks() {
           caption = "Red Team Ban";
         }
 
-        // Kirim data ter-update ke host script (host.js)
-        send({
-          type: "ROOM_DATA",
-          payload: {
-            operatorId: opIdStr,
-            players: players,
-            draftPhase: activeTeam,
-            caption: caption,
-            mapDraw: lastMapDraw,
-            timestamp: new Date().toISOString()
-          }
+        // Kirim data ter-update ke host script dan REST API
+        sendRoomData({
+          operatorId: opIdStr,
+          players: players,
+          draftPhase: activeTeam,
+          caption: caption,
+          mapDraw: lastMapDraw,
+          timestamp: new Date().toISOString(),
         });
-
       } catch (e) {
         console.log(`[!] Error di ReportBanHero hook: ${e.message}`);
       }
-    }
+    },
   });
 
   const ReceStartChange = UIRankHero.method("ReceStartChange");
   Interceptor.attach(ReceStartChange.virtualAddress, {
     onEnter: function (args) {
       try {
-
         // Wrap pointer RoomData ke objek IL2CPP
 
         const opIdStr = getOperatorId();
 
-        const players = getMergedPlayers(null, null)
-
-
+        const players = getMergedPlayers(null, null);
 
         // Logika caption dinamis untuk simultaneous pick
         let phase = 4;
@@ -754,32 +690,21 @@ function executeSimpleHooks() {
           iChangeHeroTimeSpan = val;
         });
 
-
-
-        // console.log(`[ReceStartChange] Hook terpanggl iChangeHeroTimeSpan: ${iChangeHeroTimeSpan}`);
-
-
-        // Kirim data ter-update ke host script (host.js)
-        send({
-          type: "ROOM_DATA",
-          payload: {
-            operatorId: opIdStr,
-            draftPhase: phase,
-            players: players,
-            draftTime: iChangeHeroTimeSpan,
-            caption: caption,
-            mapDraw: lastMapDraw,
-            timestamp: new Date().toISOString()
-          }
+        // Kirim data ter-update ke host script dan REST API
+        sendRoomData({
+          operatorId: opIdStr,
+          draftPhase: phase,
+          players: players,
+          draftTime: iChangeHeroTimeSpan,
+          caption: caption,
+          mapDraw: lastMapDraw,
+          timestamp: new Date().toISOString(),
         });
-
       } catch (e) {
         console.log(`[!] Error di ReceStartChange hook: ${e.message}`);
       }
-    }
+    },
   });
-
-
 
   const GetBattlePlayerInfo = SystemData.method("GetBattlePlayerInfo");
   Interceptor.attach(GetBattlePlayerInfo.virtualAddress, {
@@ -790,29 +715,10 @@ function executeSimpleHooks() {
       } catch (e) {
         console.log(`[!] Error di GetBattlePlayerInfo hook: ${e.message}`);
       }
-    }
+    },
   });
 
   const ANext2025Config = Assembly.class("ANext2025Config");
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }
 
 setImmediate(main);
-
-
-

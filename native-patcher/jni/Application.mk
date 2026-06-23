@@ -4,5 +4,5 @@ APP_ABI := arm64-v8a armeabi-v7a
 # Minimum platform version (Lollipop 5.0)
 APP_PLATFORM := android-21
 
-# Use LLVM libc++ shared runtime
-APP_STL := c++_shared
+# Use LLVM libc++ static runtime
+APP_STL := c++_static
