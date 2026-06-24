@@ -10,7 +10,7 @@ export function getFilesDir() {
   let filesDir = "/data/data/com.mobilelegends.taptest/files";
   try {
     if (Java.available) {
-      Java.perform(() => {
+      Java.performNow(() => {
         const ActivityThread = Java.use("android.app.ActivityThread");
         const currentApplication = ActivityThread.currentApplication();
         if (currentApplication) {
@@ -108,7 +108,7 @@ export function loadAuthCache() {
       }
     }
   } catch (e) {
-    // Cache file might not exist yet
+    debugLog("Auth Cache", `Cache load skipped/failed: ${e.message}`);
   }
   return null;
 }
