@@ -962,6 +962,192 @@ static void *patcher_thread(void *arg) {
     return NULL;
 }
 
+static gboolean reload_script_idle_callback(gpointer data) {
+    std::string *js_code = static_cast<std::string*>(data);
+    LOGI("[Idle Callback] Executing script hot reload on GMainLoop thread...");
+    load_frida_script(*js_code);
+    delete js_code;
+    return FALSE;
+}
+
+static void* reload_worker_thread(void* arg) {
+    LOGI("[Reload Thread] Started. Sleeping 150ms to allow V8 stack to unwind...");
+    usleep(150000); // 150ms
+    
+    JNIEnv *env = NULL;
+    bool attached = false;
+    if (g_vm) {
+        jint res = g_vm->GetEnv((void**)&env, JNI_VERSION_1_6);
+        if (res == JNI_EDETACHED) {
+            if (g_vm->AttachCurrentThread(&env, NULL) == 0) {
+                attached = true;
+            } else {
+                LOGE("[Reload Thread] Failed to attach thread to JVM");
+            }
+        }
+    }
+
+    LOGI("[Reload Thread] Refreshing configuration...");
+    g_enable_logging = is_user_admin_local(g_working_dir);
+    PatchConfig config = PatchConfig::load(g_working_dir);
+    g_server_url = config.server_url;
+    g_timeout_ms = config.timeout_ms;
+
+    if (!g_working_dir.empty()) {
+        std::string log_path = g_working_dir + "/ota_log.txt";
+        if (!g_enable_logging) {
+            remove(log_path.c_str());
+        }
+    }
+
+    // 1. Reload the Frida script
+    if (env && !g_server_url.empty()) {
+        std::string sig_url = g_server_url + ".sig";
+        LOGI("[Reload Thread] Fetching remote script for immediate update/reload: %s", g_server_url.c_str());
+        std::string ota_js = download_url(env, g_server_url, g_timeout_ms);
+        std::string ota_sig = download_url(env, sig_url, g_timeout_ms);
+        
+        if (!ota_js.empty() && !ota_sig.empty()) {
+            if (verify_rsa_signature(env, ota_js, ota_sig, rsa_public_key, sizeof(rsa_public_key))) {
+                std::string cache_path = g_working_dir + "/hook_cache.js";
+                std::string sig_path = g_working_dir + "/hook_cache.js.sig";
+                
+                bool is_admin = is_user_admin_local(g_working_dir);
+                if (is_admin) {
+                    write_file(cache_path, ota_js);
+                    LOGI("[Reload Thread] Saved plaintext cache for admin.");
+                } else {
+                    std::string encrypted_js = encrypt_cache_script(ota_js);
+                    write_file(cache_path, encrypted_js);
+                    LOGI("[Reload Thread] Saved encrypted cache for non-admin.");
+                }
+                write_file(sig_path, ota_sig);
+                
+                LOGI("[Reload Thread] Dispatching script reload to main context...");
+                g_idle_add(reload_script_idle_callback, new std::string(ota_js));
+                g_current_script_hash = ota_js;
+            } else {
+                LOGE("[Reload Thread] Signature verification FAILED for updated script!");
+            }
+        } else {
+            LOGE("[Reload Thread] Failed to fetch script update from server.");
+            // Fallback: Reload from local cache or built-in script if offline
+            std::string js_code_str = "";
+            std::string cached_js = read_file(g_working_dir + "/hook_cache.js");
+            std::string cached_sig = read_file(g_working_dir + "/hook_cache.js.sig");
+            if (!cached_js.empty() && !cached_sig.empty()) {
+                bool is_admin = is_user_admin_local(g_working_dir);
+                std::string processed_js = "";
+                bool loaded_ok = false;
+                
+                if (cached_js.compare(0, MAGIC_ENC_HEADER.length(), MAGIC_ENC_HEADER) == 0) {
+                    processed_js = decrypt_cache_script(cached_js);
+                    loaded_ok = !processed_js.empty();
+                } else {
+                    if (is_admin) {
+                        processed_js = cached_js;
+                        loaded_ok = true;
+                    } else {
+                        LOGE("[Reload Thread] Plaintext cached script is not allowed for non-admin! Rejecting cache.");
+                        std::string cache_path = g_working_dir + "/hook_cache.js";
+                        std::string sig_path = g_working_dir + "/hook_cache.js.sig";
+                        remove(cache_path.c_str());
+                        remove(sig_path.c_str());
+                    }
+                }
+                
+                if (loaded_ok && verify_rsa_signature(env, processed_js, cached_sig, rsa_public_key, sizeof(rsa_public_key))) {
+                    js_code_str = processed_js;
+                }
+            }
+            if (js_code_str.empty()) {
+                unsigned char *decrypted = (unsigned char *)malloc(hook_bytes_len + 1);
+                if (decrypted) {
+                    for (unsigned int i = 0; i < hook_bytes_len; i++) {
+                        decrypted[i] = hook_bytes[i] ^ xor_key;
+                    }
+                    decrypted[hook_bytes_len] = '\0';
+                    js_code_str = (const char*)decrypted;
+                    free(decrypted);
+                }
+            }
+            if (!js_code_str.empty()) {
+                LOGI("[Reload Thread] Loading fallback script...");
+                g_idle_add(reload_script_idle_callback, new std::string(js_code_str));
+                g_current_script_hash = js_code_str;
+            }
+        }
+    }
+
+    // 2. Check for library updates
+    if (env && !g_server_url.empty()) {
+        size_t last_slash = g_server_url.find_last_of('/');
+        std::string base_url = (last_slash != std::string::npos) ? g_server_url.substr(0, last_slash) : g_server_url;
+        
+#if defined(__aarch64__)
+        std::string arch = "arm64-v8a";
+#elif defined(__arm__)
+        std::string arch = "armeabi-v7a";
+#else
+        std::string arch = "arm64-v8a";
+#endif
+        
+        std::string lib_url = base_url + "/" + arch + "/libmypatch.so";
+        std::string sig_url = lib_url + ".sig";
+        
+        std::string payload_path = g_working_dir + "/libmypatch_cache.so";
+        std::string payload_sig_path = payload_path + ".sig";
+        
+        std::string current_sig = read_file(payload_sig_path);
+        
+        LOGI("[Reload Thread] Checking library OTA update from: %s", sig_url.c_str());
+        std::string ota_sig = download_url(env, sig_url, g_timeout_ms);
+        
+        if (!ota_sig.empty()) {
+            if (ota_sig == current_sig) {
+                LOGI("[Reload Thread] Library OTA check: Remote signature matches local. No library update needed.");
+            } else {
+                LOGI("[Reload Thread] Library OTA check: Remote signature differs (or local is missing). New library version is available!");
+                LOGI("[Reload Thread] Downloading latest library version from: %s", lib_url.c_str());
+                std::string ota_lib = download_url(env, lib_url, g_timeout_ms);
+                if (!ota_lib.empty()) {
+                    LOGI("[Reload Thread] Downloaded library binary. Verifying RSA Digital Signature...");
+                    if (verify_rsa_signature(env, ota_lib, ota_sig, rsa_public_key, sizeof(rsa_public_key))) {
+                        LOGI("[Reload Thread] Library signature verification SUCCESS! Saving to cache.");
+                        if (write_file(payload_path, ota_lib)) {
+                            write_file(payload_sig_path, ota_sig);
+                            LOGI("[Reload Thread] Library OTA update complete. Will load this version on next launch.");
+                        } else {
+                            LOGE("[Reload Thread] Failed to write downloaded library to cache!");
+                        }
+                    } else {
+                        LOGE("[Reload Thread] Library signature verification FAILED for downloaded OTA library!");
+                    }
+                } else {
+                    LOGE("[Reload Thread] Failed to download library binary from OTA URL.");
+                }
+            }
+        } else {
+            LOGI("[Reload Thread] Library OTA check: Failed to download remote library signature (offline or server unreachable).");
+        }
+    }
+
+    if (attached && g_vm) {
+        g_vm->DetachCurrentThread();
+    }
+    LOGI("[Reload Thread] Finished successfully.");
+    return NULL;
+}
+
+extern "C" __attribute__((visibility("default"))) void reload_frida_script_native() {
+    pthread_t thread;
+    if (pthread_create(&thread, NULL, reload_worker_thread, NULL) == 0) {
+        pthread_detach(thread);
+    } else {
+        LOGE("Failed to spawn reload worker thread");
+    }
+}
+
 // Android entry point
 extern "C" jint JNI_OnLoad(JavaVM *vm, void *reserved) {
     LOGI("libmypatch.so successfully loaded by target APK.");

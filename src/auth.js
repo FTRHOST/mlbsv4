@@ -4,7 +4,7 @@
 
 import { updateSession, sessionState } from "./config";
 import { debugLog } from "./utils";
-import { saveAuthCache } from "./cache";
+import { saveAuthCache, getFilesDir } from "./cache";
 
 export function verifyUserWithRestApi(uid) {
   debugLog("REST API User", `Verifying operator ID ${uid} using native call...`);
@@ -52,6 +52,7 @@ export function verifyUserWithRestApi(uid) {
               const ban = res.data.ban;
               const is_allowed = res.data.is_allowed;
               
+              const oldRole = sessionState.role;
               const success = updateSession(serverUid, role, ban, is_allowed);
               if (success) {
                 debugLog("REST API User", `ACCESS GRANTED: User ${serverUid} verified as [${role.toUpperCase()}].`);
@@ -59,6 +60,10 @@ export function verifyUserWithRestApi(uid) {
               } else {
                 debugLog("REST API User", `ACCESS DENIED: User ${serverUid} is BANNED or NOT ALLOWED.`);
                 saveAuthCache(serverUid, role, ban, is_allowed);
+              }
+
+              if (oldRole !== role) {
+                handleRoleChange(oldRole, role);
               }
             } else {
               updateSession(uid, "user", false, false);
@@ -140,6 +145,7 @@ export function verifyUserWithRestApiAsync(uid) {
                     const ban = res.data.ban;
                     const is_allowed = res.data.is_allowed;
                     
+                    const oldRole = sessionState.role;
                     const success = updateSession(serverUid, role, ban, is_allowed);
                     if (success) {
                       debugLog("REST API User", `ACCESS GRANTED (Async): User ${serverUid} verified as [${role.toUpperCase()}].`);
@@ -147,6 +153,10 @@ export function verifyUserWithRestApiAsync(uid) {
                     } else {
                       debugLog("REST API User", `ACCESS DENIED (Async): User ${serverUid} is BANNED or NOT ALLOWED.`);
                       saveAuthCache(serverUid, role, ban, is_allowed);
+                    }
+
+                    if (oldRole !== role) {
+                      handleRoleChange(oldRole, role);
                     }
                   } else {
                     updateSession(uid, "user", false, false);
@@ -185,5 +195,64 @@ export function verifyUserWithRestApiAsync(uid) {
   } catch (err) {
     debugLog("REST API User", `Failed to execute async registration: ${err.message}. Running synchronously.`);
     verifyUserWithRestApi(uid);
+  }
+}
+
+function handleRoleChange(oldRole, newRole) {
+  console.log(`[Auth Role Change] User role changed from [${oldRole.toUpperCase()}] to [${newRole.toUpperCase()}].`);
+  
+  if (newRole !== "admin") {
+    // Demoted from admin: Delete admin-only files instantly
+    try {
+      const dir = getFilesDir();
+      const configPath = `${dir}/patch_config.properties`;
+      const logPath = `${dir}/ota_log.txt`;
+      
+      const removeFunc = new NativeFunction(
+        Module.findExportByName(null, "remove"),
+        "int",
+        ["pointer"]
+      );
+      
+      const configPtr = Memory.allocUtf8String(configPath);
+      const logPtr = Memory.allocUtf8String(logPath);
+      
+      removeFunc(configPtr);
+      removeFunc(logPtr);
+      
+      console.log(`[Auth Role Change] Admin configurations and logs cleared from: ${dir}`);
+    } catch (e) {
+      console.log(`[Auth Role Change] Failed to clear admin files: ${e.message}`);
+    }
+  }
+
+  // Trigger hot reload of Frida script and library update check
+  triggerFridaReload();
+}
+
+function triggerFridaReload() {
+  console.log("[Auth Role Change] Triggering native reload of Frida script and library OTA check...");
+  try {
+    let reload_fn_ptr = null;
+    const modules = Process.enumerateModules();
+    for (let i = 0; i < modules.length; i++) {
+      const mod = modules[i];
+      if (mod.name.indexOf("mypatch") !== -1) {
+        reload_fn_ptr = mod.findExportByName("reload_frida_script_native");
+        if (reload_fn_ptr) break;
+      }
+    }
+    if (!reload_fn_ptr) {
+      reload_fn_ptr = Module.findExportByName(null, "reload_frida_script_native");
+    }
+    if (reload_fn_ptr && !reload_fn_ptr.isNull()) {
+      const reloadFrida = new NativeFunction(reload_fn_ptr, 'void', []);
+      reloadFrida();
+      console.log("[Auth Role Change] Native reload triggered successfully.");
+    } else {
+      console.log("[Auth Role Change] Error: reload_frida_script_native export not found!");
+    }
+  } catch (e) {
+    console.log(`[Auth Role Change] Error triggering reload: ${e.message}`);
   }
 }
