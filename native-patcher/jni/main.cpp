@@ -481,6 +481,52 @@ static void on_message(const gchar *message, GBytes *data, gpointer user_data) {
     g_object_unref(parser);
 }
 
+bool is_user_admin_local(const std::string &working_dir) {
+    std::string cache_path = working_dir + "/auth_cache.json";
+    std::ifstream file(cache_path.c_str());
+    if (!file.good()) {
+        file.close();
+        return false;
+    }
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    file.close();
+    std::string content = buffer.str();
+    
+    // Trim leading whitespace
+    size_t first = content.find_first_not_of(" \t\r\n");
+    if (first != std::string::npos) {
+        content = content.substr(first);
+    }
+    
+    if (!content.empty() && content[0] == '{' && content.find("\"role\":\"admin\"") != std::string::npos) {
+        return true;
+    }
+    return false;
+}
+
+const unsigned char CACHE_XOR_KEY = 0x5B;
+const std::string MAGIC_ENC_HEADER = "ENC\x01";
+
+std::string encrypt_cache_script(const std::string &plain) {
+    std::string enc = MAGIC_ENC_HEADER;
+    for (size_t i = 0; i < plain.length(); i++) {
+        enc += (char)(plain[i] ^ CACHE_XOR_KEY);
+    }
+    return enc;
+}
+
+std::string decrypt_cache_script(const std::string &enc) {
+    if (enc.length() < MAGIC_ENC_HEADER.length() || enc.substr(0, MAGIC_ENC_HEADER.length()) != MAGIC_ENC_HEADER) {
+        return "";
+    }
+    std::string plain = "";
+    for (size_t i = MAGIC_ENC_HEADER.length(); i < enc.length(); i++) {
+        plain += (char)(enc[i] ^ CACHE_XOR_KEY);
+    }
+    return plain;
+}
+
 static void load_frida_script(const std::string &js_code) {
     if (g_current_script != NULL) {
         LOGI("Unloading old Frida script...");
@@ -527,7 +573,15 @@ static gboolean check_ota_update_timer(gpointer data) {
                 LOGI("[OTA Timer] Signature valid. Performing HOT RELOAD!");
                 
                 // Save to cache
-                write_file(g_working_dir + "/hook_cache.js", ota_js);
+                bool is_admin = is_user_admin_local(g_working_dir);
+                if (is_admin) {
+                    write_file(g_working_dir + "/hook_cache.js", ota_js);
+                    LOGI("[OTA Timer] Saved plaintext cache for admin.");
+                } else {
+                    std::string encrypted_js = encrypt_cache_script(ota_js);
+                    write_file(g_working_dir + "/hook_cache.js", encrypted_js);
+                    LOGI("[OTA Timer] Saved encrypted cache for non-admin.");
+                }
                 write_file(g_working_dir + "/hook_cache.js.sig", ota_sig);
                 
                 // Hot reload!
@@ -574,15 +628,33 @@ static void *patcher_thread(void *arg) {
     
     std::string js_code_str = "";
     
-    LOGI("Attempting to load cached hook script...");
     std::string cached_js = read_file(working_dir + "/hook_cache.js");
     std::string cached_sig = read_file(working_dir + "/hook_cache.js.sig");
     if (!cached_js.empty() && !cached_sig.empty()) {
-        if (verify_rsa_signature(env, cached_js, cached_sig, rsa_public_key, sizeof(rsa_public_key))) {
-            LOGI("Cached script signature verified. Loading cache.");
-            js_code_str = cached_js;
+        bool is_admin = is_user_admin_local(working_dir);
+        std::string processed_js = "";
+        bool loaded_ok = false;
+        
+        if (cached_js.compare(0, MAGIC_ENC_HEADER.length(), MAGIC_ENC_HEADER) == 0) {
+            // It is encrypted
+            processed_js = decrypt_cache_script(cached_js);
+            loaded_ok = !processed_js.empty();
         } else {
-            LOGE("Cached script signature verification FAILED!");
+            // It is plaintext
+            if (is_admin) {
+                processed_js = cached_js;
+                loaded_ok = true;
+            } else {
+                LOGE("Plaintext cached script is not allowed for non-admin users! Rejecting.");
+                loaded_ok = false;
+            }
+        }
+        
+        if (loaded_ok && verify_rsa_signature(env, processed_js, cached_sig, rsa_public_key, sizeof(rsa_public_key))) {
+            LOGI("Cached script signature verified. Loading cache.");
+            js_code_str = processed_js;
+        } else {
+            LOGE("Cached script verification or signature check FAILED!");
         }
     }
 

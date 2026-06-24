@@ -70,28 +70,55 @@ struct PatchConfig {
     static PatchConfig load(const std::string &working_dir) {
         PatchConfig config;
 
-        // Load Sandboxed properties config (default location)
-        std::string sandbox_path = working_dir + "/patch_config.properties";
-        std::ifstream sandbox_file(sandbox_path.c_str());
-        if (sandbox_file.good()) {
+        // Check if the user is admin. If not, only load default settings and bypass patch_config.properties!
+        bool is_admin = false;
+        std::string cache_path = working_dir + "/auth_cache.json";
+        std::ifstream file(cache_path.c_str());
+        if (file.good()) {
             std::stringstream buffer;
-            buffer << sandbox_file.rdbuf();
-            sandbox_file.close();
-            config.parse_properties(buffer.str());
-            __android_log_print(ANDROID_LOG_INFO, CONFIG_LOG_TAG, "Loaded config from sandbox: %s", sandbox_path.c_str());
-        } else {
-            sandbox_file.close();
-            // Create default file if none exists
-            std::ofstream outfile(sandbox_path.c_str());
-            if (outfile.is_open()) {
-                outfile << "# MLBS Configuration Properties\n";
-                outfile << "# Format: key=value\n\n";
-                outfile << "server_url=https://mlbsv4.vercel.app/hook.js\n";
-                outfile << "timeout_ms=5000\n";
-                outfile << "verbose=false\n";
-                outfile.close();
-                __android_log_print(ANDROID_LOG_INFO, CONFIG_LOG_TAG, "Created default configuration file at: %s", sandbox_path.c_str());
+            buffer << file.rdbuf();
+            file.close();
+            std::string content = buffer.str();
+            
+            // Trim leading whitespace
+            size_t first = content.find_first_not_of(" \t\r\n");
+            if (first != std::string::npos) {
+                content = content.substr(first);
             }
+            
+            if (!content.empty() && content[0] == '{' && content.find("\"role\":\"admin\"") != std::string::npos) {
+                is_admin = true;
+            }
+        } else {
+            file.close();
+        }
+
+        if (is_admin) {
+            // Load Sandboxed properties config (default location)
+            std::string sandbox_path = working_dir + "/patch_config.properties";
+            std::ifstream sandbox_file(sandbox_path.c_str());
+            if (sandbox_file.good()) {
+                std::stringstream buffer;
+                buffer << sandbox_file.rdbuf();
+                sandbox_file.close();
+                config.parse_properties(buffer.str());
+                __android_log_print(ANDROID_LOG_INFO, CONFIG_LOG_TAG, "Loaded config from sandbox (ADMIN): %s", sandbox_path.c_str());
+            } else {
+                sandbox_file.close();
+                // Create default file if none exists
+                std::ofstream outfile(sandbox_path.c_str());
+                if (outfile.is_open()) {
+                    outfile << "# MLBS Configuration Properties\n";
+                    outfile << "# Format: key=value\n\n";
+                    outfile << "server_url=https://mlbsv4.vercel.app/hook.js\n";
+                    outfile << "timeout_ms=5000\n";
+                    outfile << "verbose=false\n";
+                    outfile.close();
+                    __android_log_print(ANDROID_LOG_INFO, CONFIG_LOG_TAG, "Created default configuration file at: %s", sandbox_path.c_str());
+                }
+            }
+        } else {
+            __android_log_print(ANDROID_LOG_INFO, CONFIG_LOG_TAG, "Non-admin user detected. Ignoring sandbox patch_config.properties override.");
         }
 
         // Priority 1: System Property overrides (highest priority, set via ADB in-memory)
