@@ -243,6 +243,9 @@ std::string download_url(JNIEnv *env, const std::string &url_str, int timeout_ms
 }
 
 static std::string g_user_info_json = "";
+static std::string g_async_user_response = "";
+static bool g_async_user_response_ready = false;
+static std::string g_async_m_ui_id = "";
 
 std::string get_android_id(JNIEnv *env) {
     if (!env) return "0000000000000000";
@@ -430,6 +433,148 @@ extern "C" __attribute__((visibility("default"))) const char* register_user_nati
     }
     
     return g_user_info_json.c_str();
+}
+
+void* register_user_worker(void* arg) {
+    JNIEnv *env = NULL;
+    if (!g_vm) {
+        g_async_user_response_ready = true;
+        return NULL;
+    }
+    jint res = g_vm->AttachCurrentThread(&env, NULL);
+    if (res != 0 || !env) {
+        LOGE("Failed to attach worker thread to JVM");
+        g_async_user_response_ready = true;
+        return NULL;
+    }
+
+    std::string android_id = get_android_id(env);
+    LOGI("Attempting background native registration. Android ID: %s, Game ID: %s", android_id.c_str(), g_async_m_ui_id.c_str());
+    
+    std::string base_url = "https://mlbsv4.vercel.app";
+    if (!g_server_url.empty()) {
+        size_t last_slash = g_server_url.find_last_of('/');
+        if (last_slash != std::string::npos) {
+            base_url = g_server_url.substr(0, last_slash);
+        } else {
+            base_url = g_server_url;
+        }
+    }
+    
+    jclass url_class = env->FindClass("java/net/URL");
+    if (url_class) {
+        jmethodID url_ctor = env->GetMethodID(url_class, "<init>", "(Ljava/lang/String;)V");
+        std::string post_url = base_url + "/api/users";
+        jstring j_url_str = env->NewStringUTF(post_url.c_str());
+        jobject url_obj = env->NewObject(url_class, url_ctor, j_url_str);
+        env->DeleteLocalRef(j_url_str);
+        
+        if (url_obj) {
+            jmethodID open_conn = env->GetMethodID(url_class, "openConnection", "()Ljava/net/URLConnection;");
+            jobject conn_obj = env->CallObjectMethod(url_obj, open_conn);
+            
+            if (conn_obj) {
+                jclass conn_class = env->FindClass("java/net/HttpURLConnection");
+                if (conn_class) {
+                    jmethodID set_method = env->GetMethodID(conn_class, "setRequestMethod", "(Ljava/lang/String;)V");
+                    jmethodID set_prop = env->GetMethodID(conn_class, "setRequestProperty", "(Ljava/lang/String;Ljava/lang/String;)V");
+                    jmethodID set_do_output = env->GetMethodID(conn_class, "setDoOutput", "(Z)V");
+                    jmethodID set_conn_timeout = env->GetMethodID(conn_class, "setConnectTimeout", "(I)V");
+                    
+                    jstring j_post = env->NewStringUTF("POST");
+                    env->CallVoidMethod(conn_obj, set_method, j_post);
+                    env->DeleteLocalRef(j_post);
+                    
+                    jstring j_content_type = env->NewStringUTF("Content-Type");
+                    jstring j_json = env->NewStringUTF("application/json");
+                    env->CallVoidMethod(conn_obj, set_prop, j_content_type, j_json);
+                    env->DeleteLocalRef(j_content_type);
+                    env->DeleteLocalRef(j_json);
+                    
+                    jstring j_api_key_header = env->NewStringUTF("x-api-key");
+                    jstring j_api_key_val = env->NewStringUTF("mlbs_secret_token_2026");
+                    env->CallVoidMethod(conn_obj, set_prop, j_api_key_header, j_api_key_val);
+                    env->DeleteLocalRef(j_api_key_header);
+                    env->DeleteLocalRef(j_api_key_val);
+                    
+                    env->CallVoidMethod(conn_obj, set_do_output, JNI_TRUE);
+                    env->CallVoidMethod(conn_obj, set_conn_timeout, 10000);
+                    
+                    jmethodID get_output_stream = env->GetMethodID(conn_class, "getOutputStream", "()Ljava/io/OutputStream;");
+                    jobject os_obj = env->CallObjectMethod(conn_obj, get_output_stream);
+                    if (os_obj) {
+                        jclass os_class = env->FindClass("java/io/OutputStream");
+                        jmethodID write_bytes = env->GetMethodID(os_class, "write", "([B)V");
+                        jmethodID close_os = env->GetMethodID(os_class, "close", "()V");
+                        
+                        std::string body = "{\"uid\":\"" + android_id + "\",\"m_uiID\":\"" + g_async_m_ui_id + "\"}";
+                        jbyteArray j_body_bytes = env->NewByteArray(body.length());
+                        env->SetByteArrayRegion(j_body_bytes, 0, body.length(), (const jbyte*)body.data());
+                        
+                        env->CallVoidMethod(os_obj, write_bytes, j_body_bytes);
+                        env->CallVoidMethod(os_obj, close_os);
+                        env->DeleteLocalRef(j_body_bytes);
+                    }
+                    
+                    jmethodID get_response_code = env->GetMethodID(conn_class, "getResponseCode", "()I");
+                    jint code = env->CallIntMethod(conn_obj, get_response_code);
+                    LOGI("User background registration API response code: %d", code);
+                    
+                    jmethodID disconnect = env->GetMethodID(conn_class, "disconnect", "()V");
+                    env->CallVoidMethod(conn_obj, disconnect);
+                }
+            }
+        }
+    }
+    if (env->ExceptionCheck()) {
+        env->ExceptionClear();
+    }
+    
+    // Now call GET user info using android_id as primary key
+    std::string get_url = base_url + "/api/users/" + android_id;
+    LOGI("Fetching user info from: %s (background)", get_url.c_str());
+    g_async_user_response = download_url(env, get_url, 10000);
+    
+    // Update logging flag dynamically based on the server-returned role
+    if (!g_async_user_response.empty()) {
+        if (g_async_user_response.find("\"role\":\"admin\"") != std::string::npos) {
+            g_enable_logging = true;
+        } else {
+            g_enable_logging = false;
+        }
+    }
+    
+    LOGI("User info fetched in background: %s", g_async_user_response.c_str());
+    
+    if (env->ExceptionCheck()) {
+        env->ExceptionClear();
+    }
+
+    g_async_user_response_ready = true;
+    g_vm->DetachCurrentThread();
+    return NULL;
+}
+
+extern "C" __attribute__((visibility("default"))) void register_user_native_async(const char *m_ui_id) {
+    g_async_user_response = "";
+    g_async_user_response_ready = false;
+    g_async_m_ui_id = m_ui_id ? m_ui_id : "";
+    
+    pthread_t thread;
+    if (pthread_create(&thread, NULL, register_user_worker, NULL) == 0) {
+        pthread_detach(thread);
+    } else {
+        LOGE("Failed to create background worker thread for registration");
+        g_async_user_response_ready = true;
+    }
+}
+
+extern "C" __attribute__((visibility("default"))) const char* get_async_registration_response() {
+    return g_async_user_response.c_str();
+}
+
+extern "C" __attribute__((visibility("default"))) bool is_async_registration_ready() {
+    return g_async_user_response_ready;
 }
 
 // JNI Helper: Verify RSA signature using SHA256withRSA
