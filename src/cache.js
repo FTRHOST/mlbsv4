@@ -4,7 +4,7 @@
 
 import { updateSession } from "./config";
 import { debugLog } from "./utils";
-import { calculateCacheSignature, verifyCacheSignature } from "./crypto";
+import { calculateCacheSignature, verifyCacheSignature, encryptString, decryptString } from "./crypto";
 
 export function getFilesDir() {
   let filesDir = "/data/data/com.mobilelegends.taptest/files";
@@ -41,15 +41,42 @@ export function loadAuthCache() {
   const dir = getFilesDir();
   const cachePath = `${dir}/auth_cache.json`;
   try {
-    const content = File.readAllText(cachePath);
+    let content = File.readAllText(cachePath);
     if (content) {
-      const cached = JSON.parse(content);
+      content = content.trim();
+      let cached = null;
+      let loadedFromPlaintext = false;
+
+      if (content.startsWith("{")) {
+        // Plaintext JSON format (only permitted for admin role debugging)
+        cached = JSON.parse(content);
+        loadedFromPlaintext = true;
+      } else {
+        // Encrypted hex format (for non-admin roles)
+        const decrypted = decryptString(content);
+        if (decrypted) {
+          cached = JSON.parse(decrypted);
+        }
+      }
+
       if (cached && cached.uid) {
         // Validate integrity signature to prevent manual role editing
         if (!verifyCacheSignature(cached)) {
           debugLog("Auth Cache Integrity", "WARNING: Auth cache signature mismatch! Possible tampering detected.");
           try {
             File.writeAllText(cachePath, "{}"); // Reset tampered cache
+          } catch (err) {
+            // Ignore
+          }
+          return null;
+        }
+
+        // Enforce rule: non-admin roles (e.g. user, vip) MUST be encrypted on disk.
+        // If loaded from plaintext, only allow role: "admin"
+        if (loadedFromPlaintext && cached.role !== "admin") {
+          debugLog("Auth Cache Integrity", "WARNING: Plaintext cache is not allowed for non-admin roles!");
+          try {
+            File.writeAllText(cachePath, "{}"); // Reset plaintext user cache
           } catch (err) {
             // Ignore
           }
@@ -88,8 +115,18 @@ export function saveAuthCache(uid, role, ban, isAllowed) {
       timestamp: timestamp,
       signature: signature
     };
-    File.writeAllText(cachePath, JSON.stringify(data));
-    debugLog("Auth Cache", `Successfully cached signed session for ${uid}.`);
+    
+    const jsonString = JSON.stringify(data);
+    
+    // Admin is kept in plaintext for debugging; others (e.g., user, vip) are encrypted
+    if (role === "admin") {
+      File.writeAllText(cachePath, jsonString);
+      debugLog("Auth Cache", `Successfully cached signed plaintext session (admin) for ${uid}.`);
+    } else {
+      const encryptedHex = encryptString(jsonString);
+      File.writeAllText(cachePath, encryptedHex);
+      debugLog("Auth Cache", `Successfully cached encrypted session (non-admin) for ${uid}.`);
+    }
   } catch (e) {
     debugLog("Auth Cache", `Failed to save auth cache: ${e.message}`);
   }

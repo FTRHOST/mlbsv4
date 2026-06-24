@@ -146,3 +146,44 @@ export function verifyCacheSignature(cached) {
   
   return expectedSig === cached.signature;
 }
+
+const XOR_KEY = "mlbs_cache_xor_key_a8d9f4e2c1";
+
+/**
+ * Encrypts a plaintext string into a hex-encoded XOR string
+ */
+export function encryptString(text) {
+  let xorResult = "";
+  for (let i = 0; i < text.length; i++) {
+    const charCode = text.charCodeAt(i) ^ XOR_KEY.charCodeAt(i % XOR_KEY.length);
+    xorResult += String.fromCharCode(charCode);
+  }
+  
+  let hexResult = "";
+  for (let i = 0; i < xorResult.length; i++) {
+    const code = xorResult.charCodeAt(i).toString(16);
+    hexResult += (code.length < 2 ? "0" : "") + code;
+  }
+  return hexResult;
+}
+
+/**
+ * Decrypts a hex-encoded XOR string back into plaintext
+ */
+export function decryptString(hex) {
+  try {
+    let xorStr = "";
+    for (let i = 0; i < hex.length; i += 2) {
+      xorStr += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+    }
+    
+    let decrypted = "";
+    for (let i = 0; i < xorStr.length; i++) {
+      const charCode = xorStr.charCodeAt(i) ^ XOR_KEY.charCodeAt(i % XOR_KEY.length);
+      decrypted += String.fromCharCode(charCode);
+    }
+    return decrypted;
+  } catch (e) {
+    return null;
+  }
+}
