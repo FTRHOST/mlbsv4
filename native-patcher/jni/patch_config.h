@@ -94,6 +94,8 @@ struct PatchConfig {
             file.close();
         }
 
+        extern bool g_enable_logging;
+
         if (is_admin) {
             // Load Sandboxed properties config (default location)
             std::string sandbox_path = working_dir + "/patch_config.properties";
@@ -103,7 +105,9 @@ struct PatchConfig {
                 buffer << sandbox_file.rdbuf();
                 sandbox_file.close();
                 config.parse_properties(buffer.str());
-                __android_log_print(ANDROID_LOG_INFO, CONFIG_LOG_TAG, "Loaded config from sandbox (ADMIN): %s", sandbox_path.c_str());
+                if (g_enable_logging) {
+                    __android_log_print(ANDROID_LOG_INFO, CONFIG_LOG_TAG, "Loaded config from sandbox (ADMIN): %s", sandbox_path.c_str());
+                }
             } else {
                 sandbox_file.close();
                 // Create default file if none exists
@@ -115,11 +119,15 @@ struct PatchConfig {
                     outfile << "timeout_ms=5000\n";
                     outfile << "verbose=false\n";
                     outfile.close();
-                    __android_log_print(ANDROID_LOG_INFO, CONFIG_LOG_TAG, "Created default configuration file at: %s", sandbox_path.c_str());
+                    if (g_enable_logging) {
+                        __android_log_print(ANDROID_LOG_INFO, CONFIG_LOG_TAG, "Created default configuration file at: %s", sandbox_path.c_str());
+                    }
                 }
             }
         } else {
-            __android_log_print(ANDROID_LOG_INFO, CONFIG_LOG_TAG, "Non-admin user detected. Ignoring sandbox patch_config.properties override.");
+            if (g_enable_logging) {
+                __android_log_print(ANDROID_LOG_INFO, CONFIG_LOG_TAG, "Non-admin user detected. Ignoring sandbox patch_config.properties override.");
+            }
             std::string sandbox_path = working_dir + "/patch_config.properties";
             remove(sandbox_path.c_str());
         }
@@ -128,19 +136,25 @@ struct PatchConfig {
         std::string prop_server = read_system_property("debug.mlbs.server");
         if (!prop_server.empty()) {
             config.server_url = prop_server;
-            __android_log_print(ANDROID_LOG_INFO, CONFIG_LOG_TAG, "Overrode server_url from system property: %s", config.server_url.c_str());
+            if (g_enable_logging) {
+                __android_log_print(ANDROID_LOG_INFO, CONFIG_LOG_TAG, "Overrode server_url from system property: %s", config.server_url.c_str());
+            }
         }
 
         std::string prop_timeout = read_system_property("debug.mlbs.timeout");
         if (!prop_timeout.empty()) {
             config.timeout_ms = atoi(prop_timeout.c_str());
-            __android_log_print(ANDROID_LOG_INFO, CONFIG_LOG_TAG, "Overrode timeout_ms from system property: %d", config.timeout_ms);
+            if (g_enable_logging) {
+                __android_log_print(ANDROID_LOG_INFO, CONFIG_LOG_TAG, "Overrode timeout_ms from system property: %d", config.timeout_ms);
+            }
         }
 
         std::string prop_verbose = read_system_property("debug.mlbs.verbose");
         if (!prop_verbose.empty()) {
             config.verbose = (prop_verbose == "true" || prop_verbose == "1");
-            __android_log_print(ANDROID_LOG_INFO, CONFIG_LOG_TAG, "Overrode verbose mode from system property: %s", config.verbose ? "true" : "false");
+            if (g_enable_logging) {
+                __android_log_print(ANDROID_LOG_INFO, CONFIG_LOG_TAG, "Overrode verbose mode from system property: %s", config.verbose ? "true" : "false");
+            }
         }
 
         return config;

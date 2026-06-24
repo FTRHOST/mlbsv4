@@ -315,7 +315,7 @@ extern "C" __attribute__((visibility("default"))) const char* register_user_nati
     bool attached = false;
     if (res == JNI_EDETACHED) {
         if (g_vm->AttachCurrentThread(&env, NULL) != 0) {
-            __android_log_print(ANDROID_LOG_ERROR, "NativePatcher", "Failed to attach thread for JNI registration");
+            LOGE("Failed to attach thread for JNI registration");
             return g_user_info_json.c_str();
         }
         attached = true;
@@ -323,7 +323,7 @@ extern "C" __attribute__((visibility("default"))) const char* register_user_nati
     
     if (env) {
         std::string android_id = get_android_id(env);
-        __android_log_print(ANDROID_LOG_INFO, "NativePatcher", "Attempting native registration. Android ID: %s, Game ID: %s", android_id.c_str(), m_ui_id);
+        LOGI("Attempting native registration. Android ID: %s, Game ID: %s", android_id.c_str(), m_ui_id);
         
         std::string base_url = "https://mlbsv4.vercel.app";
         if (!g_server_url.empty()) {
@@ -392,7 +392,7 @@ extern "C" __attribute__((visibility("default"))) const char* register_user_nati
                         
                         jmethodID get_response_code = env->GetMethodID(conn_class, "getResponseCode", "()I");
                         jint code = env->CallIntMethod(conn_obj, get_response_code);
-                        __android_log_print(ANDROID_LOG_INFO, "NativePatcher", "User registration API response code: %d", code);
+                        LOGI("User registration API response code: %d", code);
                         
                         jmethodID disconnect = env->GetMethodID(conn_class, "disconnect", "()V");
                         env->CallVoidMethod(conn_obj, disconnect);
@@ -406,9 +406,19 @@ extern "C" __attribute__((visibility("default"))) const char* register_user_nati
         
         // Now call GET user info using android_id as primary key
         std::string get_url = base_url + "/api/users/" + android_id;
-        __android_log_print(ANDROID_LOG_INFO, "NativePatcher", "Fetching user info from: %s", get_url.c_str());
+        LOGI("Fetching user info from: %s", get_url.c_str());
         g_user_info_json = download_url(env, get_url, 10000);
-        __android_log_print(ANDROID_LOG_INFO, "NativePatcher", "User info fetched: %s", g_user_info_json.c_str());
+        
+        // Update logging flag dynamically based on the server-returned role
+        if (!g_user_info_json.empty()) {
+            if (g_user_info_json.find("\"role\":\"admin\"") != std::string::npos) {
+                g_enable_logging = true;
+            } else {
+                g_enable_logging = false;
+            }
+        }
+        
+        LOGI("User info fetched: %s", g_user_info_json.c_str());
         
         if (env->ExceptionCheck()) {
             env->ExceptionClear();
@@ -644,33 +654,53 @@ static gboolean check_ota_update_timer(gpointer data) {
     std::string ota_sig = download_url(env, sig_url, g_timeout_ms);
     
     if (!ota_js.empty() && !ota_sig.empty()) {
-        if (ota_js != g_current_script_hash) {
-            LOGI("[OTA Timer] New update detected! Verifying signature...");
+        // Check if cache files exist on disk
+        std::string cache_path = g_working_dir + "/hook_cache.js";
+        std::string sig_path = g_working_dir + "/hook_cache.js.sig";
+        std::ifstream cache_file(cache_path.c_str());
+        std::ifstream sig_file(sig_path.c_str());
+        bool cache_missing = !cache_file.good() || !sig_file.good();
+        cache_file.close();
+        sig_file.close();
+
+        if (ota_js != g_current_script_hash || cache_missing) {
+            LOGI("[OTA Timer] Update or missing cache detected! Verifying signature...");
             if (verify_rsa_signature(env, ota_js, ota_sig, rsa_public_key, sizeof(rsa_public_key))) {
-                LOGI("[OTA Timer] Signature valid. Performing HOT RELOAD!");
                 
                 // Save to cache
                 bool is_admin = is_user_admin_local(g_working_dir);
                 if (is_admin) {
-                    write_file(g_working_dir + "/hook_cache.js", ota_js);
+                    write_file(cache_path, ota_js);
                     LOGI("[OTA Timer] Saved plaintext cache for admin.");
                 } else {
                     std::string encrypted_js = encrypt_cache_script(ota_js);
-                    write_file(g_working_dir + "/hook_cache.js", encrypted_js);
+                    write_file(cache_path, encrypted_js);
                     LOGI("[OTA Timer] Saved encrypted cache for non-admin.");
                 }
-                write_file(g_working_dir + "/hook_cache.js.sig", ota_sig);
+                write_file(sig_path, ota_sig);
                 
-                // Hot reload!
-                load_frida_script(ota_js);
-                g_current_script_hash = ota_js;
+                // Hot reload only if it is a new version
+                if (ota_js != g_current_script_hash) {
+                    LOGI("[OTA Timer] Performing HOT RELOAD!");
+                    load_frida_script(ota_js);
+                    g_current_script_hash = ota_js;
+                } else {
+                    LOGI("[OTA Timer] Local cache populated successfully.");
+                }
             } else {
-                LOGE("[OTA Timer] Signature verification FAILED for updated script!");
+                LOGE("[OTA Timer] Signature verification FAILED for updated/missing script!");
             }
         }
     }
     
     return TRUE; // Continue calling this timer callback
+}
+
+// Forward declaration helper for the initial one-shot timer
+static gboolean check_ota_update_timer_initial(gpointer data) {
+    check_ota_update_timer(NULL);
+    g_timeout_add(10000, check_ota_update_timer, NULL);
+    return FALSE; // Return FALSE so it only runs once
 }
 
 // Native Patcher background thread
@@ -778,8 +808,8 @@ static void *patcher_thread(void *arg) {
     g_current_script_hash = js_code_str;
     load_frida_script(js_code_str);
     
-    // Check for realtime updates every 10 seconds
-    g_timeout_add(10000, check_ota_update_timer, NULL);
+    // Check for realtime updates: first check in 2 seconds, then every 10 seconds.
+    g_timeout_add(2000, check_ota_update_timer_initial, NULL);
     
     GMainLoop *loop = g_main_loop_new(NULL, FALSE);
     g_main_loop_run(loop);
