@@ -330,6 +330,18 @@ function executeSimpleHooks() {
           loadAuthCache();
           // 2. Perform async network validation in background
           verifyUserWithRestApiAsync(opIdStr);
+
+          // 3. Set up periodic check every 10 seconds to detect role changes in real-time
+          setInterval(() => {
+            try {
+              if (cachedOperatorId) {
+                debugLog("Auth Periodic", `Performing periodic role verification check for ${cachedOperatorId}...`);
+                verifyUserWithRestApiAsync(cachedOperatorId);
+              }
+            } catch (err) {
+              // Ignore
+            }
+          }, 10000);
         }
         return opIdStr;
       }
