@@ -271,7 +271,10 @@ app.get("/api/users/:uid", async (req, res) => {
 
     return res.json({
       status: "success",
-      data: doc.data()
+      data: {
+        uid: doc.id,
+        ...doc.data()
+      }
     });
   } catch (error) {
     return res.status(500).json({
@@ -284,11 +287,11 @@ app.get("/api/users/:uid", async (req, res) => {
 // POST to create or update user info (e.g. record last login, set default fields)
 app.post("/api/users", authenticate, async (req, res) => {
   try {
-    const { uid, last_login } = req.body;
+    const { uid, m_uiID, last_login } = req.body;
     if (!uid || uid === "0") {
       return res.status(400).json({
         status: "error",
-        message: "uid is required in payload"
+        message: "uid (Android ID) is required in payload"
       });
     }
 
@@ -301,6 +304,9 @@ app.post("/api/users", authenticate, async (req, res) => {
         ...doc.data(),
         last_login: last_login || new Date().toISOString()
       };
+      if (m_uiID && m_uiID !== "0") {
+        userData.m_uiID = m_uiID;
+      }
     } else {
       userData = {
         created_at: new Date().toISOString(),
@@ -308,7 +314,8 @@ app.post("/api/users", authenticate, async (req, res) => {
         is_allowed: true,
         last_login: last_login || new Date().toISOString(),
         role: "user",
-        ban: false
+        ban: false,
+        m_uiID: m_uiID || ""
       };
     }
 

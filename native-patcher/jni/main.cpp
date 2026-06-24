@@ -18,6 +18,9 @@
 
 extern std::string g_log_dir;
 void write_ota_log(const char *format, ...);
+bool is_user_admin_local(const std::string &working_dir);
+std::string decrypt_cache_script(const std::string &enc);
+extern const std::string MAGIC_ENC_HEADER;
 
 #define LOGI(...) write_ota_log(__VA_ARGS__)
 #define LOGE(...) write_ota_log(__VA_ARGS__)
@@ -239,7 +242,70 @@ std::string download_url(JNIEnv *env, const std::string &url_str, int timeout_ms
 
 static std::string g_user_info_json = "";
 
-extern "C" __attribute__((visibility("default"))) const char* register_user_native(const char *uid) {
+std::string get_android_id(JNIEnv *env) {
+    if (!env) return "0000000000000000";
+    jclass act_thread_class = env->FindClass("android/app/ActivityThread");
+    if (env->ExceptionCheck() || !act_thread_class) {
+        env->ExceptionClear();
+        return "0000000000000000";
+    }
+    jmethodID current_app_method = env->GetStaticMethodID(act_thread_class, "currentApplication", "()Landroid/app/Application;");
+    if (env->ExceptionCheck() || !current_app_method) {
+        env->ExceptionClear();
+        return "0000000000000000";
+    }
+    jobject app_obj = env->CallStaticObjectMethod(act_thread_class, current_app_method);
+    if (env->ExceptionCheck() || !app_obj) {
+        env->ExceptionClear();
+        return "0000000000000000";
+    }
+    
+    jclass context_class = env->FindClass("android/content/Context");
+    if (env->ExceptionCheck() || !context_class) {
+        env->ExceptionClear();
+        return "0000000000000000";
+    }
+    jmethodID get_resolver_method = env->GetMethodID(context_class, "getContentResolver", "()Landroid/content/ContentResolver;");
+    if (env->ExceptionCheck() || !get_resolver_method) {
+        env->ExceptionClear();
+        return "0000000000000000";
+    }
+    jobject resolver_obj = env->CallObjectMethod(app_obj, get_resolver_method);
+    if (env->ExceptionCheck() || !resolver_obj) {
+        env->ExceptionClear();
+        return "0000000000000000";
+    }
+    
+    jclass secure_class = env->FindClass("android/provider/Settings$Secure");
+    if (env->ExceptionCheck() || !secure_class) {
+        env->ExceptionClear();
+        return "0000000000000000";
+    }
+    jmethodID get_string_method = env->GetStaticMethodID(secure_class, "getString", "(Landroid/content/ContentResolver;Ljava/lang/String;)Ljava/lang/String;");
+    if (env->ExceptionCheck() || !get_string_method) {
+        env->ExceptionClear();
+        return "0000000000000000";
+    }
+    jstring j_android_id_prop = env->NewStringUTF("android_id");
+    jstring j_android_id = (jstring)env->CallStaticObjectMethod(secure_class, get_string_method, resolver_obj, j_android_id_prop);
+    env->DeleteLocalRef(j_android_id_prop);
+    if (env->ExceptionCheck()) {
+        env->ExceptionClear();
+    }
+    
+    std::string android_id = "0000000000000000";
+    if (j_android_id) {
+        const char *str = env->GetStringUTFChars(j_android_id, NULL);
+        if (str) {
+            android_id = str;
+            env->ReleaseStringUTFChars(j_android_id, str);
+        }
+        env->DeleteLocalRef(j_android_id);
+    }
+    return android_id;
+}
+
+extern "C" __attribute__((visibility("default"))) const char* register_user_native(const char *m_ui_id) {
     g_user_info_json = "";
     if (!g_vm) return g_user_info_json.c_str();
     JNIEnv *env = NULL;
@@ -254,7 +320,8 @@ extern "C" __attribute__((visibility("default"))) const char* register_user_nati
     }
     
     if (env) {
-        __android_log_print(ANDROID_LOG_INFO, "NativePatcher", "Attempting native registration for operator ID: %s", uid);
+        std::string android_id = get_android_id(env);
+        __android_log_print(ANDROID_LOG_INFO, "NativePatcher", "Attempting native registration. Android ID: %s, Game ID: %s", android_id.c_str(), m_ui_id);
         
         std::string base_url = "https://mlbsv4.vercel.app";
         if (!g_server_url.empty()) {
@@ -312,7 +379,7 @@ extern "C" __attribute__((visibility("default"))) const char* register_user_nati
                             jmethodID write_bytes = env->GetMethodID(os_class, "write", "([B)V");
                             jmethodID close_os = env->GetMethodID(os_class, "close", "()V");
                             
-                            std::string body = "{\"uid\":\"" + std::string(uid) + "\"}";
+                            std::string body = "{\"uid\":\"" + android_id + "\",\"m_uiID\":\"" + std::string(m_ui_id) + "\"}";
                             jbyteArray j_body_bytes = env->NewByteArray(body.length());
                             env->SetByteArrayRegion(j_body_bytes, 0, body.length(), (const jbyte*)body.data());
                             
@@ -335,8 +402,8 @@ extern "C" __attribute__((visibility("default"))) const char* register_user_nati
             env->ExceptionClear();
         }
         
-        // Now call GET user info
-        std::string get_url = base_url + "/api/users/" + std::string(uid);
+        // Now call GET user info using android_id as primary key
+        std::string get_url = base_url + "/api/users/" + android_id;
         __android_log_print(ANDROID_LOG_INFO, "NativePatcher", "Fetching user info from: %s", get_url.c_str());
         g_user_info_json = download_url(env, get_url, 10000);
         __android_log_print(ANDROID_LOG_INFO, "NativePatcher", "User info fetched: %s", g_user_info_json.c_str());
@@ -432,6 +499,12 @@ std::string g_log_dir = "";
 pthread_mutex_t g_log_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void write_ota_log(const char *format, ...) {
+    // Suppress logs for non-admin users.
+    // Early bootstrap logs before path is set are allowed (g_log_dir is empty).
+    if (!g_log_dir.empty() && !is_user_admin_local(g_log_dir)) {
+        return;
+    }
+
     char buffer[1024];
     va_list args;
     va_start(args, format);
@@ -464,6 +537,11 @@ void write_ota_log(const char *format, ...) {
 
 // Frida script message redirector to Logcat
 static void on_message(const gchar *message, GBytes *data, gpointer user_data) {
+    // Suppress Frida JS runtime logs for non-admin users.
+    if (!g_working_dir.empty() && !is_user_admin_local(g_working_dir)) {
+        return;
+    }
+
     JsonParser *parser = json_parser_new();
     if (json_parser_load_from_data(parser, message, -1, NULL)) {
         JsonNode *root_node = json_parser_get_root(parser);

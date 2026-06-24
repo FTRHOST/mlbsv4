@@ -47,17 +47,18 @@ export function verifyUserWithRestApi(uid) {
           try {
             const res = JSON.parse(responseJson);
             if (res && res.data) {
+              const serverUid = res.data.uid || uid;
               const role = res.data.role || "user";
               const ban = res.data.ban;
               const is_allowed = res.data.is_allowed;
               
-              const success = updateSession(uid, role, ban, is_allowed);
+              const success = updateSession(serverUid, role, ban, is_allowed);
               if (success) {
-                debugLog("REST API User", `ACCESS GRANTED: User ${uid} verified as [${role.toUpperCase()}].`);
-                saveAuthCache(uid, role, ban, is_allowed);
+                debugLog("REST API User", `ACCESS GRANTED: User ${serverUid} verified as [${role.toUpperCase()}].`);
+                saveAuthCache(serverUid, role, ban, is_allowed);
               } else {
-                debugLog("REST API User", `ACCESS DENIED: User ${uid} is BANNED or NOT ALLOWED.`);
-                saveAuthCache(uid, role, ban, is_allowed);
+                debugLog("REST API User", `ACCESS DENIED: User ${serverUid} is BANNED or NOT ALLOWED.`);
+                saveAuthCache(serverUid, role, ban, is_allowed);
               }
             } else {
               updateSession(uid, "user", false, false);
