@@ -61,12 +61,23 @@ export function loadAuthCache() {
 
       if (content.startsWith("{")) {
         // Plaintext JSON format (only permitted for admin role debugging)
+        const firstBrace = content.indexOf("{");
+        const lastBrace = content.lastIndexOf("}");
+        if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+          content = content.substring(firstBrace, lastBrace + 1);
+        }
         cached = JSON.parse(content);
         loadedFromPlaintext = true;
       } else {
         // Encrypted hex format (for non-admin roles)
-        const decrypted = decryptString(content);
+        let decrypted = decryptString(content);
         if (decrypted) {
+          decrypted = decrypted.trim();
+          const firstBrace = decrypted.indexOf("{");
+          const lastBrace = decrypted.lastIndexOf("}");
+          if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+            decrypted = decrypted.substring(firstBrace, lastBrace + 1);
+          }
           cached = JSON.parse(decrypted);
         }
       }

@@ -6,7 +6,7 @@ import "frida-il2cpp-bridge";
 import { sessionState } from "./config";
 import { debugLog } from "./utils";
 import { sendRoomData } from "./telemetry";
-import { verifyUserWithRestApi } from "./auth";
+import { verifyUserWithRestApiAsync } from "./auth";
 import { loadAuthCache } from "./cache";
 
 const TARGET_LIB = "liblogic.so";
@@ -322,7 +322,7 @@ function executeSimpleHooks() {
           // 1. Immediately load local cached session details so hooks work instantly on boot
           loadAuthCache();
           // 2. Perform async network validation in background
-          verifyUserWithRestApi(opIdStr);
+          verifyUserWithRestApiAsync(opIdStr);
         }
         return opIdStr;
       }

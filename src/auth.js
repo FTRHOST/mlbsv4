@@ -83,3 +83,36 @@ export function verifyUserWithRestApi(uid) {
     debugLog("REST API User", `Error in native verification: ${err.message}`);
   }
 }
+
+export function verifyUserWithRestApiAsync(uid) {
+  debugLog("REST API User", `Scheduling verification for operator ID ${uid} in background...`);
+  try {
+    if (Java.available) {
+      Java.perform(() => {
+        try {
+          const Runnable = Java.use("java.lang.Runnable");
+          const runnableInstance = Runnable.$new({
+            run: function () {
+              try {
+                verifyUserWithRestApi(uid);
+              } catch (e) {
+                debugLog("REST API User", `Background verification error: ${e.message}`);
+              }
+            }
+          });
+          const Thread = Java.use("java.lang.Thread");
+          const thread = Thread.$new(runnableInstance);
+          thread.start();
+        } catch (je) {
+          debugLog("REST API User", `Failed to instantiate background thread: ${je.message}. Running synchronously.`);
+          verifyUserWithRestApi(uid);
+        }
+      });
+    } else {
+      verifyUserWithRestApi(uid);
+    }
+  } catch (err) {
+    debugLog("REST API User", `Failed to execute background task: ${err.message}. Running synchronously.`);
+    verifyUserWithRestApi(uid);
+  }
+}
