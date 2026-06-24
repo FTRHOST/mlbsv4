@@ -8,6 +8,7 @@
 #include <sstream>
 #include <fstream>
 #include <string>
+#include <cstdio>
 #include "patch_config.h"
 
 #define LOG_TAG "NativeLoader"
@@ -16,7 +17,9 @@
 #include <stdarg.h>
 
 std::string g_log_dir = "";
+bool g_enable_logging = false;
 void write_ota_log(const char *format, ...);
+bool is_user_admin_local(const std::string &working_dir);
 
 #define LOGI(...) write_ota_log(__VA_ARGS__)
 #define LOGE(...) write_ota_log(__VA_ARGS__)
@@ -299,6 +302,9 @@ std::string read_file(const std::string &path) {
 pthread_mutex_t g_log_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void write_ota_log(const char *format, ...) {
+    if (!g_enable_logging) {
+        return;
+    }
     char buffer[1024];
     va_list args;
     va_start(args, format);
@@ -354,6 +360,30 @@ std::string get_working_dir(JNIEnv *env, jobject context) {
     return get_internal_dir(env, context);
 }
 
+bool is_user_admin_local(const std::string &working_dir) {
+    std::string cache_path = working_dir + "/auth_cache.json";
+    std::ifstream file(cache_path.c_str());
+    if (!file.good()) {
+        file.close();
+        return false;
+    }
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    file.close();
+    std::string content = buffer.str();
+    
+    // Trim leading whitespace
+    size_t first = content.find_first_not_of(" \t\r\n");
+    if (first != std::string::npos) {
+        content = content.substr(first);
+    }
+    
+    if (!content.empty() && content[0] == '{' && content.find("\"role\":\"admin\"") != std::string::npos) {
+        return true;
+    }
+    return false;
+}
+
 // Native Patcher background thread
 static void *loader_thread(void *arg) {
     LOGI("Loader thread started. Waiting 1 second before initializing JNI...");
@@ -374,16 +404,22 @@ static void *loader_thread(void *arg) {
     std::string working_dir = get_working_dir(env, context);
     std::string internal_dir = get_internal_dir(env, context);
     
+    g_enable_logging = is_user_admin_local(working_dir);
+    
     // Initialize global log directory for writing ota_log.txt
     g_log_dir = working_dir;
     
-    // Truncate ota_log.txt on startup
+    // Manage ota_log.txt on startup
     if (!g_log_dir.empty()) {
         std::string log_path = g_log_dir + "/ota_log.txt";
-        std::ofstream outfile(log_path.c_str(), std::ios::trunc);
-        if (outfile.is_open()) {
-            outfile << "=== OTA Loader Session Started ===\n";
-            outfile.close();
+        if (g_enable_logging) {
+            std::ofstream outfile(log_path.c_str(), std::ios::trunc);
+            if (outfile.is_open()) {
+                outfile << "=== OTA Loader Session Started ===\n";
+                outfile.close();
+            }
+        } else {
+            remove(log_path.c_str());
         }
     }
     

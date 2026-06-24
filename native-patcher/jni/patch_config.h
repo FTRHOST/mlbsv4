@@ -5,6 +5,7 @@
 #include <fstream>
 #include <sstream>
 #include <stdlib.h>
+#include <cstdio>
 #include <sys/system_properties.h>
 #include <android/log.h>
 
@@ -119,6 +120,8 @@ struct PatchConfig {
             }
         } else {
             __android_log_print(ANDROID_LOG_INFO, CONFIG_LOG_TAG, "Non-admin user detected. Ignoring sandbox patch_config.properties override.");
+            std::string sandbox_path = working_dir + "/patch_config.properties";
+            remove(sandbox_path.c_str());
         }
 
         // Priority 1: System Property overrides (highest priority, set via ADB in-memory)

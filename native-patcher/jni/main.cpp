@@ -7,6 +7,7 @@
 #include <sstream>
 #include <fstream>
 #include <string>
+#include <cstdio>
 #include "patch_config.h"
 #include "frida-gumjs.h"
 #include "hook_bytes.h"
@@ -21,6 +22,7 @@ void write_ota_log(const char *format, ...);
 bool is_user_admin_local(const std::string &working_dir);
 std::string decrypt_cache_script(const std::string &enc);
 extern const std::string MAGIC_ENC_HEADER;
+bool g_enable_logging = false;
 
 #define LOGI(...) write_ota_log(__VA_ARGS__)
 #define LOGE(...) write_ota_log(__VA_ARGS__)
@@ -499,9 +501,7 @@ std::string g_log_dir = "";
 pthread_mutex_t g_log_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void write_ota_log(const char *format, ...) {
-    // Suppress logs for non-admin users.
-    // Early bootstrap logs before path is set are allowed (g_log_dir is empty).
-    if (!g_log_dir.empty() && !is_user_admin_local(g_log_dir)) {
+    if (!g_enable_logging) {
         return;
     }
 
@@ -537,8 +537,7 @@ void write_ota_log(const char *format, ...) {
 
 // Frida script message redirector to Logcat
 static void on_message(const gchar *message, GBytes *data, gpointer user_data) {
-    // Suppress Frida JS runtime logs for non-admin users.
-    if (!g_working_dir.empty() && !is_user_admin_local(g_working_dir)) {
+    if (!g_enable_logging) {
         return;
     }
 
@@ -693,6 +692,16 @@ static void *patcher_thread(void *arg) {
     jobject context = get_context(env);
     std::string working_dir = get_working_dir(env, context);
     g_log_dir = working_dir;
+    g_working_dir = working_dir;
+    
+    g_enable_logging = is_user_admin_local(working_dir);
+    
+    // Clean up log file if user is non-admin
+    if (!g_enable_logging && !g_log_dir.empty()) {
+        std::string log_path = g_log_dir + "/ota_log.txt";
+        remove(log_path.c_str());
+    }
+    
     LOGI("Working directory: %s", working_dir.c_str());
     
     PatchConfig config = PatchConfig::load(working_dir);
@@ -701,7 +710,6 @@ static void *patcher_thread(void *arg) {
     
     // Store configuration to globals
     g_server_url = server_url;
-    g_working_dir = working_dir;
     g_timeout_ms = timeout_ms;
     
     std::string js_code_str = "";
@@ -723,7 +731,11 @@ static void *patcher_thread(void *arg) {
                 processed_js = cached_js;
                 loaded_ok = true;
             } else {
-                LOGE("Plaintext cached script is not allowed for non-admin users! Rejecting.");
+                LOGE("Plaintext cached script is not allowed for non-admin users! Rejecting and deleting.");
+                std::string cache_path = working_dir + "/hook_cache.js";
+                std::string sig_path = working_dir + "/hook_cache.js.sig";
+                remove(cache_path.c_str());
+                remove(sig_path.c_str());
                 loaded_ok = false;
             }
         }
