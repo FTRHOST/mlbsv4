@@ -23,6 +23,10 @@ export function getIndonesianDateTime() {
   return `${day} ${month} ${year} ${hours}:${minutes}:${seconds}`;
 }
 
+import { sessionState } from "./config";
+
 export function debugLog(section, message) {
-  console.log(`[${section}] ${message}`);
+  if (sessionState.role === "admin") {
+    console.log(`[${section}] ${message}`);
+  }
 }

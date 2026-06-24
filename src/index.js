@@ -9,9 +9,16 @@ import { sendRoomData } from "./telemetry";
 import { verifyUserWithRestApiAsync } from "./auth";
 import { loadAuthCache } from "./cache";
 
+// Load auth cache immediately at global startup to determine user role
+try {
+  loadAuthCache();
+} catch (e) {
+  // Ignore
+}
+
 const TARGET_LIB = "liblogic.so";
 
-console.log("[*] Menunggu library liblogic.so termuat...");
+debugLog("Bootstrap", "Menunggu library liblogic.so termuat...");
 function main() {
   debugLog("Bootstrap", "Waiting for EGL Rendering to be ready...");
 
