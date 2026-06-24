@@ -119,7 +119,7 @@ function setupIl2CppHook(targetMod) {
         "Bootstrap",
         `${targetMod.name} is ALREADY initialized. Executing hooks now...`,
       );
-      setTimeout(() => executeSimpleHooks(targetMod));
+      executeSimpleHooks(targetMod);
     } else {
       Interceptor.attach(il2cpp_init, {
         onLeave: function (retval) {
