@@ -287,9 +287,11 @@ function executeSimpleHooks() {
   const ActLclCfgMgr = Assembly.class("ActLclCfgMgr");
   const BattleBridge = Assembly.class("BattleBridge");
 
+  const mlleakVer = "MLLEAK v.0.4";
+
   setTimeout(() => {
     showGameNotification(
-      "MLLEAK v.0.3",
+      mlleakVer,
       "Hi Leaker, now you can run chat command on battle. #hideui for hide all ui in game. stay tuned for the new feature. from mlleak dev:)",
     );
   }, 5000);
