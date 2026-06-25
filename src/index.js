@@ -245,7 +245,7 @@ export function showGameNotification(title, message) {
 
     // Set type (none = informational popup, usually auto-dismiss or simple)
     // Use enumClass.field("SimpleTxt_Confirm").value for a popup with an OK button
-    const enumValue = enumClass.field("none").value;
+    const enumValue = enumClass.field("SimpleTxt_Confirm").value;
     data.field("type").value = enumValue;
 
     // Force update title (note: the game dump often has a typo 'strTitile')
@@ -286,13 +286,14 @@ function executeSimpleHooks() {
   const GameInit = Assembly.class("GameInit");
   const ActLclCfgMgr = Assembly.class("ActLclCfgMgr");
 
+  showGameNotification("MLLEAK", "v.0.1");
+
   // Hook 1: Free Skin Mod (Restricted to VIP and Admin)
   const BActFreeSkin = ChooseHeroMgr.method("BActFreeSkin");
   Interceptor.attach(BActFreeSkin.virtualAddress, {
     onLeave: function (retval) {
       if (sessionState.isAuthorized && sessionState.permissions.allowFreeSkin) {
         retval.replace(ptr(1));
-        showGameNotification("MLLEAK", "v.0.1");
       }
     },
   });
