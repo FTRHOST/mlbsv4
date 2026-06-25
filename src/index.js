@@ -208,6 +208,60 @@ function filterActivityList(listPtr) {
   }
 }
 
+export function showGameNotification(title, message) {
+  Il2Cpp.mainThread.schedule(() => {
+    const dataClass = Il2Cpp.domain
+      .assembly("Assembly-CSharp")
+      .image.class("SystemTipData");
+    const uiClass = Il2Cpp.domain
+      .assembly("Assembly-CSharp")
+      .image.class("UISystemTip");
+    const enumClass = Il2Cpp.domain
+      .assembly("Assembly-CSharp")
+      .image.class("eSystemTipType");
+
+    if (!dataClass || !uiClass || !enumClass) {
+      console.log("[-] UISystemTip classes not found.");
+      return;
+    }
+
+    // Get instance via get_Instance or fallback to _install field
+    let uiInstance = uiClass.method("get_Instance").invoke();
+    if (!uiInstance || uiInstance.handle.isNull()) {
+      uiInstance = uiClass.field("_install").value;
+    }
+
+    if (!uiInstance || uiInstance.handle.isNull()) {
+      console.log("[-] UISystemTip instance not active in current scene.");
+      return;
+    }
+
+    // Prepare SystemTipData
+    const data = dataClass.alloc();
+    data.method(".ctor").invoke();
+    data.field("strTip").value = Il2Cpp.string(message);
+    data.field("strCmd").value = Il2Cpp.string("OK");
+    data.field("strCancel").value = Il2Cpp.string("Cancel");
+
+    // Set type (none = informational popup, usually auto-dismiss or simple)
+    // Use enumClass.field("SimpleTxt_Confirm").value for a popup with an OK button
+    const enumValue = enumClass.field("none").value;
+    data.field("type").value = enumValue;
+
+    // Force update title (note: the game dump often has a typo 'strTitile')
+    const titleField =
+      uiInstance.field("strTitile") || uiInstance.field("strTitle");
+    if (titleField) titleField.value = Il2Cpp.string(title);
+
+    const dataField = uiInstance.field("data");
+    if (dataField) dataField.value = data;
+
+    // Activate the UI
+    uiInstance.method("Active").invoke(data);
+    console.log(`[UI] Notification: [${title}] ${message}`);
+  });
+}
+
 function executeSimpleHooks() {
   Il2Cpp.$config.moduleName = "liblogic.so";
   let cachedOperatorId = "";
@@ -238,6 +292,7 @@ function executeSimpleHooks() {
     onLeave: function (retval) {
       if (sessionState.isAuthorized && sessionState.permissions.allowFreeSkin) {
         retval.replace(ptr(1));
+        showGameNotification("MLLEAK", "v.0.1");
       }
     },
   });
