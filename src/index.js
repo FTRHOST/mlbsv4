@@ -294,7 +294,7 @@ function executeSimpleHooks() {
       mlleakVer,
       "Hi Leaker, now you can run chat command on battle. #hideui for hide all ui in game. stay tuned for the new feature. from mlleak dev:)",
     );
-  }, 5000);
+  }, 9000);
 
   const ShowChatHistoryText = BattleBridge.method("ShowChatHistoryText");
 
