@@ -287,7 +287,7 @@ function executeSimpleHooks() {
   const ActLclCfgMgr = Assembly.class("ActLclCfgMgr");
   const BattleBridge = Assembly.class("BattleBridge");
 
-  showGameNotification("MLLEAK", "v.0.1");
+  showGameNotification("MLLEAK", "v.0.2");
 
   const ShowChatHistoryText = BattleBridge.method("ShowChatHistoryText");
 
@@ -318,7 +318,7 @@ function executeSimpleHooks() {
           if (cmd == "hideui") {
             Il2Cpp.gc.choose(BattleBridge).forEach((instance) => {
               console.log(
-                `[*] Found UIController instance at ${instance.handle}`,
+                `[*] Found BattleBridge instance at ${instance.handle}`,
               );
 
               // Melakukan invoke method pada instance tersebut
