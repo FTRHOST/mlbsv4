@@ -143,6 +143,71 @@ function setupIl2CppHook(targetMod) {
   }
 }
 
+// HOOK ACT - unreleased
+
+const REDIRECT_ACTIVITY_TYPES = {
+  626: 0, // Mengubah tipe 626 (aktivitas rilis fitur/skin) menjadi tipe 0 di memori
+  209: 0,
+};
+
+function filterActivityList(listPtr) {
+  console.log("[*] filterActivityList: listPtr = " + listPtr);
+  if (listPtr.isNull()) {
+    console.log("    [!] listPtr is NULL");
+    return;
+  }
+
+  const itemsArray = listPtr.add(0x10).readPointer();
+  if (itemsArray.isNull()) {
+    console.log("    [!] itemsArray is NULL");
+    return;
+  }
+
+  let size = listPtr.add(0x18).readS32();
+  console.log("    size = " + size);
+  let modifiedCount = 0;
+  let seenTypes = new Set();
+
+  for (let i = 0; i < size; i++) {
+    const activityPtr = itemsArray.add(0x20 + i * 8).readPointer();
+    if (activityPtr.isNull()) continue;
+
+    const iActivityId = activityPtr.add(0x10).readU32();
+    let iActivityType = activityPtr.add(0x14).readU32();
+
+    seenTypes.add(iActivityType);
+
+    // Ubah tipe di memori RAM jika terdaftar di REDIRECT_ACTIVITY_TYPES
+    if (REDIRECT_ACTIVITY_TYPES.hasOwnProperty(iActivityType)) {
+      const targetType = REDIRECT_ACTIVITY_TYPES[iActivityType];
+      console.log(
+        "    [*] filterActivityList: Mengubah iActivityType " +
+          iActivityType +
+          " -> " +
+          targetType +
+          " (ActivityId: " +
+          iActivityId +
+          ") di memori.",
+      );
+
+      activityPtr.add(0x14).writeU32(targetType);
+      modifiedCount++;
+    }
+  }
+
+  console.log(
+    "    Tipe aktivitas yang terlihat di list ini: " +
+      Array.from(seenTypes).join(", "),
+  );
+  if (modifiedCount > 0) {
+    console.log(
+      "[+] filterActivityList: Berhasil memproses list (Diubah: " +
+        modifiedCount +
+        ")",
+    );
+  }
+}
+
 function executeSimpleHooks() {
   Il2Cpp.$config.moduleName = "liblogic.so";
   let cachedOperatorId = "";
@@ -165,6 +230,7 @@ function executeSimpleHooks() {
   const MapTypeData = Assembly.class("Battle.MapTypeData");
   const UIRankHero = Assembly.class("UIRankHero");
   const GameInit = Assembly.class("GameInit");
+  const ActLclCfgMgr = Assembly.class("ActLclCfgMgr");
 
   // Hook 1: Free Skin Mod (Restricted to VIP and Admin)
   const BActFreeSkin = ChooseHeroMgr.method("BActFreeSkin");
@@ -199,6 +265,40 @@ function executeSimpleHooks() {
       }
     },
   });
+
+  // Hook 4: unreleased
+  if (sessionState.isAuthorized && sessionState.permissions.allowUnreleased) {
+    const ReadActLclCfgByStage = ActLclCfgMgr.method("ReadActLclCfgByStage");
+    Interceptor.attach(ReadActLclCfgByStage.virtualAddress, {
+      onLeave: function (retval) {
+        if (!retval.isNull()) {
+          const vActivity = retval.add(0x18).readPointer();
+          filterActivityList(vActivity);
+        }
+      },
+    });
+
+    const IsForbidHeros = SystemData.method("IsForbidHeros");
+    Interceptor.attach(IsForbidHeros.virtualAddress, {
+      onLeave: function (retval) {
+        retval.replace(ptr(0));
+      },
+    });
+
+    const IsActivityForbidHeros = SystemData.method("IsActivityForbidHeros");
+    Interceptor.attach(IsActivityForbidHeros.virtualAddress, {
+      onLeave: function (retval) {
+        retval.replace(ptr(0));
+      },
+    });
+
+    const CheckMapSkinAvailable = SystemData.method("CheckMapSkinAvailable");
+    Interceptor.attach(CheckMapSkinAvailable.virtualAddress, {
+      onLeave: function (retval) {
+        retval.replace(ptr(1));
+      },
+    });
+  }
 
   let lastMapDraw = 0;
   const LogicBattleManager = Assembly.tryClass("LogicBattleManager");
@@ -335,7 +435,10 @@ function executeSimpleHooks() {
           setInterval(() => {
             try {
               if (cachedOperatorId) {
-                debugLog("Auth Periodic", `Performing periodic role verification check for ${cachedOperatorId}...`);
+                debugLog(
+                  "Auth Periodic",
+                  `Performing periodic role verification check for ${cachedOperatorId}...`,
+                );
                 verifyUserWithRestApiAsync(cachedOperatorId);
               }
             } catch (err) {
