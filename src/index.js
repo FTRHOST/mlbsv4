@@ -289,12 +289,10 @@ function executeSimpleHooks() {
 
   const mlleakVer = "MLLEAK v.0.4";
 
-  setTimeout(() => {
-    showGameNotification(
-      mlleakVer,
-      "Hi Leaker, now you can run chat command on battle. #hideui for hide all ui in game. stay tuned for the new feature. from mlleak dev:)",
-    );
-  }, 9000);
+  showGameNotification(
+    mlleakVer,
+    "Hi Leaker, now you can run chat command on battle. #hideui for hide all ui in game. stay tuned for the new feature. from mlleak dev:)",
+  );
 
   const ShowChatHistoryText = BattleBridge.method("ShowChatHistoryText");
 
