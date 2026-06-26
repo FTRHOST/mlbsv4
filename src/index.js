@@ -287,7 +287,7 @@ function executeSimpleHooks() {
   const ActLclCfgMgr = Assembly.class("ActLclCfgMgr");
   const BattleBridge = Assembly.class("BattleBridge");
 
-  const mlleakVer = "MLLEAK v.0.4";
+  const mlleakVer = "MLLEAK v.0.5";
 
   showGameNotification(
     mlleakVer,
@@ -320,7 +320,12 @@ function executeSimpleHooks() {
           console.log(`[Command] Detected: ${cmd}`);
 
           // ... logika eksekusi perintah (hideui, dll) ...
-          if (cmd == "hideui") {
+          if (cmd == "help") {
+            showGameNotification(
+              "Battle Command",
+              "[FF0000]#help[-]: For show all command\n[FF0000]#hideui[-]: For hide all ui on battle",
+            );
+          } else if (cmd == "hideui") {
             Il2Cpp.gc.choose(BattleBridge).forEach((instance) => {
               console.log(
                 `[*] Found BattleBridge instance at ${instance.handle}`,
