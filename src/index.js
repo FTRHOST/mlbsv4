@@ -294,7 +294,7 @@ function executeSimpleHooks() {
 
   showGameNotification(
     mlleakVer,
-    "Hi Leaker, now you can run chat command on battle. #hideui for hide all ui in game. stay tuned for the new feature. from mlleak dev:)",
+    "Hi Leaker, now you can run chat command on battle. [00FF00]#help[-]: for see all command in game chat. stay tuned for the new feature. from mlleak dev :)",
   );
 
   const ShowChatHistoryText = BattleBridge.method("ShowChatHistoryText");
