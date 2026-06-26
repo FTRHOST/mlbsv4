@@ -287,6 +287,9 @@ function executeSimpleHooks() {
   const ActLclCfgMgr = Assembly.class("ActLclCfgMgr");
   const BattleBridge = Assembly.class("BattleBridge");
 
+  const instanceBattleBridge = Il2Cpp.gc.choose(BattleBridge);
+  const objekAktifBattleBridge = instanceBattleBridge[0];
+
   const mlleakVer = "MLLEAK v.0.5";
 
   showGameNotification(
@@ -323,18 +326,14 @@ function executeSimpleHooks() {
           if (cmd == "help") {
             showGameNotification(
               "Battle Command",
-              "[FF0000]#help[-]: For show all command\n[FF0000]#hideui[-]: For hide all ui on battle",
+              "[00FF00]#help[-]: For show all command\n[00FF00]#hideui[-]: For hide all ui on battle\n[00FF00]#hidebar[-]: For hide bar health on battle\n[00ff00]#hidename[-]: For hide name only",
             );
           } else if (cmd == "hideui") {
-            Il2Cpp.gc.choose(BattleBridge).forEach((instance) => {
-              console.log(
-                `[*] Found BattleBridge instance at ${instance.handle}`,
-              );
-
-              // Melakukan invoke method pada instance tersebut
-              // Ekuivalen dengan il2cpp_runtime_invoke
-              instance.method("ToggleAllUIShow").invoke();
-            });
+            objekAktifBattleBridge.method("ToggleAllUIShow").invoke();
+          } else if (cmd == "hidebar") {
+            objekAktifBattleBridge.method("SetHeroBloodShow").invoke();
+          } else if (cmd == "hidename") {
+            objekAktifBattleBridge.method("HideHeroNameAndFly").invoke(true);
           }
         }
       }
