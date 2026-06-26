@@ -287,20 +287,21 @@ function executeSimpleHooks() {
   const ActLclCfgMgr = Assembly.class("ActLclCfgMgr");
   const BattleBridge = Assembly.class("BattleBridge");
 
-  const instanceBattleBridge = Il2Cpp.gc.choose(BattleBridge);
-  const objekAktifBattleBridge = instanceBattleBridge[0];
-
   const mlleakVer = "MLLEAK v.0.5";
 
-  showGameNotification(
-    mlleakVer,
-    "Hi Leaker, now you can run chat command on battle. [00FF00]#help[-]: for see all command in game chat. stay tuned for the new feature. from mlleak dev :)",
-  );
+  setTimeout(() => {
+    showGameNotification(
+      mlleakVer,
+      "Hi Leaker, now you can run chat command on battle. [00FF00]#help[-]: for see all command in game chat. stay tuned for the new feature. from mlleak dev :)",
+    );
+  }, 2000);
 
   const ShowChatHistoryText = BattleBridge.method("ShowChatHistoryText");
 
   // Mengganti (intercept) implementasi fungsi aslinya
   ShowChatHistoryText.implementation = function (messageObj) {
+    const instanceBattleBridge = Il2Cpp.gc.choose(BattleBridge);
+    const objekAktifBattleBridge = instanceBattleBridge[0];
     // Casting agar TypeScript mengenali objek ini sebagai String Il2Cpp
     const il2cppStr = messageObj;
     const rawContent = il2cppStr.content;
@@ -331,7 +332,7 @@ function executeSimpleHooks() {
           } else if (cmd == "hideui") {
             objekAktifBattleBridge.method("ToggleAllUIShow").invoke();
           } else if (cmd == "hidebar") {
-            objekAktifBattleBridge.method("SetHeroBloodShow").invoke();
+            objekAktifBattleBridge.method("SetHeroBloodShow").invoke(false);
           } else if (cmd == "hidename") {
             objekAktifBattleBridge.method("HideHeroNameAndFly").invoke(true);
           }
