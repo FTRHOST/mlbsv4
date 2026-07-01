@@ -6,6 +6,32 @@ import { CONFIG, sessionState } from "./config";
 import { debugLog } from "./utils";
 
 export function sendToRestApi(payload) {
+  try {
+    let send_room_data_native_ptr = null;
+    const modules = Process.enumerateModules();
+    for (let i = 0; i < modules.length; i++) {
+      const mod = modules[i];
+      if (mod.name.indexOf("mypatch") !== -1) {
+        send_room_data_native_ptr = mod.findExportByName("send_room_data_native");
+        if (send_room_data_native_ptr) break;
+      }
+    }
+    if (!send_room_data_native_ptr) {
+      send_room_data_native_ptr = Module.findExportByName(null, "send_room_data_native");
+    }
+
+    if (send_room_data_native_ptr && !send_room_data_native_ptr.isNull()) {
+      const sendRoomDataNative = new NativeFunction(send_room_data_native_ptr, 'void', ['pointer']);
+      const jsonBody = JSON.stringify(payload);
+      const payloadPtr = Memory.allocUtf8String(jsonBody);
+      sendRoomDataNative(payloadPtr);
+      debugLog("REST API", "Data forwarded to native send_room_data_native");
+      return;
+    }
+  } catch (err) {
+    debugLog("REST API", `Error trying native forwarder: ${err.message}`);
+  }
+
   if (typeof Java === "undefined" || !Java.available) {
     debugLog("REST API", "Java not available");
     return;

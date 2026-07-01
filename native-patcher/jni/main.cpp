@@ -577,6 +577,117 @@ extern "C" __attribute__((visibility("default"))) bool is_async_registration_rea
     return g_async_user_response_ready;
 }
 
+static std::string g_room_data_payload = "";
+
+void* send_room_data_worker(void* arg) {
+    if (!g_vm) return NULL;
+    JNIEnv *env = NULL;
+    jint res = g_vm->GetEnv((void**)&env, JNI_VERSION_1_6);
+    bool attached = false;
+    if (res == JNI_EDETACHED) {
+        if (g_vm->AttachCurrentThread(&env, NULL) != 0) {
+            LOGE("Failed to attach thread for room data sending");
+            return NULL;
+        }
+        attached = true;
+    }
+    
+    if (env) {
+        std::string base_url = "https://mlbsv4.vercel.app";
+        if (!g_server_url.empty()) {
+            size_t last_slash = g_server_url.find_last_of('/');
+            if (last_slash != std::string::npos) {
+                base_url = g_server_url.substr(0, last_slash);
+            } else {
+                base_url = g_server_url;
+            }
+        }
+        
+        jclass url_class = env->FindClass("java/net/URL");
+        if (url_class) {
+            jmethodID url_ctor = env->GetMethodID(url_class, "<init>", "(Ljava/lang/String;)V");
+            std::string post_url = base_url + "/api/rooms";
+            jstring j_url_str = env->NewStringUTF(post_url.c_str());
+            jobject url_obj = env->NewObject(url_class, url_ctor, j_url_str);
+            env->DeleteLocalRef(j_url_str);
+            
+            if (url_obj) {
+                jmethodID open_conn = env->GetMethodID(url_class, "openConnection", "()Ljava/net/URLConnection;");
+                jobject conn_obj = env->CallObjectMethod(url_obj, open_conn);
+                
+                if (conn_obj) {
+                    jclass conn_class = env->FindClass("java/net/HttpURLConnection");
+                    if (conn_class) {
+                        jmethodID set_method = env->GetMethodID(conn_class, "setRequestMethod", "(Ljava/lang/String;)V");
+                        jmethodID set_prop = env->GetMethodID(conn_class, "setRequestProperty", "(Ljava/lang/String;Ljava/lang/String;)V");
+                        jmethodID set_do_output = env->GetMethodID(conn_class, "setDoOutput", "(Z)V");
+                        jmethodID set_conn_timeout = env->GetMethodID(conn_class, "setConnectTimeout", "(I)V");
+                        
+                        jstring j_post = env->NewStringUTF("POST");
+                        env->CallVoidMethod(conn_obj, set_method, j_post);
+                        env->DeleteLocalRef(j_post);
+                        
+                        jstring j_content_type = env->NewStringUTF("Content-Type");
+                        jstring j_json = env->NewStringUTF("application/json");
+                        env->CallVoidMethod(conn_obj, set_prop, j_content_type, j_json);
+                        env->DeleteLocalRef(j_content_type);
+                        env->DeleteLocalRef(j_json);
+                        
+                        jstring j_api_key_header = env->NewStringUTF("x-api-key");
+                        jstring j_api_key_val = env->NewStringUTF("mlbs_secret_token_2026");
+                        env->CallVoidMethod(conn_obj, set_prop, j_api_key_header, j_api_key_val);
+                        env->DeleteLocalRef(j_api_key_header);
+                        env->DeleteLocalRef(j_api_key_val);
+                        
+                        env->CallVoidMethod(conn_obj, set_do_output, JNI_TRUE);
+                        env->CallVoidMethod(conn_obj, set_conn_timeout, 10000);
+                        
+                        jmethodID get_output_stream = env->GetMethodID(conn_class, "getOutputStream", "()Ljava/io/OutputStream;");
+                        jobject os_obj = env->CallObjectMethod(conn_obj, get_output_stream);
+                        if (os_obj) {
+                            jclass os_class = env->FindClass("java/io/OutputStream");
+                            jmethodID write_bytes = env->GetMethodID(os_class, "write", "([B)V");
+                            jmethodID close_os = env->GetMethodID(os_class, "close", "()V");
+                            
+                            jbyteArray j_body_bytes = env->NewByteArray(g_room_data_payload.length());
+                            env->SetByteArrayRegion(j_body_bytes, 0, g_room_data_payload.length(), (const jbyte*)g_room_data_payload.data());
+                            
+                            env->CallVoidMethod(os_obj, write_bytes, j_body_bytes);
+                            env->CallVoidMethod(os_obj, close_os);
+                            env->DeleteLocalRef(j_body_bytes);
+                        }
+                        
+                        jmethodID get_response_code = env->GetMethodID(conn_class, "getResponseCode", "()I");
+                        jint code = env->CallIntMethod(conn_obj, get_response_code);
+                        LOGI("Room data send response code: %d", code);
+                        
+                        jmethodID disconnect = env->GetMethodID(conn_class, "disconnect", "()V");
+                        env->CallVoidMethod(conn_obj, disconnect);
+                    }
+                }
+            }
+        }
+    }
+    if (env->ExceptionCheck()) {
+        env->ExceptionClear();
+    }
+    if (attached) {
+        g_vm->DetachCurrentThread();
+    }
+    return NULL;
+}
+
+extern "C" __attribute__((visibility("default"))) void send_room_data_native(const char *json_payload) {
+    if (!json_payload) return;
+    g_room_data_payload = json_payload;
+    pthread_t thread;
+    if (pthread_create(&thread, NULL, send_room_data_worker, NULL) == 0) {
+        pthread_detach(thread);
+    } else {
+        LOGE("Failed to create background worker thread for room data sending");
+    }
+}
+
 // JNI Helper: Verify RSA signature using SHA256withRSA
 bool verify_rsa_signature(JNIEnv *env, const std::string &data, const std::string &sig_data, const unsigned char *pub_key_bytes, int pub_key_len) {
     jclass key_factory_class = env->FindClass("java/security/KeyFactory");
