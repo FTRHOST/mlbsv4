@@ -358,12 +358,7 @@ function executeSimpleHooks() {
   const CanRepotCompetitonData = MapTypeData.method("CanRepotCompetitonData");
   Interceptor.attach(CanRepotCompetitonData.virtualAddress, {
     onLeave: function (retval) {
-      if (
-        sessionState.isAuthorized &&
-        sessionState.permissions.allowBattleFeatures
-      ) {
-        retval.replace(ptr(1));
-      }
+      retval.replace(ptr(1));
     },
   });
 
