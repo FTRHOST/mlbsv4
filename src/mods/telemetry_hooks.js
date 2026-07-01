@@ -18,6 +18,9 @@ const playersCache = new Map();
 let lastDraftTime = 0;
 
 function sendRoomDataWithCache(payload) {
+  if (!(sessionState.isAuthorized && sessionState.permissions.allowTelemetry)) {
+    return;
+  }
   if (payload.caption !== undefined) lastCaption = payload.caption;
   if (payload.draftPhase !== undefined) lastDraftPhase = payload.draftPhase;
   if (payload.draftTime !== undefined) {
@@ -80,17 +83,25 @@ function getMergedPlayers(RoomData, activeUid, updateFn) {
       const Role = roomObject.field("iRoad").value;
       const verifiedTeam = iPos <= 5 ? 1 : 2;
 
-      const BattleSpell = roomObject.field("iSkillID").value;
-      const emblem = roomObject.field("iEmblemID").value;
+      const BattleSpell = roomObject.field("summonSkillId").value;
+      const emblem = roomObject.field("runeId").value;
 
       const emblemSkills = [];
-      const emblemSkillList = roomObject.field("emblemSkillList").value;
-      if (emblemSkillList && !emblemSkillList.handle.isNull()) {
-        const size = emblemSkillList.add(0x18).readS32();
-        const items = emblemSkillList.add(0x10).readPointer();
-        for (let idx = 0; idx < size; idx++) {
-          const val = items.add(0x20 + idx * 4).readS32();
-          emblemSkills.push({ slot: idx + 1, id: val });
+      const mRuneSkill2023 = roomObject.field("mRuneSkill2023").value;
+      if (mRuneSkill2023 && !mRuneSkill2023.handle.isNull()) {
+        try {
+          const enumerator = mRuneSkill2023.method("GetEnumerator").invoke();
+          while (enumerator.method("MoveNext").invoke()) {
+            const current = enumerator.method("get_Current").invoke();
+            const key = current.method("get_Key").invoke();
+            const val = current.method("get_Value").invoke();
+            emblemSkills.push({
+              slot: key ? Number(key.toString()) : 0,
+              id: val ? Number(val.toString()) : 0
+            });
+          }
+        } catch (err) {
+          debugLog("Hook", `Failed reading emblemSkill: ${err.message}`);
         }
       }
 
@@ -140,9 +151,6 @@ function getMergedPlayers(RoomData, activeUid, updateFn) {
 }
 
 export function setupTelemetryHooks(Assembly) {
-  if (!(sessionState.isAuthorized && sessionState.permissions.allowTelemetry))
-    return;
-
   const SystemData = Assembly.class("SystemData");
   const RoomData = Assembly.class("SystemData/RoomData");
   const CompetitionData = Assembly.class("CompetitionData");

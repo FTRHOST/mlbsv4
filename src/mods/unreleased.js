@@ -33,8 +33,6 @@ function filterActivityList(listPtr) {
 }
 
 export function setupUnreleasedHooks(Assembly) {
-  if (!(sessionState.isAuthorized && sessionState.permissions.allowUnreleased)) return;
-
   const ActLclCfgMgr = Assembly.class("ActLclCfgMgr");
   const SystemData = Assembly.class("SystemData");
 
@@ -43,9 +41,11 @@ export function setupUnreleasedHooks(Assembly) {
     if (ReadActLclCfgByStage) {
       Interceptor.attach(ReadActLclCfgByStage.virtualAddress, {
         onLeave: function (retval) {
-          if (!retval.isNull()) {
-            const vActivity = retval.add(0x18).readPointer();
-            filterActivityList(vActivity);
+          if (sessionState.isAuthorized && sessionState.permissions.allowUnreleased) {
+            if (!retval.isNull()) {
+              const vActivity = retval.add(0x18).readPointer();
+              filterActivityList(vActivity);
+            }
           }
         },
       });
@@ -57,7 +57,9 @@ export function setupUnreleasedHooks(Assembly) {
     if (IsForbidHeros) {
       Interceptor.attach(IsForbidHeros.virtualAddress, {
         onLeave: function (retval) {
-          retval.replace(ptr(0));
+          if (sessionState.isAuthorized && sessionState.permissions.allowUnreleased) {
+            retval.replace(ptr(0));
+          }
         },
       });
     }
@@ -66,7 +68,9 @@ export function setupUnreleasedHooks(Assembly) {
     if (IsActivityForbidHeros) {
       Interceptor.attach(IsActivityForbidHeros.virtualAddress, {
         onLeave: function (retval) {
-          retval.replace(ptr(0));
+          if (sessionState.isAuthorized && sessionState.permissions.allowUnreleased) {
+            retval.replace(ptr(0));
+          }
         },
       });
     }
@@ -75,7 +79,9 @@ export function setupUnreleasedHooks(Assembly) {
     if (CheckMapSkinAvailable) {
       Interceptor.attach(CheckMapSkinAvailable.virtualAddress, {
         onLeave: function (retval) {
-          retval.replace(ptr(1));
+          if (sessionState.isAuthorized && sessionState.permissions.allowUnreleased) {
+            retval.replace(ptr(1));
+          }
         },
       });
     }
