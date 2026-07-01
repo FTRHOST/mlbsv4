@@ -73,9 +73,5 @@ export function sendToRestApi(payload) {
 }
 
 export function sendRoomData(payload) {
-  send({
-    type: "ROOM_DATA",
-    payload: payload,
-  });
   sendToRestApi(payload);
 }

@@ -4,12 +4,10 @@
   "description": "Tournament 3rd-party tool",
   "main": "index.js",
   "scripts": {
-    "wait-and-hook": "while [ -z $(adb shell ps -A | grep ':UnityKillsMe' | awk '{print $2}') ]; do sleep 1; done; PID=$(adb shell ps -A | grep ':UnityKillsMe' | awk '{print $2}'); echo 'PID Found: ' $PID; frida -U -p $PID -l dist/agent.js",
     "watch": "npx frida-compile src/index.js -o dist/agent.js -w",
     "build": "mkdir -p dist && npx frida-compile src/index.js -o dist/agent.js -c",
     "build-all": "npm run build && cd native-patcher && export ANDROID_NDK=\"$(pwd)/../android-ndk-r26d\" && export ANDROID_NDK_ROOT=\"$ANDROID_NDK\" && export ANDROID_NDK_HOME=\"$ANDROID_NDK\" && export PATH=\"$ANDROID_NDK:$PATH\" && ./build.sh --all && cd .. && npm run sign-ota && npm run sign-lib",
     "vercel-build": "echo 'Skipping Frida compilation on Vercel'",
-    "start-host": "node host.js",
     "gen-keys": "node scripts/generate-keys.js",
     "sign-ota": "node scripts/sign-ota.js",
     "sign-lib": "node scripts/sign-lib.js",
