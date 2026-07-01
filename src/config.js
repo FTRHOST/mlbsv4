@@ -13,24 +13,28 @@ export const CONFIG = {
       allowFreeSkin: true,
       allowGMMode: true,
       allowUnreleased: true,
+      allowTourAPI: true,
       description: "Administrator Access - All Features Enabled",
     },
     vip: {
       allowFreeSkin: true,
       allowGMMode: false,
       allowUnreleased: true,
+      allowTourAPI: false,
       description: "VIP Access - Skins & Telemetry Enabled (No GM Mode)",
     },
     user: {
       allowFreeSkin: true,
       allowGMMode: true,
       allowUnreleased: true,
+      allowTourAPI: false,
       description: "Regular User - Telemetry Only",
     },
     leaker: {
       allowFreeSkin: true,
       allowGMMode: true,
       allowUnreleased: true,
+      allowTourAPI: false,
       description: "Leaker",
     },
   },
@@ -44,8 +48,7 @@ export let sessionState = {
   permissions: {
     allowFreeSkin: false,
     allowGMMode: false,
-    allowTelemetry: false,
-    allowBattleFeatures: false,
+    allowTourAPI: false,
   },
 };
 

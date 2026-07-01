@@ -354,15 +354,7 @@ function executeSimpleHooks() {
     },
   });
 
-  // Hook 2: Competition Report (Restricted to Admin & VIP)
-  const CanRepotCompetitonData = MapTypeData.method("CanRepotCompetitonData");
-  Interceptor.attach(CanRepotCompetitonData.virtualAddress, {
-    onLeave: function (retval) {
-      retval.replace(ptr(1));
-    },
-  });
-
-  // Hook 3: Sandbox/GM Mode IP Check (Restricted to Admin only)
+  // Hook 2: Sandbox/GM Mode IP Check (Restricted to Admin only)
   const IsSandBoxIp = GameInit.method("IsSandBoxIp");
   Interceptor.attach(IsSandBoxIp.virtualAddress, {
     onLeave: function (retval) {
@@ -373,7 +365,7 @@ function executeSimpleHooks() {
     },
   });
 
-  // Hook 4: unreleased
+  // Hook 3: unreleased
   if (sessionState.isAuthorized && sessionState.permissions.allowUnreleased) {
     const ReadActLclCfgByStage = ActLclCfgMgr.method("ReadActLclCfgByStage");
     Interceptor.attach(ReadActLclCfgByStage.virtualAddress, {
@@ -407,123 +399,7 @@ function executeSimpleHooks() {
     });
   }
 
-  let lastMapDraw = 0;
-  const LogicBattleManager = Assembly.tryClass("LogicBattleManager");
-  if (LogicBattleManager && !LogicBattleManager.handle.isNull()) {
-    const get_m_iNext2025Feature = LogicBattleManager.tryMethod(
-      "get_m_iNext2025Feature",
-    );
-    if (get_m_iNext2025Feature) {
-      Interceptor.attach(get_m_iNext2025Feature.virtualAddress, {
-        onLeave: function (retval) {
-          try {
-            const val = retval.toInt32();
-            lastMapDraw = val;
-          } catch (err) {
-            debugLog(
-              "Hook",
-              `Error reading get_m_iNext2025Feature: ${err.message}`,
-            );
-          }
-        },
-      });
-    }
-  }
-
-  // Local Cache to merge players
-  const playersCache = new Map();
-
-  function getMergedPlayers(activeUid, updateFn) {
-    const instances = Il2Cpp.gc.choose(RoomData);
-    const slotsMap = new Map();
-
-    instances.forEach((roomObject) => {
-      try {
-        const iPosVal = roomObject.field("iPos").value;
-        const iPos = iPosVal ? Number(iPosVal.toString()) : 0;
-        if (iPos < 1 || iPos > 10) return;
-
-        const ID = roomObject.field("lUid").value;
-        const uid = ID ? ID.toString() : "";
-        if (!uid || uid === "0") return;
-
-        const Name = roomObject.field("_sName").value;
-        const Role = roomObject.field("iRoad").value;
-        const Team = roomObject.field("iCamp").value;
-        const BattleSpell = roomObject.field("summonSkillId").value;
-        const emblem = roomObject.field("runeId").value;
-        const emblemSkil = roomObject.field("mRuneSkill2023").value;
-
-        let cached = playersCache.get(uid);
-        if (!cached) {
-          cached = {
-            pickPhase: false,
-            banPhase: false,
-            SelHeroID: 0,
-            banHero: 0,
-          };
-        }
-
-        if (updateFn) {
-          updateFn(uid, cached);
-        }
-
-        const nameStr = Name ? Name.content || "" : "";
-        let verifiedTeam = 0;
-        if (iPos >= 1 && iPos <= 5) {
-          verifiedTeam = 1;
-        } else if (iPos >= 6 && iPos <= 10) {
-          verifiedTeam = 2;
-        } else {
-          return;
-        }
-
-        const actualTeam = Team ? Number(Team.toString()) : 0;
-        if (actualTeam !== verifiedTeam) return;
-
-        const emblemSkills = [];
-        if (emblemSkil && !emblemSkil.isNull()) {
-          try {
-            const enumerator = emblemSkil.method("GetEnumerator").invoke();
-            while (enumerator.method("MoveNext").invoke()) {
-              const current = enumerator.method("get_Current").invoke();
-              const key = current.method("get_Key").invoke();
-              const value = current.method("get_Value").invoke();
-              emblemSkills.push({
-                slot: key ? Number(key.toString()) : 0,
-                id: value ? Number(value.toString()) : 0,
-              });
-            }
-          } catch (err) {
-            debugLog("Hook", `Failed reading emblemSkil: ${err.message}`);
-          }
-        }
-
-        const playerObj = {
-          ipos: iPos,
-          id: uid,
-          name: nameStr,
-          role: Role ? Number(Role.toString()) : 0,
-          team: verifiedTeam,
-          battleSpell: BattleSpell ? Number(BattleSpell.toString()) : 0,
-          emblem: emblem ? Number(emblem.toString()) : 0,
-          emblemSkills: emblemSkills,
-          pickPhase: cached.pickPhase,
-          banPhase: cached.banPhase,
-          SelHeroID: cached.SelHeroID,
-          banHero: cached.banHero,
-        };
-
-        playersCache.set(uid, cached);
-        slotsMap.set(iPos, playerObj);
-      } catch (err) {
-        debugLog("Hook", `Failed parsing RoomData fields: ${err.message}`);
-      }
-    });
-
-    return Array.from(slotsMap.values());
-  }
-
+  // Mengambil informasi operator (client)
   function getOperatorId() {
     if (cachedOperatorId) return cachedOperatorId;
     try {
@@ -561,257 +437,389 @@ function executeSimpleHooks() {
     return "";
   }
 
-  // Hook 4: Player Info Telemetry Hook
-  const ReportPlayerInfoEx = CompetitionData.method("ReportPlayerInfoEx");
-  Interceptor.attach(ReportPlayerInfoEx.virtualAddress, {
-    onLeave: function (args) {
-      try {
-        const opIdStr = getOperatorId();
-        debugLog("Hook", `Operator account ID: ${opIdStr}`);
-        playersCache.clear();
-        const players = getMergedPlayers(null, null);
+  // ==== TOURNAMENT OVERLAY DATA ====
+  // Hook 4: Competition Report
+  //
+  if (sessionState.isAuthorized && sessionState.permissions.allowTourAPI) {
+    const CanRepotCompetitonData = MapTypeData.method("CanRepotCompetitonData");
+    Interceptor.attach(CanRepotCompetitonData.virtualAddress, {
+      onLeave: function (retval) {
+        retval.replace(ptr(1));
+      },
+    });
 
-        sendRoomData({
-          operatorId: opIdStr,
-          players: players,
-          draftPhase: 0,
-          draftTime: 0,
-          caption: "",
-          mapDraw: lastMapDraw,
-          timestamp: new Date().toISOString(),
+    let lastMapDraw = 0;
+    const LogicBattleManager = Assembly.tryClass("LogicBattleManager");
+    if (LogicBattleManager && !LogicBattleManager.handle.isNull()) {
+      const get_m_iNext2025Feature = LogicBattleManager.tryMethod(
+        "get_m_iNext2025Feature",
+      );
+      if (get_m_iNext2025Feature) {
+        Interceptor.attach(get_m_iNext2025Feature.virtualAddress, {
+          onLeave: function (retval) {
+            try {
+              const val = retval.toInt32();
+              lastMapDraw = val;
+            } catch (err) {
+              debugLog(
+                "Hook",
+                `Error reading get_m_iNext2025Feature: ${err.message}`,
+              );
+            }
+          },
         });
-      } catch (e) {
-        debugLog("Hook", `Error in ReportPlayerInfoEx: ${e.message}`);
       }
-    },
-  });
+    }
 
-  // Hook 5: Pick Hero Start Hook
-  const ReportPickHeroStart = CompetitionData.method("ReportPickHeroStart");
-  Interceptor.attach(ReportPickHeroStart.virtualAddress, {
-    onEnter: function (args) {
-      try {
-        const playerDataPtr = args[1];
-        const playerDataObj = new Il2Cpp.Object(playerDataPtr);
-        const activeUid = playerDataObj.field("lUid").value.toString();
-        debugLog("Hook", `ReportPickHeroStart active UID: ${activeUid}`);
+    // Local Cache to merge players
+    const playersCache = new Map();
 
-        const opIdStr = getOperatorId();
-        const players = getMergedPlayers(activeUid, (uid, cached) => {
-          if (uid === activeUid) {
-            cached.pickPhase = true;
+    function getMergedPlayers(activeUid, updateFn) {
+      const instances = Il2Cpp.gc.choose(RoomData);
+      const slotsMap = new Map();
+
+      instances.forEach((roomObject) => {
+        try {
+          const iPosVal = roomObject.field("iPos").value;
+          const iPos = iPosVal ? Number(iPosVal.toString()) : 0;
+          if (iPos < 1 || iPos > 10) return;
+
+          const ID = roomObject.field("lUid").value;
+          const uid = ID ? ID.toString() : "";
+          if (!uid || uid === "0") return;
+
+          const Name = roomObject.field("_sName").value;
+          const Role = roomObject.field("iRoad").value;
+          const Team = roomObject.field("iCamp").value;
+          const BattleSpell = roomObject.field("summonSkillId").value;
+          const emblem = roomObject.field("runeId").value;
+          const emblemSkil = roomObject.field("mRuneSkill2023").value;
+
+          let cached = playersCache.get(uid);
+          if (!cached) {
+            cached = {
+              pickPhase: false,
+              banPhase: false,
+              SelHeroID: 0,
+              banHero: 0,
+            };
           }
-        });
 
-        const activePlayer = players.find((p) => p.id === activeUid);
-        const activeTeam = activePlayer ? activePlayer.team : 0;
-
-        const isBluePicking = players.some((p) => p.team === 1 && p.pickPhase);
-        const isRedPicking = players.some((p) => p.team === 2 && p.pickPhase);
-        let caption = "";
-        if (isBluePicking && isRedPicking) {
-          caption = "Both Teams Pick";
-        } else if (isBluePicking) {
-          caption = "Blue Team Pick";
-        } else if (isRedPicking) {
-          caption = "Red Team Pick";
-        }
-
-        sendRoomData({
-          operatorId: opIdStr,
-          players: players,
-          draftPhase: activeTeam,
-          caption: caption,
-          mapDraw: lastMapDraw,
-          timestamp: new Date().toISOString(),
-        });
-      } catch (e) {
-        debugLog("Hook", `Error in ReportPickHeroStart: ${e.message}`);
-      }
-    },
-  });
-
-  // Hook 6: Pick Hero Submit Hook
-  const ReportPickHero = CompetitionData.method("ReportPickHero");
-  Interceptor.attach(ReportPickHero.virtualAddress, {
-    onEnter: function (args) {
-      try {
-        const playerDataPtr = args[1];
-        const pickHeroID = args[2].toInt32();
-        const playerDataObj = new Il2Cpp.Object(playerDataPtr);
-        const activeUid = playerDataObj.field("lUid").value.toString();
-        debugLog(
-          "Hook",
-          `ReportPickHero UID: ${activeUid}, heroID: ${pickHeroID}`,
-        );
-
-        const opIdStr = getOperatorId();
-        const players = getMergedPlayers(activeUid, (uid, cached) => {
-          if (uid === activeUid) {
-            cached.pickPhase = false;
-            cached.SelHeroID = pickHeroID;
+          if (updateFn) {
+            updateFn(uid, cached);
           }
-        });
 
-        const activePlayer = players.find((p) => p.id === activeUid);
-        const activeTeam = activePlayer ? activePlayer.team : 0;
-
-        const isBluePicking = players.some((p) => p.team === 1 && p.pickPhase);
-        const isRedPicking = players.some((p) => p.team === 2 && p.pickPhase);
-        let caption = "";
-        if (isBluePicking && isRedPicking) {
-          caption = "Both Teams Pick";
-        } else if (isBluePicking) {
-          caption = "Blue Team Pick";
-        } else if (isRedPicking) {
-          caption = "Red Team Pick";
-        }
-
-        sendRoomData({
-          operatorId: opIdStr,
-          players: players,
-          draftPhase: activeTeam,
-          caption: caption,
-          mapDraw: lastMapDraw,
-          timestamp: new Date().toISOString(),
-        });
-      } catch (e) {
-        debugLog("Hook", `Error in ReportPickHero: ${e.message}`);
-      }
-    },
-  });
-
-  // Hook 7: Ban Hero Start Hook
-  const ReportBanStart = CompetitionData.method("ReportBanStart");
-  Interceptor.attach(ReportBanStart.virtualAddress, {
-    onEnter: function (args) {
-      try {
-        const playerDataPtr = args[1];
-        const banTimeSpan = args[2].toInt32();
-        const playerDataObj = new Il2Cpp.Object(playerDataPtr);
-        const activeUid = playerDataObj.field("lUid").value.toString();
-        debugLog(
-          "Hook",
-          `ReportBanStart UID: ${activeUid}, time: ${banTimeSpan}`,
-        );
-
-        const opIdStr = getOperatorId();
-        const players = getMergedPlayers(activeUid, (uid, cached) => {
-          if (uid === activeUid) {
-            cached.banPhase = true;
+          const nameStr = Name ? Name.content || "" : "";
+          let verifiedTeam = 0;
+          if (iPos >= 1 && iPos <= 5) {
+            verifiedTeam = 1;
+          } else if (iPos >= 6 && iPos <= 10) {
+            verifiedTeam = 2;
+          } else {
+            return;
           }
-        });
 
-        const activePlayer = players.find((p) => p.id === activeUid);
-        const activeTeam = activePlayer ? activePlayer.team : 0;
+          const actualTeam = Team ? Number(Team.toString()) : 0;
+          if (actualTeam !== verifiedTeam) return;
 
-        const isBlueBanning = players.some((p) => p.team === 1 && p.banPhase);
-        const isRedBanning = players.some((p) => p.team === 2 && p.banPhase);
-        let caption = "";
-        if (isBlueBanning && isRedBanning) {
-          caption = "Both Teams Ban";
-        } else if (isBlueBanning) {
-          caption = "Blue Team Ban";
-        } else if (isRedBanning) {
-          caption = "Red Team Ban";
-        }
-
-        sendRoomData({
-          operatorId: opIdStr,
-          players: players,
-          draftPhase: activeTeam,
-          draftTime: banTimeSpan,
-          caption: caption,
-          mapDraw: lastMapDraw,
-          timestamp: new Date().toISOString(),
-        });
-      } catch (e) {
-        debugLog("Hook", `Error in ReportBanStart: ${e.message}`);
-      }
-    },
-  });
-
-  // Hook 8: Ban Hero Submit Hook
-  const ReportBanHero = CompetitionData.method("ReportBanHero");
-  Interceptor.attach(ReportBanHero.virtualAddress, {
-    onEnter: function (args) {
-      try {
-        const playerDataPtr = args[1];
-        const banHeroID = args[2].toInt32();
-        const playerDataObj = new Il2Cpp.Object(playerDataPtr);
-        const activeUid = playerDataObj.field("lUid").value.toString();
-        debugLog(
-          "Hook",
-          `ReportBanHero UID: ${activeUid}, heroID: ${banHeroID}`,
-        );
-
-        const opIdStr = getOperatorId();
-        const players = getMergedPlayers(activeUid, (uid, cached) => {
-          if (uid === activeUid) {
-            cached.banPhase = false;
-            cached.banHero = banHeroID;
+          const emblemSkills = [];
+          if (emblemSkil && !emblemSkil.isNull()) {
+            try {
+              const enumerator = emblemSkil.method("GetEnumerator").invoke();
+              while (enumerator.method("MoveNext").invoke()) {
+                const current = enumerator.method("get_Current").invoke();
+                const key = current.method("get_Key").invoke();
+                const value = current.method("get_Value").invoke();
+                emblemSkills.push({
+                  slot: key ? Number(key.toString()) : 0,
+                  id: value ? Number(value.toString()) : 0,
+                });
+              }
+            } catch (err) {
+              debugLog("Hook", `Failed reading emblemSkil: ${err.message}`);
+            }
           }
-        });
 
-        const activePlayer = players.find((p) => p.id === activeUid);
-        const activeTeam = activePlayer ? activePlayer.team : 0;
+          const playerObj = {
+            ipos: iPos,
+            id: uid,
+            name: nameStr,
+            role: Role ? Number(Role.toString()) : 0,
+            team: verifiedTeam,
+            battleSpell: BattleSpell ? Number(BattleSpell.toString()) : 0,
+            emblem: emblem ? Number(emblem.toString()) : 0,
+            emblemSkills: emblemSkills,
+            pickPhase: cached.pickPhase,
+            banPhase: cached.banPhase,
+            SelHeroID: cached.SelHeroID,
+            banHero: cached.banHero,
+          };
 
-        const isBlueBanning = players.some((p) => p.team === 1 && p.banPhase);
-        const isRedBanning = players.some((p) => p.team === 2 && p.banPhase);
-        let caption = "";
-        if (isBlueBanning && isRedBanning) {
-          caption = "Both Teams Ban";
-        } else if (isBlueBanning) {
-          caption = "Blue Team Ban";
-        } else if (isRedBanning) {
-          caption = "Red Team Ban";
+          playersCache.set(uid, cached);
+          slotsMap.set(iPos, playerObj);
+        } catch (err) {
+          debugLog("Hook", `Failed parsing RoomData fields: ${err.message}`);
         }
+      });
 
-        sendRoomData({
-          operatorId: opIdStr,
-          players: players,
-          draftPhase: activeTeam,
-          caption: caption,
-          mapDraw: lastMapDraw,
-          timestamp: new Date().toISOString(),
-        });
-      } catch (e) {
-        debugLog("Hook", `Error in ReportBanHero: ${e.message}`);
-      }
-    },
-  });
+      return Array.from(slotsMap.values());
+    }
 
-  // Hook 9: Swap Hero Phase Hook
-  const ReceStartChange = UIRankHero.method("ReceStartChange");
-  Interceptor.attach(ReceStartChange.virtualAddress, {
-    onEnter: function (args) {
-      try {
-        const opIdStr = getOperatorId();
-        const players = getMergedPlayers(null, null);
-        let phase = 4;
-        let caption = "Change";
-        let iChangeHeroTimeSpan;
+    const ReportPlayerInfoEx = CompetitionData.method("ReportPlayerInfoEx");
+    Interceptor.attach(ReportPlayerInfoEx.virtualAddress, {
+      onLeave: function (args) {
+        try {
+          const opIdStr = getOperatorId();
+          debugLog("Hook", `Operator account ID: ${opIdStr}`);
+          playersCache.clear();
+          const players = getMergedPlayers(null, null);
 
-        const instances = Il2Cpp.gc.choose(UIRankHero);
-        instances.forEach((uirankObject) => {
-          const val = uirankObject.field("iChangeHeroTimeSpan").value;
-          iChangeHeroTimeSpan = val;
-        });
+          sendRoomData({
+            operatorId: opIdStr,
+            players: players,
+            draftPhase: 0,
+            draftTime: 0,
+            caption: "",
+            mapDraw: lastMapDraw,
+            timestamp: new Date().toISOString(),
+          });
+        } catch (e) {
+          debugLog("Hook", `Error in ReportPlayerInfoEx: ${e.message}`);
+        }
+      },
+    });
 
-        sendRoomData({
-          operatorId: opIdStr,
-          draftPhase: phase,
-          players: players,
-          draftTime: iChangeHeroTimeSpan,
-          caption: caption,
-          mapDraw: lastMapDraw,
-          timestamp: new Date().toISOString(),
-        });
-      } catch (e) {
-        debugLog("Hook", `Error in ReceStartChange: ${e.message}`);
-      }
-    },
-  });
+    // Hook 5: Pick Hero Start Hook
+    const ReportPickHeroStart = CompetitionData.method("ReportPickHeroStart");
+    Interceptor.attach(ReportPickHeroStart.virtualAddress, {
+      onEnter: function (args) {
+        try {
+          const playerDataPtr = args[1];
+          const playerDataObj = new Il2Cpp.Object(playerDataPtr);
+          const activeUid = playerDataObj.field("lUid").value.toString();
+          debugLog("Hook", `ReportPickHeroStart active UID: ${activeUid}`);
+
+          const opIdStr = getOperatorId();
+          const players = getMergedPlayers(activeUid, (uid, cached) => {
+            if (uid === activeUid) {
+              cached.pickPhase = true;
+            }
+          });
+
+          const activePlayer = players.find((p) => p.id === activeUid);
+          const activeTeam = activePlayer ? activePlayer.team : 0;
+
+          const isBluePicking = players.some(
+            (p) => p.team === 1 && p.pickPhase,
+          );
+          const isRedPicking = players.some((p) => p.team === 2 && p.pickPhase);
+          let caption = "";
+          if (isBluePicking && isRedPicking) {
+            caption = "Both Teams Pick";
+          } else if (isBluePicking) {
+            caption = "Blue Team Pick";
+          } else if (isRedPicking) {
+            caption = "Red Team Pick";
+          }
+
+          sendRoomData({
+            operatorId: opIdStr,
+            players: players,
+            draftPhase: activeTeam,
+            caption: caption,
+            mapDraw: lastMapDraw,
+            timestamp: new Date().toISOString(),
+          });
+        } catch (e) {
+          debugLog("Hook", `Error in ReportPickHeroStart: ${e.message}`);
+        }
+      },
+    });
+
+    // Hook 6: Pick Hero Submit Hook
+    const ReportPickHero = CompetitionData.method("ReportPickHero");
+    Interceptor.attach(ReportPickHero.virtualAddress, {
+      onEnter: function (args) {
+        try {
+          const playerDataPtr = args[1];
+          const pickHeroID = args[2].toInt32();
+          const playerDataObj = new Il2Cpp.Object(playerDataPtr);
+          const activeUid = playerDataObj.field("lUid").value.toString();
+          debugLog(
+            "Hook",
+            `ReportPickHero UID: ${activeUid}, heroID: ${pickHeroID}`,
+          );
+
+          const opIdStr = getOperatorId();
+          const players = getMergedPlayers(activeUid, (uid, cached) => {
+            if (uid === activeUid) {
+              cached.pickPhase = false;
+              cached.SelHeroID = pickHeroID;
+            }
+          });
+
+          const activePlayer = players.find((p) => p.id === activeUid);
+          const activeTeam = activePlayer ? activePlayer.team : 0;
+
+          const isBluePicking = players.some(
+            (p) => p.team === 1 && p.pickPhase,
+          );
+          const isRedPicking = players.some((p) => p.team === 2 && p.pickPhase);
+          let caption = "";
+          if (isBluePicking && isRedPicking) {
+            caption = "Both Teams Pick";
+          } else if (isBluePicking) {
+            caption = "Blue Team Pick";
+          } else if (isRedPicking) {
+            caption = "Red Team Pick";
+          }
+
+          sendRoomData({
+            operatorId: opIdStr,
+            players: players,
+            draftPhase: activeTeam,
+            caption: caption,
+            mapDraw: lastMapDraw,
+            timestamp: new Date().toISOString(),
+          });
+        } catch (e) {
+          debugLog("Hook", `Error in ReportPickHero: ${e.message}`);
+        }
+      },
+    });
+
+    // Hook 7: Ban Hero Start Hook
+    const ReportBanStart = CompetitionData.method("ReportBanStart");
+    Interceptor.attach(ReportBanStart.virtualAddress, {
+      onEnter: function (args) {
+        try {
+          const playerDataPtr = args[1];
+          const banTimeSpan = args[2].toInt32();
+          const playerDataObj = new Il2Cpp.Object(playerDataPtr);
+          const activeUid = playerDataObj.field("lUid").value.toString();
+          debugLog(
+            "Hook",
+            `ReportBanStart UID: ${activeUid}, time: ${banTimeSpan}`,
+          );
+
+          const opIdStr = getOperatorId();
+          const players = getMergedPlayers(activeUid, (uid, cached) => {
+            if (uid === activeUid) {
+              cached.banPhase = true;
+            }
+          });
+
+          const activePlayer = players.find((p) => p.id === activeUid);
+          const activeTeam = activePlayer ? activePlayer.team : 0;
+
+          const isBlueBanning = players.some((p) => p.team === 1 && p.banPhase);
+          const isRedBanning = players.some((p) => p.team === 2 && p.banPhase);
+          let caption = "";
+          if (isBlueBanning && isRedBanning) {
+            caption = "Both Teams Ban";
+          } else if (isBlueBanning) {
+            caption = "Blue Team Ban";
+          } else if (isRedBanning) {
+            caption = "Red Team Ban";
+          }
+
+          sendRoomData({
+            operatorId: opIdStr,
+            players: players,
+            draftPhase: activeTeam,
+            draftTime: banTimeSpan,
+            caption: caption,
+            mapDraw: lastMapDraw,
+            timestamp: new Date().toISOString(),
+          });
+        } catch (e) {
+          debugLog("Hook", `Error in ReportBanStart: ${e.message}`);
+        }
+      },
+    });
+
+    // Hook 8: Ban Hero Submit Hook
+    const ReportBanHero = CompetitionData.method("ReportBanHero");
+    Interceptor.attach(ReportBanHero.virtualAddress, {
+      onEnter: function (args) {
+        try {
+          const playerDataPtr = args[1];
+          const banHeroID = args[2].toInt32();
+          const playerDataObj = new Il2Cpp.Object(playerDataPtr);
+          const activeUid = playerDataObj.field("lUid").value.toString();
+          debugLog(
+            "Hook",
+            `ReportBanHero UID: ${activeUid}, heroID: ${banHeroID}`,
+          );
+
+          const opIdStr = getOperatorId();
+          const players = getMergedPlayers(activeUid, (uid, cached) => {
+            if (uid === activeUid) {
+              cached.banPhase = false;
+              cached.banHero = banHeroID;
+            }
+          });
+
+          const activePlayer = players.find((p) => p.id === activeUid);
+          const activeTeam = activePlayer ? activePlayer.team : 0;
+
+          const isBlueBanning = players.some((p) => p.team === 1 && p.banPhase);
+          const isRedBanning = players.some((p) => p.team === 2 && p.banPhase);
+          let caption = "";
+          if (isBlueBanning && isRedBanning) {
+            caption = "Both Teams Ban";
+          } else if (isBlueBanning) {
+            caption = "Blue Team Ban";
+          } else if (isRedBanning) {
+            caption = "Red Team Ban";
+          }
+
+          sendRoomData({
+            operatorId: opIdStr,
+            players: players,
+            draftPhase: activeTeam,
+            caption: caption,
+            mapDraw: lastMapDraw,
+            timestamp: new Date().toISOString(),
+          });
+        } catch (e) {
+          debugLog("Hook", `Error in ReportBanHero: ${e.message}`);
+        }
+      },
+    });
+
+    // Hook 9: Swap Hero Phase Hook
+    const ReceStartChange = UIRankHero.method("ReceStartChange");
+    Interceptor.attach(ReceStartChange.virtualAddress, {
+      onEnter: function (args) {
+        try {
+          const opIdStr = getOperatorId();
+          const players = getMergedPlayers(null, null);
+          let phase = 4;
+          let caption = "Change";
+          let iChangeHeroTimeSpan;
+
+          const instances = Il2Cpp.gc.choose(UIRankHero);
+          instances.forEach((uirankObject) => {
+            const val = uirankObject.field("iChangeHeroTimeSpan").value;
+            iChangeHeroTimeSpan = val;
+          });
+
+          sendRoomData({
+            operatorId: opIdStr,
+            draftPhase: phase,
+            players: players,
+            draftTime: iChangeHeroTimeSpan,
+            caption: caption,
+            mapDraw: lastMapDraw,
+            timestamp: new Date().toISOString(),
+          });
+        } catch (e) {
+          debugLog("Hook", `Error in ReceStartChange: ${e.message}`);
+        }
+      },
+    });
+  }
 
   // Hook 10: Operator ID Initialization Hook
   const GetBattlePlayerInfo = SystemData.method("GetBattlePlayerInfo");
