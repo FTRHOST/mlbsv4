@@ -65,7 +65,7 @@ export function getOperatorId(SystemData) {
   return "";
 }
 
-function getMergedPlayers(RoomData, activeUid, updateFn) {
+function getMergedPlayers(activeUid, updateFn) {
   const instances = Il2Cpp.gc.choose(RoomData);
   const slotsMap = new Map();
 
@@ -81,48 +81,54 @@ function getMergedPlayers(RoomData, activeUid, updateFn) {
 
       const Name = roomObject.field("_sName").value;
       const Role = roomObject.field("iRoad").value;
-      const verifiedTeam = iPos <= 5 ? 1 : 2;
-
+      const Team = roomObject.field("iCamp").value;
       const BattleSpell = roomObject.field("summonSkillId").value;
       const emblem = roomObject.field("runeId").value;
+      const emblemSkil = roomObject.field("mRuneSkill2023").value;
 
-      const emblemSkills = [];
-      const mRuneSkill2023 = roomObject.field("mRuneSkill2023").value;
-      if (mRuneSkill2023 && !mRuneSkill2023.handle.isNull()) {
-        try {
-          const enumerator = mRuneSkill2023.method("GetEnumerator").invoke();
-          while (enumerator.method("MoveNext").invoke()) {
-            const current = enumerator.method("get_Current").invoke();
-            const key = current.method("get_Key").invoke();
-            const val = current.method("get_Value").invoke();
-            emblemSkills.push({
-              slot: key ? Number(key.toString()) : 0,
-              id: val ? Number(val.toString()) : 0
-            });
-          }
-        } catch (err) {
-          debugLog("Hook", `Failed reading emblemSkill: ${err.message}`);
-        }
+      let cached = playersCache.get(uid);
+      if (!cached) {
+        cached = {
+          pickPhase: false,
+          banPhase: false,
+          SelHeroID: 0,
+          banHero: 0,
+        };
       }
-
-      let cached = playersCache.get(uid) || {
-        pickPhase: false,
-        banPhase: false,
-        SelHeroID: 0,
-        banHero: 0,
-      };
 
       if (updateFn) {
         updateFn(uid, cached);
       }
 
-      const nameStr = Name ? Name.toString() : "";
+      const nameStr = Name ? Name.content || "" : "";
+      let verifiedTeam = 0;
+      if (iPos >= 1 && iPos <= 5) {
+        verifiedTeam = 1;
+      } else if (iPos >= 6 && iPos <= 10) {
+        verifiedTeam = 2;
+      } else {
+        return;
+      }
 
-      const RoomState = roomObject.field("iState").value;
-      const stateVal = RoomState ? Number(RoomState.toString()) : 0;
-      if (stateVal === 2) {
-        cached.pickPhase = false;
-        cached.banPhase = false;
+      const actualTeam = Team ? Number(Team.toString()) : 0;
+      if (actualTeam !== verifiedTeam) return;
+
+      const emblemSkills = [];
+      if (emblemSkil && !emblemSkil.isNull()) {
+        try {
+          const enumerator = emblemSkil.method("GetEnumerator").invoke();
+          while (enumerator.method("MoveNext").invoke()) {
+            const current = enumerator.method("get_Current").invoke();
+            const key = current.method("get_Key").invoke();
+            const value = current.method("get_Value").invoke();
+            emblemSkills.push({
+              slot: key ? Number(key.toString()) : 0,
+              id: value ? Number(value.toString()) : 0,
+            });
+          }
+        } catch (err) {
+          debugLog("Hook", `Failed reading emblemSkil: ${err.message}`);
+        }
       }
 
       const playerObj = {
@@ -497,117 +503,125 @@ export function setupTelemetryHooks(Assembly) {
   }
 
   // Hooks for receiving pick and ban phases with proper timing fields
-  UIRankHero.methods.filter(m => m.name === "ReceStartBanState").forEach(method => {
-    Interceptor.attach(method.virtualAddress, {
-      onEnter: function (args) {
-        try {
-          const opIdStr = getOperatorId(SystemData);
-          const players = getMergedPlayers(RoomData, null, null);
-          let iBanTimeSpan;
+  UIRankHero.methods
+    .filter((m) => m.name === "ReceStartBanState")
+    .forEach((method) => {
+      Interceptor.attach(method.virtualAddress, {
+        onEnter: function (args) {
+          try {
+            const opIdStr = getOperatorId(SystemData);
+            const players = getMergedPlayers(RoomData, null, null);
+            let iBanTimeSpan;
 
-          const instances = Il2Cpp.gc.choose(UIRankHero);
-          instances.forEach((uirankObject) => {
-            const val = uirankObject.field("iBanTimeSpan").value;
-            iBanTimeSpan = val;
-          });
+            const instances = Il2Cpp.gc.choose(UIRankHero);
+            instances.forEach((uirankObject) => {
+              const val = uirankObject.field("iBanTimeSpan").value;
+              iBanTimeSpan = val;
+            });
 
-          sendRoomDataWithCache({
-            operatorId: opIdStr,
-            players: players,
-            draftTime: iBanTimeSpan,
-            mapDraw: lastMapDraw,
-            timestamp: new Date().toISOString(),
-          });
-        } catch (e) {
-          debugLog("Hook", `Error in ReceStartBanState: ${e.message}`);
-        }
-      }
+            sendRoomDataWithCache({
+              operatorId: opIdStr,
+              players: players,
+              draftTime: iBanTimeSpan,
+              mapDraw: lastMapDraw,
+              timestamp: new Date().toISOString(),
+            });
+          } catch (e) {
+            debugLog("Hook", `Error in ReceStartBanState: ${e.message}`);
+          }
+        },
+      });
     });
-  });
 
-  UIRankHero.methods.filter(m => m.name === "ReceStartSecondBanState").forEach(method => {
-    Interceptor.attach(method.virtualAddress, {
-      onEnter: function (args) {
-        try {
-          const opIdStr = getOperatorId(SystemData);
-          const players = getMergedPlayers(RoomData, null, null);
-          let iSecondBanTimeSpan;
+  UIRankHero.methods
+    .filter((m) => m.name === "ReceStartSecondBanState")
+    .forEach((method) => {
+      Interceptor.attach(method.virtualAddress, {
+        onEnter: function (args) {
+          try {
+            const opIdStr = getOperatorId(SystemData);
+            const players = getMergedPlayers(RoomData, null, null);
+            let iSecondBanTimeSpan;
 
-          const instances = Il2Cpp.gc.choose(UIRankHero);
-          instances.forEach((uirankObject) => {
-            const val = uirankObject.field("iSecondBanTimeSpan").value;
-            iSecondBanTimeSpan = val;
-          });
+            const instances = Il2Cpp.gc.choose(UIRankHero);
+            instances.forEach((uirankObject) => {
+              const val = uirankObject.field("iSecondBanTimeSpan").value;
+              iSecondBanTimeSpan = val;
+            });
 
-          sendRoomDataWithCache({
-            operatorId: opIdStr,
-            players: players,
-            draftTime: iSecondBanTimeSpan,
-            mapDraw: lastMapDraw,
-            timestamp: new Date().toISOString(),
-          });
-        } catch (e) {
-          debugLog("Hook", `Error in ReceStartSecondBanState: ${e.message}`);
-        }
-      }
+            sendRoomDataWithCache({
+              operatorId: opIdStr,
+              players: players,
+              draftTime: iSecondBanTimeSpan,
+              mapDraw: lastMapDraw,
+              timestamp: new Date().toISOString(),
+            });
+          } catch (e) {
+            debugLog("Hook", `Error in ReceStartSecondBanState: ${e.message}`);
+          }
+        },
+      });
     });
-  });
 
-  UIRankHero.methods.filter(m => m.name === "ReceStartPickState").forEach(method => {
-    Interceptor.attach(method.virtualAddress, {
-      onEnter: function (args) {
-        try {
-          const opIdStr = getOperatorId(SystemData);
-          const players = getMergedPlayers(RoomData, null, null);
-          let iPickTimeSpan;
+  UIRankHero.methods
+    .filter((m) => m.name === "ReceStartPickState")
+    .forEach((method) => {
+      Interceptor.attach(method.virtualAddress, {
+        onEnter: function (args) {
+          try {
+            const opIdStr = getOperatorId(SystemData);
+            const players = getMergedPlayers(RoomData, null, null);
+            let iPickTimeSpan;
 
-          const instances = Il2Cpp.gc.choose(UIRankHero);
-          instances.forEach((uirankObject) => {
-            const val = uirankObject.field("iPickTimeSpan").value;
-            iPickTimeSpan = val;
-          });
+            const instances = Il2Cpp.gc.choose(UIRankHero);
+            instances.forEach((uirankObject) => {
+              const val = uirankObject.field("iPickTimeSpan").value;
+              iPickTimeSpan = val;
+            });
 
-          sendRoomDataWithCache({
-            operatorId: opIdStr,
-            players: players,
-            draftTime: iPickTimeSpan,
-            mapDraw: lastMapDraw,
-            timestamp: new Date().toISOString(),
-          });
-        } catch (e) {
-          debugLog("Hook", `Error in ReceStartPickState: ${e.message}`);
-        }
-      }
+            sendRoomDataWithCache({
+              operatorId: opIdStr,
+              players: players,
+              draftTime: iPickTimeSpan,
+              mapDraw: lastMapDraw,
+              timestamp: new Date().toISOString(),
+            });
+          } catch (e) {
+            debugLog("Hook", `Error in ReceStartPickState: ${e.message}`);
+          }
+        },
+      });
     });
-  });
 
-  UIRankHero.methods.filter(m => m.name === "ReceStartSecondPickState").forEach(method => {
-    Interceptor.attach(method.virtualAddress, {
-      onEnter: function (args) {
-        try {
-          const opIdStr = getOperatorId(SystemData);
-          const players = getMergedPlayers(RoomData, null, null);
-          let iPickTimeSpan;
+  UIRankHero.methods
+    .filter((m) => m.name === "ReceStartSecondPickState")
+    .forEach((method) => {
+      Interceptor.attach(method.virtualAddress, {
+        onEnter: function (args) {
+          try {
+            const opIdStr = getOperatorId(SystemData);
+            const players = getMergedPlayers(RoomData, null, null);
+            let iPickTimeSpan;
 
-          const instances = Il2Cpp.gc.choose(UIRankHero);
-          instances.forEach((uirankObject) => {
-            const val = uirankObject.field("iPickTimeSpan").value;
-            iPickTimeSpan = val;
-          });
+            const instances = Il2Cpp.gc.choose(UIRankHero);
+            instances.forEach((uirankObject) => {
+              const val = uirankObject.field("iPickTimeSpan").value;
+              iPickTimeSpan = val;
+            });
 
-          sendRoomDataWithCache({
-            operatorId: opIdStr,
-            players: players,
-            draftTime: iPickTimeSpan,
-            mapDraw: lastMapDraw,
-            timestamp: new Date().toISOString(),
-          });
-        } catch (e) {
-          debugLog("Hook", `Error in ReceStartSecondPickState: ${e.message}`);
-        }
-      }
+            sendRoomDataWithCache({
+              operatorId: opIdStr,
+              players: players,
+              draftTime: iPickTimeSpan,
+              mapDraw: lastMapDraw,
+              timestamp: new Date().toISOString(),
+            });
+          } catch (e) {
+            debugLog("Hook", `Error in ReceStartSecondPickState: ${e.message}`);
+          }
+        },
+      });
     });
-  });
 
   const GetBattlePlayerInfo = SystemData.method("GetBattlePlayerInfo");
   if (GetBattlePlayerInfo) {
