@@ -909,6 +909,10 @@ static gboolean check_ota_update_timer(gpointer data) {
     std::string ota_js = download_url(env, g_server_url, g_timeout_ms);
     std::string ota_sig = download_url(env, sig_url, g_timeout_ms);
     
+    if (!ota_js.empty() && ota_js.compare(0, MAGIC_ENC_HEADER.length(), MAGIC_ENC_HEADER) == 0) {
+        ota_js = decrypt_cache_script(ota_js);
+    }
+    
     if (!ota_js.empty() && !ota_sig.empty()) {
         // Check if cache files exist on disk
         std::string cache_path = g_working_dir + "/hook_cache.js";
@@ -1118,6 +1122,10 @@ static void* reload_worker_thread(void* arg) {
         std::string ota_js = download_url(env, g_server_url, g_timeout_ms);
         std::string ota_sig = download_url(env, sig_url, g_timeout_ms);
         
+        if (!ota_js.empty() && ota_js.compare(0, MAGIC_ENC_HEADER.length(), MAGIC_ENC_HEADER) == 0) {
+            ota_js = decrypt_cache_script(ota_js);
+        }
+
         if (!ota_js.empty() && !ota_sig.empty()) {
             if (verify_rsa_signature(env, ota_js, ota_sig, rsa_public_key, sizeof(rsa_public_key))) {
                 std::string cache_path = g_working_dir + "/hook_cache.js";

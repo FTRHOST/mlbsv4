@@ -49,11 +49,19 @@ if (!fs.existsSync(publicDir)) {
   fs.mkdirSync(publicDir, { recursive: true });
 }
 
-// Copy agent.js to public/hook.js and signature to public/hook.js.sig
-fs.writeFileSync(hookOtaPath, jsCode);
+// Encrypt hook.js before saving to public directory to protect against MITM
+const CACHE_XOR_KEY = 0x5B;
+const MAGIC_ENC_HEADER = Buffer.from("ENC\x01");
+const encryptedBuffer = Buffer.alloc(MAGIC_ENC_HEADER.length + jsCode.length);
+MAGIC_ENC_HEADER.copy(encryptedBuffer);
+for (let i = 0; i < jsCode.length; i++) {
+  encryptedBuffer[MAGIC_ENC_HEADER.length + i] = jsCode[i] ^ CACHE_XOR_KEY;
+}
+
+fs.writeFileSync(hookOtaPath, encryptedBuffer);
 fs.writeFileSync(hookSigPath, signature);
 console.log(`[+] OTA Update Files Created:`);
-console.log(`    Script: public/hook.js`);
+console.log(`    Script: public/hook.js (Encrypted)`);
 console.log(`    Signature: public/hook.js.sig`);
 
 // Step 3: Copy to native patcher scripts for embedded fallback & encrypt it
