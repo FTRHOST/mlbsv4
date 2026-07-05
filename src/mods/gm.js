@@ -6,18 +6,55 @@ import { sessionState } from "../tools/config";
 import { debugLog } from "../tools/utils";
 
 export function setupGMHooks(Assembly) {
-  const GameInit = Assembly.class("GameInit");
-  if (!GameInit || GameInit.handle.isNull()) return;
+  const hookSandboxMethod = (className, methodName) => {
+    const cls = Assembly.class(className);
+    if (!cls || cls.handle.isNull()) return;
 
-  const IsSandBoxIp = GameInit.method("IsSandBoxIp");
-  if (IsSandBoxIp) {
-    Interceptor.attach(IsSandBoxIp.virtualAddress, {
-      onLeave: function (retval) {
-        if (sessionState.isAuthorized && sessionState.permissions.allowGMMode) {
-          retval.replace(ptr(1));
-          debugLog("GM Mod", "GM Mode/Sandbox IP hook applied.");
+    const method = cls.method(methodName);
+    if (method) {
+      Interceptor.attach(method.virtualAddress, {
+        onLeave: function (retval) {
+          if (sessionState.isAuthorized && sessionState.permissions.allowGMMode) {
+            retval.replace(ptr(1));
+            debugLog("GM Mod", `${className}.${methodName} hook applied. Returning true.`);
+          }
+        },
+      });
+    }
+  };
+
+  hookSandboxMethod("GameInit", "IsSandBoxIp");
+  hookSandboxMethod("BattleStaticInit", "IsAdjustSandBox");
+  hookSandboxMethod("SDKCommon", "IsSandbox");
+  hookSandboxMethod("LogicExtension", "IsAdjustSandBox");
+  hookSandboxMethod("SdkInit", "IsSandBox");
+
+  // Hook GameServerConfig constructor untuk mengubah nilai field secara dinamis
+  const GameServerConfig = Assembly.class("GameServerConfig");
+  if (GameServerConfig && !GameServerConfig.handle.isNull()) {
+    const ctor = GameServerConfig.method(".ctor");
+    const fieldGSDKSandbox = GameServerConfig.field("m_bGSDKSandBox");
+    const fieldAdjustSandbox = GameServerConfig.field("m_bAdjustSandBox");
+
+    if (ctor) {
+      Interceptor.attach(ctor.virtualAddress, {
+        onEnter: function (args) {
+          this.instance = args[0];
+        },
+        onLeave: function () {
+          if (this.instance && !this.instance.isNull()) {
+            if (sessionState.isAuthorized && sessionState.permissions.allowGMMode) {
+              if (fieldGSDKSandbox) {
+                this.instance.add(fieldGSDKSandbox.offset).writeU8(1);
+              }
+              if (fieldAdjustSandbox) {
+                this.instance.add(fieldAdjustSandbox.offset).writeU8(1);
+              }
+              debugLog("GM Mod", "GameServerConfig sandbox fields set to true dynamically.");
+            }
+          }
         }
-      },
-    });
+      });
+    }
   }
 }
