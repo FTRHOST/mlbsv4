@@ -207,11 +207,11 @@ function executeSimpleHooks() {
 
   const Assembly = Il2Cpp.domain.assembly("Assembly-CSharp").image;
 
-  const mlleakVer = "MLLEAK v.0.5";
+  const mlleakVer = "MLLEAK v.0.6";
   setTimeout(() => {
     showGameNotification(
       mlleakVer,
-      "Hi Leaker, now you can run chat command on battle. [00FF00]#help[-]: for see all command in game chat. stay tuned for the new feature. from mlleak dev :)",
+      "Hi Leaker, Sorry to say method for hide ui has been change by moonton. stay tuned for the new feature. from mlleak dev :)",
     );
   }, 2000);
 

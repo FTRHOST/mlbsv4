@@ -26,31 +26,25 @@ export function setupBattleCommands(Assembly) {
             if (cmd == "help") {
               showGameNotification(
                 "Battle Command",
-                "[00FF00]#help[-]: For show all command\n[00FF00]#hideui[-]: For hide all ui on battle\n[00FF00]#hidebar[-]: For hide bar health on battle\n[00ff00]#hidename[-]: For hide name only",
+                "[00FF00]#help[-]: For show all command\nSorry to say method for hide ui has been change by moonton",
               );
-            } else if (cmd == "hideui" || cmd == "hidebar" || cmd == "hidename") {
-              // Harus menggunakan 'this' (instance pemanggil asli dari BattleBridge)
-              // daripada mengandalkan gc.choose yang tidak dapat diandalkan
+            } /* else if (cmd == "hideui" || cmd == "hidebar" || cmd == "hidename") {
               const activeBattleBridge = this;
-              
               try {
                 if (cmd == "hideui") {
                   const mToggle = activeBattleBridge.method("ToggleAllUIShow", 0) || activeBattleBridge.method("ToggleAllUIShow");
                   if(mToggle) mToggle.invoke();
-                  else console.log("[-] Method ToggleAllUIShow not found");
                 } else if (cmd == "hidebar") {
                   const mHideBar = activeBattleBridge.method("SetHeroBloodShow", 1) || activeBattleBridge.method("SetHeroBloodShow");
                   if(mHideBar) mHideBar.invoke(false);
-                  else console.log("[-] Method SetHeroBloodShow not found");
                 } else if (cmd == "hidename") {
                   const mHideName = activeBattleBridge.method("HideHeroNameAndFly", 1) || activeBattleBridge.method("HideHeroNameAndFly");
                   if(mHideName) mHideName.invoke(true);
-                  else console.log("[-] Method HideHeroNameAndFly not found");
                 }
               } catch (e) {
                 console.log(`[-] Error invoking command ${cmd}: ${e.message}`);
               }
-            }
+            } */
           }
         }
       }
