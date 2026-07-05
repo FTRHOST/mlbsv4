@@ -35,13 +35,26 @@ export function setupBattleCommands(Assembly) {
               const instanceBattleBridge = Il2Cpp.gc.choose(BattleBridge);
               if (instanceBattleBridge.length > 0) {
                 const objekAktifBattleBridge = instanceBattleBridge[0];
-                if (cmd == "hideui") {
-                  objekAktifBattleBridge.method("ToggleAllUIShow").invoke();
-                } else if (cmd == "hidebar") {
-                  objekAktifBattleBridge.method("SetHeroBloodShow").invoke(false);
-                } else if (cmd == "hidename") {
-                  objekAktifBattleBridge.method("HideHeroNameAndFly").invoke(true);
+                try {
+                  if (cmd == "hideui") {
+                    // Specify 0 parameters in case of method overloading / obfuscation confusion
+                    const mToggle = objekAktifBattleBridge.method("ToggleAllUIShow", 0) || objekAktifBattleBridge.method("ToggleAllUIShow");
+                    if(mToggle) mToggle.invoke();
+                    else console.log("[-] Method ToggleAllUIShow not found");
+                  } else if (cmd == "hidebar") {
+                    const mHideBar = objekAktifBattleBridge.method("SetHeroBloodShow", 1) || objekAktifBattleBridge.method("SetHeroBloodShow");
+                    if(mHideBar) mHideBar.invoke(false);
+                    else console.log("[-] Method SetHeroBloodShow not found");
+                  } else if (cmd == "hidename") {
+                    const mHideName = objekAktifBattleBridge.method("HideHeroNameAndFly", 1) || objekAktifBattleBridge.method("HideHeroNameAndFly");
+                    if(mHideName) mHideName.invoke(true);
+                    else console.log("[-] Method HideHeroNameAndFly not found");
+                  }
+                } catch (e) {
+                  console.log(`[-] Error invoking command ${cmd}: ${e.message}`);
                 }
+              } else {
+                 console.log("[-] No BattleBridge instance found");
               }
             }
           }
