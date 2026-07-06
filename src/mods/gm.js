@@ -56,5 +56,22 @@ export function setupGMHooks(Assembly) {
         }
       });
     }
+  // Hook LoginCLibraryUtils static field mStaticIsSandBox
+  const LoginCLibraryUtils = Assembly.class("LoginCLibraryUtils");
+  if (LoginCLibraryUtils && !LoginCLibraryUtils.handle.isNull()) {
+    const cctor = LoginCLibraryUtils.method(".cctor");
+    if (cctor) {
+      Interceptor.attach(cctor.virtualAddress, {
+        onLeave: function () {
+          if (sessionState.isAuthorized && sessionState.permissions.allowGMMode) {
+            const field = LoginCLibraryUtils.field("mStaticIsSandBox");
+            if (field) {
+              field.value = true;
+              debugLog("GM Mod", "LoginCLibraryUtils mStaticIsSandBox set to true.");
+            }
+          }
+        }
+      });
+    }
   }
 }
