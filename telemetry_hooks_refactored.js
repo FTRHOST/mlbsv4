@@ -235,12 +235,13 @@ export function setupTelemetryHooks(Assembly) {
 
           const opIdStr = getOperatorId(SystemData);
           const players = getMergedPlayers(
+            RoomData,
             activeUid,
             (uid, cached) => {
               if (uid === activeUid) {
                 cached.pickPhase = true;
               }
-            }
+            },
           );
 
           const activePlayer = players.find((p) => p.id === activeUid);
@@ -290,13 +291,14 @@ export function setupTelemetryHooks(Assembly) {
 
           const opIdStr = getOperatorId(SystemData);
           const players = getMergedPlayers(
+            RoomData,
             activeUid,
             (uid, cached) => {
               if (uid === activeUid) {
                 cached.pickPhase = false;
                 cached.SelHeroID = pickHeroID;
               }
-            }
+            },
           );
 
           const activePlayer = players.find((p) => p.id === activeUid);
@@ -346,12 +348,13 @@ export function setupTelemetryHooks(Assembly) {
 
           const opIdStr = getOperatorId(SystemData);
           const players = getMergedPlayers(
+            RoomData,
             activeUid,
             (uid, cached) => {
               if (uid === activeUid) {
                 cached.banPhase = true;
               }
-            }
+            },
           );
 
           const activePlayer = players.find((p) => p.id === activeUid);
@@ -399,13 +402,14 @@ export function setupTelemetryHooks(Assembly) {
 
           const opIdStr = getOperatorId(SystemData);
           const players = getMergedPlayers(
+            RoomData,
             activeUid,
             (uid, cached) => {
               if (uid === activeUid) {
                 cached.banPhase = false;
                 cached.banHero = banHeroID;
               }
-            }
+            },
           );
 
           const activePlayer = players.find((p) => p.id === activeUid);
