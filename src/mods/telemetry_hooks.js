@@ -67,7 +67,7 @@ export function getOperatorId(SystemData) {
 
 function getMergedPlayers(activeUid, updateFn) {
   const RoomData = Il2Cpp.domain
-    .assembly(Assembly - CSharp)
+    .assembly("Assembly-CSharp")
     .image.class("SystemData/RoomData");
   const instances = Il2Cpp.gc.choose(RoomData);
   const slotsMap = new Map();
