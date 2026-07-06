@@ -152,7 +152,7 @@ function getMergedPlayers(activeUid, updateFn) {
       playersCache.set(uid, cached);
       slotsMap.set(iPos, playerObj);
     } catch (err) {
-      debugLog("Hook", `Failed parsing RoomData fields: ${err.message}`);
+      debugLog("Hook", `Failed parsing RoomData fields: ${err.stack || err.message}`);
     }
   });
 
