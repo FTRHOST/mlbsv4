@@ -56,6 +56,8 @@ export function setupGMHooks(Assembly) {
         }
       });
     }
+  }
+
   // Hook LoginCLibraryUtils static field mStaticIsSandBox
   const LoginCLibraryUtils = Assembly.class("LoginCLibraryUtils");
   if (LoginCLibraryUtils && !LoginCLibraryUtils.handle.isNull()) {
