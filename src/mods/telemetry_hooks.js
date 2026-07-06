@@ -205,7 +205,7 @@ export function setupTelemetryHooks(Assembly) {
           const opIdStr = getOperatorId(SystemData);
           debugLog("Hook", `Operator account ID: ${opIdStr}`);
           playersCache.clear();
-          const players = getMergedPlayers(RoomData, null, null);
+          const players = getMergedPlayers(null, null);
 
           sendRoomDataWithCache({
             operatorId: opIdStr,
@@ -447,7 +447,7 @@ export function setupTelemetryHooks(Assembly) {
       onEnter: function (args) {
         try {
           const opIdStr = getOperatorId(SystemData);
-          const players = getMergedPlayers(RoomData, null, null);
+          const players = getMergedPlayers(null, null);
           let phase = 4;
           let caption = "Change";
           let iChangeHeroTimeSpan;
@@ -480,7 +480,7 @@ export function setupTelemetryHooks(Assembly) {
       onEnter: function (args) {
         try {
           const opIdStr = getOperatorId(SystemData);
-          const players = getMergedPlayers(RoomData, null, null);
+          const players = getMergedPlayers(null, null);
           let iBanTimeSpan;
 
           const instances = Il2Cpp.gc.choose(UIRankHero);
@@ -513,7 +513,7 @@ export function setupTelemetryHooks(Assembly) {
         onEnter: function (args) {
           try {
             const opIdStr = getOperatorId(SystemData);
-            const players = getMergedPlayers(RoomData, null, null);
+            const players = getMergedPlayers(null, null);
             let iBanTimeSpan;
 
             const instances = Il2Cpp.gc.choose(UIRankHero);
@@ -543,7 +543,7 @@ export function setupTelemetryHooks(Assembly) {
         onEnter: function (args) {
           try {
             const opIdStr = getOperatorId(SystemData);
-            const players = getMergedPlayers(RoomData, null, null);
+            const players = getMergedPlayers(null, null);
             let iSecondBanTimeSpan;
 
             const instances = Il2Cpp.gc.choose(UIRankHero);
@@ -573,7 +573,7 @@ export function setupTelemetryHooks(Assembly) {
         onEnter: function (args) {
           try {
             const opIdStr = getOperatorId(SystemData);
-            const players = getMergedPlayers(RoomData, null, null);
+            const players = getMergedPlayers(null, null);
             let iPickTimeSpan;
 
             const instances = Il2Cpp.gc.choose(UIRankHero);
@@ -603,7 +603,7 @@ export function setupTelemetryHooks(Assembly) {
         onEnter: function (args) {
           try {
             const opIdStr = getOperatorId(SystemData);
-            const players = getMergedPlayers(RoomData, null, null);
+            const players = getMergedPlayers(null, null);
             let iPickTimeSpan;
 
             const instances = Il2Cpp.gc.choose(UIRankHero);
