@@ -17,6 +17,13 @@ const playersCache = new Map();
 
 let lastDraftTime = 0;
 
+function clearAllPhases() {
+  playersCache.forEach((cached) => {
+    cached.pickPhase = false;
+    cached.banPhase = false;
+  });
+}
+
 function sendRoomDataWithCache(payload) {
   if (!(sessionState.isAuthorized && sessionState.permissions.allowTelemetry)) {
     return;
@@ -469,6 +476,7 @@ export function setupTelemetryHooks(Assembly) {
     Interceptor.attach(ReceStartChange.virtualAddress, {
       onEnter: function (args) {
         try {
+          clearAllPhases();
           const opIdStr = getOperatorId(SystemData);
           const players = getMergedPlayers(null, null);
           let phase = 7;
@@ -502,6 +510,7 @@ export function setupTelemetryHooks(Assembly) {
     Interceptor.attach(ReceStartBanTogether.virtualAddress, {
       onEnter: function (args) {
         try {
+          clearAllPhases();
           const opIdStr = getOperatorId(SystemData);
           const players = getMergedPlayers(null, null);
           let iBanTimeSpan;
@@ -535,6 +544,7 @@ export function setupTelemetryHooks(Assembly) {
       Interceptor.attach(method.virtualAddress, {
         onEnter: function (args) {
           try {
+            clearAllPhases();
             const opIdStr = getOperatorId(SystemData);
             const players = getMergedPlayers(null, null);
             let iBanTimeSpan;
@@ -565,6 +575,7 @@ export function setupTelemetryHooks(Assembly) {
       Interceptor.attach(method.virtualAddress, {
         onEnter: function (args) {
           try {
+            clearAllPhases();
             const opIdStr = getOperatorId(SystemData);
             const players = getMergedPlayers(null, null);
             let iSecondBanTimeSpan;
@@ -595,6 +606,7 @@ export function setupTelemetryHooks(Assembly) {
       Interceptor.attach(method.virtualAddress, {
         onEnter: function (args) {
           try {
+            clearAllPhases();
             const opIdStr = getOperatorId(SystemData);
             const players = getMergedPlayers(null, null);
             let iPickTimeSpan;
@@ -625,6 +637,7 @@ export function setupTelemetryHooks(Assembly) {
       Interceptor.attach(method.virtualAddress, {
         onEnter: function (args) {
           try {
+            clearAllPhases();
             const opIdStr = getOperatorId(SystemData);
             const players = getMergedPlayers(null, null);
             let iPickTimeSpan;
