@@ -16,6 +16,7 @@ let lastMapDraw = 0;
 const playersCache = new Map();
 
 let lastDraftTime = 0;
+let lastTimestamp = new Date().toISOString();
 
 function clearAllPhases() {
   playersCache.forEach((cached) => {
@@ -43,8 +44,10 @@ function sendRoomDataWithCache(payload) {
   } else {
     payload.draftTime = lastDraftTime;
   }
-  if (payload.timestamp === undefined) {
-    payload.timestamp = new Date().toISOString();
+  if (payload.timestamp !== undefined) {
+    lastTimestamp = payload.timestamp;
+  } else {
+    payload.timestamp = lastTimestamp;
   }
   sendRoomData(payload);
 }
@@ -232,7 +235,6 @@ export function setupTelemetryHooks(Assembly) {
             draftTime: 0,
             caption: "",
             mapDraw: lastMapDraw,
-            timestamp: new Date().toISOString(),
           });
         } catch (e) {
           debugLog("Hook", `Error in ReportPlayerInfoEx: ${e.message}`);
@@ -287,7 +289,6 @@ export function setupTelemetryHooks(Assembly) {
             draftPhase: phaseToSend,
             caption: caption,
             mapDraw: lastMapDraw,
-            timestamp: new Date().toISOString(),
           });
         } catch (e) {
           debugLog("Hook", `Error in ReportPickHeroStart: ${e.message}`);
@@ -347,7 +348,6 @@ export function setupTelemetryHooks(Assembly) {
             draftPhase: phaseToSend,
             caption: caption,
             mapDraw: lastMapDraw,
-            timestamp: new Date().toISOString(),
           });
         } catch (e) {
           debugLog("Hook", `Error in ReportPickHero: ${e.message}`);
@@ -404,7 +404,6 @@ export function setupTelemetryHooks(Assembly) {
             draftPhase: phaseToSend,
             caption: caption,
             mapDraw: lastMapDraw,
-            timestamp: new Date().toISOString(),
           });
         } catch (e) {
           debugLog("Hook", `Error in ReportBanStart: ${e.message}`);
@@ -462,7 +461,6 @@ export function setupTelemetryHooks(Assembly) {
             draftPhase: phaseToSend,
             caption: caption,
             mapDraw: lastMapDraw,
-            timestamp: new Date().toISOString(),
           });
         } catch (e) {
           debugLog("Hook", `Error in ReportBanHero: ${e.message}`);
