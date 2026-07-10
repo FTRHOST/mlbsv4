@@ -21,12 +21,23 @@ function sendRoomDataWithCache(payload) {
   if (!(sessionState.isAuthorized && sessionState.permissions.allowTelemetry)) {
     return;
   }
-  if (payload.caption !== undefined) lastCaption = payload.caption;
-  if (payload.draftPhase !== undefined) lastDraftPhase = payload.draftPhase;
+  if (payload.caption !== undefined) {
+    lastCaption = payload.caption;
+  } else {
+    payload.caption = lastCaption;
+  }
+  if (payload.draftPhase !== undefined) {
+    lastDraftPhase = payload.draftPhase;
+  } else {
+    payload.draftPhase = lastDraftPhase;
+  }
   if (payload.draftTime !== undefined) {
     lastDraftTime = payload.draftTime;
   } else {
     payload.draftTime = lastDraftTime;
+  }
+  if (payload.timestamp === undefined) {
+    payload.timestamp = new Date().toISOString();
   }
   sendRoomData(payload);
 }
@@ -251,18 +262,22 @@ export function setupTelemetryHooks(Assembly) {
           );
           const isRedPicking = players.some((p) => p.team === 2 && p.pickPhase);
           let caption = "";
+          let phaseToSend = 0;
           if (isBluePicking && isRedPicking) {
             caption = "Both Teams Pick";
+            phaseToSend = 6;
           } else if (isBluePicking) {
             caption = "Blue Team Pick";
+            phaseToSend = 4;
           } else if (isRedPicking) {
             caption = "Red Team Pick";
+            phaseToSend = 5;
           }
 
           sendRoomDataWithCache({
             operatorId: opIdStr,
             players: players,
-            draftPhase: activeTeam,
+            draftPhase: phaseToSend,
             caption: caption,
             mapDraw: lastMapDraw,
             timestamp: new Date().toISOString(),
@@ -307,18 +322,22 @@ export function setupTelemetryHooks(Assembly) {
           );
           const isRedPicking = players.some((p) => p.team === 2 && p.pickPhase);
           let caption = "";
+          let phaseToSend = 0;
           if (isBluePicking && isRedPicking) {
             caption = "Both Teams Pick";
+            phaseToSend = 6;
           } else if (isBluePicking) {
             caption = "Blue Team Pick";
+            phaseToSend = 4;
           } else if (isRedPicking) {
             caption = "Red Team Pick";
+            phaseToSend = 5;
           }
 
           sendRoomDataWithCache({
             operatorId: opIdStr,
             players: players,
-            draftPhase: activeTeam,
+            draftPhase: phaseToSend,
             caption: caption,
             mapDraw: lastMapDraw,
             timestamp: new Date().toISOString(),
@@ -360,18 +379,22 @@ export function setupTelemetryHooks(Assembly) {
           const isBlueBanning = players.some((p) => p.team === 1 && p.banPhase);
           const isRedBanning = players.some((p) => p.team === 2 && p.banPhase);
           let caption = "";
+          let phaseToSend = 0;
           if (isBlueBanning && isRedBanning) {
             caption = "Both Teams Ban";
+            phaseToSend = 3;
           } else if (isBlueBanning) {
             caption = "Blue Team Ban";
+            phaseToSend = 1;
           } else if (isRedBanning) {
             caption = "Red Team Ban";
+            phaseToSend = 2;
           }
 
           sendRoomDataWithCache({
             operatorId: opIdStr,
             players: players,
-            draftPhase: activeTeam,
+            draftPhase: phaseToSend,
             caption: caption,
             mapDraw: lastMapDraw,
             timestamp: new Date().toISOString(),
@@ -414,18 +437,22 @@ export function setupTelemetryHooks(Assembly) {
           const isBlueBanning = players.some((p) => p.team === 1 && p.banPhase);
           const isRedBanning = players.some((p) => p.team === 2 && p.banPhase);
           let caption = "";
+          let phaseToSend = 0;
           if (isBlueBanning && isRedBanning) {
             caption = "Both Teams Ban";
+            phaseToSend = 3;
           } else if (isBlueBanning) {
             caption = "Blue Team Ban";
+            phaseToSend = 1;
           } else if (isRedBanning) {
             caption = "Red Team Ban";
+            phaseToSend = 2;
           }
 
           sendRoomDataWithCache({
             operatorId: opIdStr,
             players: players,
-            draftPhase: activeTeam,
+            draftPhase: phaseToSend,
             caption: caption,
             mapDraw: lastMapDraw,
             timestamp: new Date().toISOString(),
@@ -444,7 +471,7 @@ export function setupTelemetryHooks(Assembly) {
         try {
           const opIdStr = getOperatorId(SystemData);
           const players = getMergedPlayers(null, null);
-          let phase = 4;
+          let phase = 7;
           let caption = "Change";
           let iChangeHeroTimeSpan;
 
