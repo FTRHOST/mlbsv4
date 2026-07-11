@@ -213,12 +213,7 @@ app.post("/api/rooms", authenticate, async (req, res) => {
       last_active: admin.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
 
-    // 2. Write player data in subcollection
-    const docRef = db
-      .collection("test")
-      .doc("OperatorId")
-      .collection(operatorId)
-      .doc("iPlayer");
+    // 2. Write player data in subcollection (docRef already defined above)
 
     await docRef.set(matchData);
 
