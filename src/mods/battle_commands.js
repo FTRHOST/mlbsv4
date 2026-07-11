@@ -32,10 +32,10 @@ export function setupBattleCommands(Assembly) {
             if (cmd == "help") {
               showGameNotification(
                 "Battle Command",
-                "[00FF00]#help[-]: For show all command\n[00FF00]#nocd[-]: For no cooldown\nSorry to say method for hide ui has been change by moonton",
+                "[00FF00]#help[-]: For show all command\n[00FF00]#nocd[-]: For no cooldown, add ! on command to revert no cooldown\nSorry to say method for hide ui has been change by moonton",
               );
             } else if (cmd == "nocd") {
-              Interceptor.attach(EnterCoolDown, {
+              Interceptor.attach(EnterCoolDown.virtualAddress, {
                 onEnter: function (args) {
                   // Blok ini kosong, fungsi asli tidak akan mengeksekusi
                   // instruksi apapun sampai keluar dari fungsi.
@@ -44,6 +44,8 @@ export function setupBattleCommands(Assembly) {
                   // Opsional: Anda juga bisa mengubah nilai balik (*return value*)
                 },
               });
+            } else if (cmd == "!nocd") {
+              Interceptor.revert(EnterCoolDown.virtualAddress);
             }
           }
         }
