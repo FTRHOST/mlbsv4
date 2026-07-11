@@ -600,11 +600,9 @@ export function setupTelemetryHooks(Assembly) {
             const players = getMergedPlayers(null, null);
             let iPickTimeSpan;
 
-            const instances = Il2Cpp.gc.choose(UIRankHero);
-            instances.forEach((uirankObject) => {
-              const val = uirankObject.field("iPickTimeSpan").value;
-              iPickTimeSpan = val;
-            });
+            let duration = args[1].toInt32();
+
+            iPickTimeSpan = duration;
 
             sendRoomDataWithCache({
               operatorId: opIdStr,
@@ -615,37 +613,6 @@ export function setupTelemetryHooks(Assembly) {
             });
           } catch (e) {
             debugLog("Hook", `Error in ReceStartPickState: ${e.message}`);
-          }
-        },
-      });
-    });
-
-  UIRankHero.methods
-    .filter((m) => m.name === "ReceStartSecondPickState")
-    .forEach((method) => {
-      Interceptor.attach(method.virtualAddress, {
-        onEnter: function (args) {
-          try {
-            clearAllPhases();
-            const opIdStr = getOperatorId(SystemData);
-            const players = getMergedPlayers(null, null);
-            let iPickTimeSpan;
-
-            const instances = Il2Cpp.gc.choose(UIRankHero);
-            instances.forEach((uirankObject) => {
-              const val = uirankObject.field("iPickTimeSpan").value;
-              iPickTimeSpan = val;
-            });
-
-            sendRoomDataWithCache({
-              operatorId: opIdStr,
-              players: players,
-              draftTime: iPickTimeSpan,
-              mapDraw: lastMapDraw,
-              timestamp: new Date().toISOString(),
-            });
-          } catch (e) {
-            debugLog("Hook", `Error in ReceStartSecondPickState: ${e.message}`);
           }
         },
       });
