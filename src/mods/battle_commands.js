@@ -37,6 +37,7 @@ export function setupBattleCommands(Assembly) {
             } else if (cmd == "nocd") {
               Interceptor.attach(EnterCoolDown.virtualAddress, {
                 onEnter: function (args) {
+                  args[2] = ptr(0);
                   // Blok ini kosong, fungsi asli tidak akan mengeksekusi
                   // instruksi apapun sampai keluar dari fungsi.
                 },
