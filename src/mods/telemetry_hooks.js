@@ -173,7 +173,10 @@ function getMergedPlayers(activeUid, updateFn) {
       playersCache.set(uid, cached);
       slotsMap.set(iPos, playerObj);
     } catch (err) {
-      debugLog("Hook", `Failed parsing RoomData fields: ${err.stack || err.message}`);
+      debugLog(
+        "Hook",
+        `Failed parsing RoomData fields: ${err.stack || err.message}`,
+      );
     }
   });
 
@@ -254,14 +257,11 @@ export function setupTelemetryHooks(Assembly) {
           debugLog("Hook", `ReportPickHeroStart active UID: ${activeUid}`);
 
           const opIdStr = getOperatorId(SystemData);
-          const players = getMergedPlayers(
-            activeUid,
-            (uid, cached) => {
-              if (uid === activeUid) {
-                cached.pickPhase = true;
-              }
+          const players = getMergedPlayers(activeUid, (uid, cached) => {
+            if (uid === activeUid) {
+              cached.pickPhase = true;
             }
-          );
+          });
 
           const activePlayer = players.find((p) => p.id === activeUid);
           const activeTeam = activePlayer ? activePlayer.team : 0;
@@ -312,15 +312,12 @@ export function setupTelemetryHooks(Assembly) {
           );
 
           const opIdStr = getOperatorId(SystemData);
-          const players = getMergedPlayers(
-            activeUid,
-            (uid, cached) => {
-              if (uid === activeUid) {
-                cached.pickPhase = false;
-                cached.SelHeroID = pickHeroID;
-              }
+          const players = getMergedPlayers(activeUid, (uid, cached) => {
+            if (uid === activeUid) {
+              cached.pickPhase = false;
+              cached.SelHeroID = pickHeroID;
             }
-          );
+          });
 
           const activePlayer = players.find((p) => p.id === activeUid);
           const activeTeam = activePlayer ? activePlayer.team : 0;
@@ -371,14 +368,11 @@ export function setupTelemetryHooks(Assembly) {
           );
 
           const opIdStr = getOperatorId(SystemData);
-          const players = getMergedPlayers(
-            activeUid,
-            (uid, cached) => {
-              if (uid === activeUid) {
-                cached.banPhase = true;
-              }
+          const players = getMergedPlayers(activeUid, (uid, cached) => {
+            if (uid === activeUid) {
+              cached.banPhase = true;
             }
-          );
+          });
 
           const activePlayer = players.find((p) => p.id === activeUid);
           const activeTeam = activePlayer ? activePlayer.team : 0;
@@ -427,15 +421,12 @@ export function setupTelemetryHooks(Assembly) {
           );
 
           const opIdStr = getOperatorId(SystemData);
-          const players = getMergedPlayers(
-            activeUid,
-            (uid, cached) => {
-              if (uid === activeUid) {
-                cached.banPhase = false;
-                cached.banHero = banHeroID;
-              }
+          const players = getMergedPlayers(activeUid, (uid, cached) => {
+            if (uid === activeUid) {
+              cached.banPhase = false;
+              cached.banHero = banHeroID;
             }
-          );
+          });
 
           const activePlayer = players.find((p) => p.id === activeUid);
           const activeTeam = activePlayer ? activePlayer.team : 0;
@@ -599,7 +590,7 @@ export function setupTelemetryHooks(Assembly) {
     });
 
   UIRankHero.methods
-    .filter((m) => m.name === "ReceStartPickState")
+    .filter((m) => m.name === "ShowPicking")
     .forEach((method) => {
       Interceptor.attach(method.virtualAddress, {
         onEnter: function (args) {
