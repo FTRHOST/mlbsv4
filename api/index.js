@@ -44,7 +44,7 @@ app.use(express.json());
 const API_KEY = process.env.API_KEY || "mlbs_secret_token_2026";
 
 // Helper to resolve team names from players' ID and ipos
-const resolveTeamNames = async (players) => {
+const resolveTeamNames = async (operatorId, players) => {
   let blueTeamName = "BLUE TEAM";
   let redTeamName = "RED TEAM";
   let blueTeamFound = false;
@@ -62,8 +62,7 @@ const resolveTeamNames = async (players) => {
       
       if (isBlue || isRed) {
         try {
-          // Asumsi id pemain tersimpan di collection "team_mappings"
-          const mappingDoc = await db.collection("team_mappings").doc(String(player.id)).get();
+          const mappingDoc = await db.collection("test").doc("OperatorId").collection(operatorId).collection("team_mappings").doc(String(player.id)).get();
           if (mappingDoc.exists) {
             const mappingData = mappingDoc.data();
             if (mappingData.teamName) {
@@ -178,16 +177,29 @@ app.post("/api/rooms", authenticate, async (req, res) => {
       });
     }
 
-    const { blueTeamName, redTeamName } = await resolveTeamNames(payload.players);
+    // Fetch existing room to preserve scores if not provided in payload
+    const docRef = db
+      .collection("test")
+      .doc("OperatorId")
+      .collection(operatorId)
+      .doc("iPlayer");
+
+    const doc = await docRef.get();
+    let currentData = {};
+    if (doc.exists) {
+      currentData = doc.data();
+    }
+
+    const { blueTeamName, redTeamName } = await resolveTeamNames(operatorId, payload.players);
 
     const matchData = {
       operatorId: operatorId,
       players: payload.players || [],
       blueTeamName: blueTeamName,
       redTeamName: redTeamName,
-      blueScore: payload.blueScore !== undefined ? Number(payload.blueScore) : 0,
-      redScore: payload.redScore !== undefined ? Number(payload.redScore) : 0,
-      baseOf: payload.baseOf !== undefined ? Number(payload.baseOf) : 0,
+      blueScore: payload.blueScore !== undefined ? Number(payload.blueScore) : (currentData.blueScore || 0),
+      redScore: payload.redScore !== undefined ? Number(payload.redScore) : (currentData.redScore || 0),
+      baseOf: payload.baseOf !== undefined ? Number(payload.baseOf) : (currentData.baseOf || 0),
       draftTime: payload.draftTime !== undefined ? Number(payload.draftTime) : 0,
       draftPhase: payload.draftPhase !== undefined ? Number(payload.draftPhase) : 0,
       caption: payload.caption || "",
@@ -250,7 +262,7 @@ app.put("/api/rooms/:operatorId", authenticate, async (req, res) => {
     let redTeamName = currentData.redTeamName || "RED TEAM";
     
     if (updates.players) {
-      const names = await resolveTeamNames(updates.players);
+      const names = await resolveTeamNames(operatorId, updates.players);
       blueTeamName = names.blueTeamName;
       redTeamName = names.redTeamName;
     }
@@ -401,10 +413,11 @@ app.post("/api/users", authenticate, async (req, res) => {
   }
 });
 
-// GET all team mappings
-app.get("/api/team-mappings", async (req, res) => {
+// GET all team mappings for an operator
+app.get("/api/team-mappings/:operatorId", async (req, res) => {
   try {
-    const snapshot = await db.collection("team_mappings").get();
+    const { operatorId } = req.params;
+    const snapshot = await db.collection("test").doc("OperatorId").collection(operatorId).collection("team_mappings").get();
     const mappings = [];
     snapshot.forEach(doc => {
       mappings.push({ uid: doc.id, ...doc.data() });
@@ -421,17 +434,18 @@ app.get("/api/team-mappings", async (req, res) => {
   }
 });
 
-// POST to create or update a team mapping
-app.post("/api/team-mappings", authenticate, async (req, res) => {
+// POST to create or update a team mapping for an operator
+app.post("/api/team-mappings/:operatorId", authenticate, async (req, res) => {
   try {
+    const { operatorId } = req.params;
     const { uid, teamName, playerName } = req.body;
     if (!uid) {
       return res.status(400).json({ status: "error", message: "uid is required" });
     }
-    const docRef = db.collection("team_mappings").doc(String(uid));
+    const docRef = db.collection("test").doc("OperatorId").collection(operatorId).collection("team_mappings").doc(String(uid));
     const dataToSave = {
       teamName: teamName || "",
-      playerName: playerName || "", // Optional: for display purposes
+      playerName: playerName || "",
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     };
     await docRef.set(dataToSave, { merge: true });
@@ -441,11 +455,11 @@ app.post("/api/team-mappings", authenticate, async (req, res) => {
   }
 });
 
-// DELETE a team mapping
-app.delete("/api/team-mappings/:uid", authenticate, async (req, res) => {
+// DELETE a team mapping for an operator
+app.delete("/api/team-mappings/:operatorId/:uid", authenticate, async (req, res) => {
   try {
-    const { uid } = req.params;
-    await db.collection("team_mappings").doc(String(uid)).delete();
+    const { operatorId, uid } = req.params;
+    await db.collection("test").doc("OperatorId").collection(operatorId).collection("team_mappings").doc(String(uid)).delete();
     return res.json({ status: "success", message: "Mapping deleted" });
   } catch (error) {
     return res.status(500).json({ status: "error", message: error.message });

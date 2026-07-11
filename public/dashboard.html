@@ -415,6 +415,9 @@
           updateDisplay(result.data);
           setStatus(`Connected to ${opId}`, true);
           
+          // Load specific mappings for this operator
+          loadMappings();
+          
           // Start polling
           if (pollingInterval) clearInterval(pollingInterval);
           pollingInterval = setInterval(fetchLatest, 5000);
@@ -481,8 +484,11 @@
 
     // --- Team Mappings Logic ---
     async function loadMappings() {
+      const opId = ui.operatorId.value.trim();
+      if (!opId) return;
+
       try {
-        const res = await fetch('/api/team-mappings');
+        const res = await fetch(`/api/team-mappings/${opId}`);
         const result = await res.json();
         
         if (result.status === 'success') {
@@ -506,6 +512,9 @@
     }
 
     async function saveMapping() {
+      const opId = ui.operatorId.value.trim();
+      if (!opId) return alert("Please Load Room first to get an Operator ID.");
+
       const uid = ui.mapUid.value.trim();
       const teamName = ui.mapTeamName.value.trim();
       const playerName = ui.mapPlayerName.value.trim();
@@ -513,7 +522,7 @@
       if (!uid || !teamName) return alert("Player ID and Team Name are required!");
 
       try {
-        const res = await fetch('/api/team-mappings', {
+        const res = await fetch(`/api/team-mappings/${opId}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -539,10 +548,13 @@
     }
 
     async function deleteMapping(uid) {
+      const opId = ui.operatorId.value.trim();
+      if (!opId) return;
+      
       if (!confirm(`Are you sure you want to delete mapping for ID ${uid}?`)) return;
 
       try {
-        const res = await fetch(`/api/team-mappings/${uid}`, {
+        const res = await fetch(`/api/team-mappings/${opId}/${uid}`, {
           method: 'DELETE',
           headers: {
             'x-api-key': 'mlbs_secret_token_2026'
@@ -559,9 +571,6 @@
         alert('Error deleting mapping');
       }
     }
-
-    // Load mappings on page load
-    loadMappings();
   </script>
 </body>
 </html>
