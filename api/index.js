@@ -62,7 +62,7 @@ const resolveTeamNames = async (operatorId, players) => {
       
       if (isBlue || isRed) {
         try {
-          const mappingDoc = await db.collection("test").doc("OperatorId").collection(operatorId).collection("team_mappings").doc(String(player.id)).get();
+          const mappingDoc = await db.collection("test").doc("OperatorId").collection(operatorId).doc("config").collection("team_mappings").doc(String(player.id)).get();
           if (mappingDoc.exists) {
             const mappingData = mappingDoc.data();
             if (mappingData.teamName) {
@@ -412,7 +412,7 @@ app.post("/api/users", authenticate, async (req, res) => {
 app.get("/api/team-mappings/:operatorId", async (req, res) => {
   try {
     const { operatorId } = req.params;
-    const snapshot = await db.collection("test").doc("OperatorId").collection(operatorId).collection("team_mappings").get();
+    const snapshot = await db.collection("test").doc("OperatorId").collection(operatorId).doc("config").collection("team_mappings").get();
     const mappings = [];
     snapshot.forEach(doc => {
       mappings.push({ uid: doc.id, ...doc.data() });
@@ -437,7 +437,7 @@ app.post("/api/team-mappings/:operatorId", authenticate, async (req, res) => {
     if (!uid) {
       return res.status(400).json({ status: "error", message: "uid is required" });
     }
-    const docRef = db.collection("test").doc("OperatorId").collection(operatorId).collection("team_mappings").doc(String(uid));
+    const docRef = db.collection("test").doc("OperatorId").collection(operatorId).doc("config").collection("team_mappings").doc(String(uid));
     const dataToSave = {
       teamName: teamName || "",
       playerName: playerName || "",
@@ -454,7 +454,7 @@ app.post("/api/team-mappings/:operatorId", authenticate, async (req, res) => {
 app.delete("/api/team-mappings/:operatorId/:uid", authenticate, async (req, res) => {
   try {
     const { operatorId, uid } = req.params;
-    await db.collection("test").doc("OperatorId").collection(operatorId).collection("team_mappings").doc(String(uid)).delete();
+    await db.collection("test").doc("OperatorId").collection(operatorId).doc("config").collection("team_mappings").doc(String(uid)).delete();
     return res.json({ status: "success", message: "Mapping deleted" });
   } catch (error) {
     return res.status(500).json({ status: "error", message: error.message });
