@@ -34,6 +34,40 @@ function filterActivityList(listPtr) {
 
 export function setupUnreleasedHooks(Assembly) {
   const ActLclCfgMgr = Assembly.class("ActLclCfgMgr");
+  const GameInit = Assembly.class("GameInit");
+  const NewPackageMgr = Assembly.class("NewPackageMgr");
+
+  const IsCloseAstcInPackVar = NewPackageMgr.method("IsCloseAstcInPackVar");
+  Interceptor.replace(
+    IsCloseAstcInPackVar.virtualAddress,
+    new NativeCallback(
+      function () {
+        console.log(
+          "[*] Fungsi di-NOP secara total. Mengembalikan nilai: FALSE",
+        );
+        return 0; // 0 = false
+      },
+      "int",
+      [],
+    ),
+  );
+
+  const get_bAstcInPack = GameInit.method("get_bAstcInPack");
+
+  Interceptor.replace(
+    get_bAstcInPack.virtualAddress,
+    new NativeCallback(
+      function () {
+        console.log(
+          "[*] Fungsi di-NOP secara total. Mengembalikan nilai: FALSE",
+        );
+        return 0; // 0 = false
+      },
+      "int",
+      [],
+    ),
+  );
+
   const SystemData = Assembly.class("SystemData");
   const CheckFileMd5_SubThread = SystemData.method("CheckFileMd5_SubThread");
 
