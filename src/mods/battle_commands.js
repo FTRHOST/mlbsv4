@@ -6,7 +6,7 @@ import { showGameNotification } from "../index";
 
 export function setupBattleCommands(Assembly) {
   const BattleBridge = Assembly.class("BattleBridge");
-  const CoolDownData = Assembly.class("CoolDownData");
+  const CoolDownData = Assembly.class("Battle.CoolDownData");
 
   const EnterCoolDown = CoolDownData.method("EnterCoolDown");
 
