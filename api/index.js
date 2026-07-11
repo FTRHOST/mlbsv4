@@ -43,6 +43,51 @@ app.use(express.json());
 // API Key configuration (default fallback if process.env.API_KEY is not defined)
 const API_KEY = process.env.API_KEY || "mlbs_secret_token_2026";
 
+// Helper to resolve team names from players' ID and ipos
+const resolveTeamNames = async (players) => {
+  let blueTeamName = "BLUE TEAM";
+  let redTeamName = "RED TEAM";
+  let blueTeamFound = false;
+  let redTeamFound = false;
+
+  if (Array.isArray(players) && players.length > 0) {
+    for (const player of players) {
+      if (!player.id) continue;
+      
+      const ipos = Number(player.ipos);
+      const isBlue = ipos >= 1 && ipos <= 5;
+      const isRed = ipos >= 6 && ipos <= 10;
+      
+      if ((isBlue && blueTeamFound) || (isRed && redTeamFound)) continue;
+      
+      if (isBlue || isRed) {
+        try {
+          // Asumsi id pemain tersimpan di collection "team_mappings"
+          const mappingDoc = await db.collection("team_mappings").doc(String(player.id)).get();
+          if (mappingDoc.exists) {
+            const mappingData = mappingDoc.data();
+            if (mappingData.teamName) {
+              if (isBlue && !blueTeamFound) {
+                blueTeamName = mappingData.teamName;
+                blueTeamFound = true;
+              } else if (isRed && !redTeamFound) {
+                redTeamName = mappingData.teamName;
+                redTeamFound = true;
+              }
+            }
+          }
+        } catch (e) {
+          console.error("Error fetching player team:", e);
+        }
+      }
+      
+      if (blueTeamFound && redTeamFound) break;
+    }
+  }
+
+  return { blueTeamName, redTeamName };
+};
+
 // Security Middleware for Write Operations
 const authenticate = (req, res, next) => {
   const key = req.headers["x-api-key"] || req.query.apiKey;
@@ -133,9 +178,16 @@ app.post("/api/rooms", authenticate, async (req, res) => {
       });
     }
 
+    const { blueTeamName, redTeamName } = await resolveTeamNames(payload.players);
+
     const matchData = {
       operatorId: operatorId,
       players: payload.players || [],
+      blueTeamName: blueTeamName,
+      redTeamName: redTeamName,
+      blueScore: payload.blueScore !== undefined ? Number(payload.blueScore) : 0,
+      redScore: payload.redScore !== undefined ? Number(payload.redScore) : 0,
+      baseOf: payload.baseOf !== undefined ? Number(payload.baseOf) : 0,
       draftTime: payload.draftTime !== undefined ? Number(payload.draftTime) : 0,
       draftPhase: payload.draftPhase !== undefined ? Number(payload.draftPhase) : 0,
       caption: payload.caption || "",
@@ -194,12 +246,27 @@ app.put("/api/rooms/:operatorId", authenticate, async (req, res) => {
     const currentData = doc.data();
 
     // Merge updates
+    let blueTeamName = currentData.blueTeamName || "BLUE TEAM";
+    let redTeamName = currentData.redTeamName || "RED TEAM";
+    
+    if (updates.players) {
+      const names = await resolveTeamNames(updates.players);
+      blueTeamName = names.blueTeamName;
+      redTeamName = names.redTeamName;
+    }
+
     const updatedData = {
       ...currentData,
       ...updates,
+      blueTeamName: updates.blueTeamName !== undefined ? updates.blueTeamName : blueTeamName,
+      redTeamName: updates.redTeamName !== undefined ? updates.redTeamName : redTeamName,
       operatorId: operatorId, // ensure operatorId cannot be overwritten
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     };
+
+    if (updates.blueScore !== undefined) updatedData.blueScore = Number(updates.blueScore);
+    if (updates.redScore !== undefined) updatedData.redScore = Number(updates.redScore);
+    if (updates.baseOf !== undefined) updatedData.baseOf = Number(updates.baseOf);
 
     await docRef.set(updatedData);
 
@@ -334,6 +401,56 @@ app.post("/api/users", authenticate, async (req, res) => {
   }
 });
 
+// GET all team mappings
+app.get("/api/team-mappings", async (req, res) => {
+  try {
+    const snapshot = await db.collection("team_mappings").get();
+    const mappings = [];
+    snapshot.forEach(doc => {
+      mappings.push({ uid: doc.id, ...doc.data() });
+    });
+    return res.json({
+      status: "success",
+      data: mappings
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: "error",
+      message: error.message
+    });
+  }
+});
+
+// POST to create or update a team mapping
+app.post("/api/team-mappings", authenticate, async (req, res) => {
+  try {
+    const { uid, teamName, playerName } = req.body;
+    if (!uid) {
+      return res.status(400).json({ status: "error", message: "uid is required" });
+    }
+    const docRef = db.collection("team_mappings").doc(String(uid));
+    const dataToSave = {
+      teamName: teamName || "",
+      playerName: playerName || "", // Optional: for display purposes
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    };
+    await docRef.set(dataToSave, { merge: true });
+    return res.json({ status: "success", message: "Mapping saved", data: { uid, ...dataToSave } });
+  } catch (error) {
+    return res.status(500).json({ status: "error", message: error.message });
+  }
+});
+
+// DELETE a team mapping
+app.delete("/api/team-mappings/:uid", authenticate, async (req, res) => {
+  try {
+    const { uid } = req.params;
+    await db.collection("team_mappings").doc(String(uid)).delete();
+    return res.json({ status: "success", message: "Mapping deleted" });
+  } catch (error) {
+    return res.status(500).json({ status: "error", message: error.message });
+  }
+});
 
 // Catch-all fallback route for debugging 404 errors
 app.use((req, res) => {
