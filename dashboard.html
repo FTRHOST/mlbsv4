@@ -256,48 +256,53 @@
       <button onclick="loadRoomData()">Load Room</button>
     </div>
 
-    <!-- Match Score Editor (Table Format) -->
-    <div class="editor-section" id="matchScoreSection" style="display: none; grid-template-columns: 1fr;">
+    <!-- Match Setup Card -->
+    <div class="editor-section" id="matchSetupSection" style="display: none; grid-template-columns: 1fr;">
       <div class="editor-card">
-        <h3>Live Match Scores</h3>
-        <div class="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Operator ID</th>
-                <th style="color: var(--blue-team)">Blue Team</th>
-                <th style="color: var(--blue-team)">Blue Score</th>
-                <th>Format</th>
-                <th style="color: var(--red-team)">Red Score</th>
-                <th style="color: var(--red-team)">Red Team</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td id="tblOpId">-</td>
-                <td id="tblBlueName" style="font-weight: bold;">-</td>
-                <td>
-                  <input type="number" id="tblBlueScore" class="score-input" value="0" min="0" />
-                </td>
-                <td>
-                  <select id="tblBaseOf" style="padding: 0.5rem;">
-                    <option value="1">BO1</option>
-                    <option value="3">BO3</option>
-                    <option value="5">BO5</option>
-                    <option value="7">BO7</option>
-                  </select>
-                </td>
-                <td>
-                  <input type="number" id="tblRedScore" class="score-input" value="0" min="0" />
-                </td>
-                <td id="tblRedName" style="font-weight: bold;">-</td>
-                <td>
-                  <button class="btn-save" onclick="saveRoomData()" style="padding: 0.5rem 1rem; font-size: 0.9rem;">Save Changes</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <h3>Match Setup</h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
+          Configure Match Phase, Team Names, and Formats manually. This configuration will automatically overwrite the hook's scores if needed.
+        </p>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; align-items: end;">
+          
+          <div class="form-group">
+            <label style="color: var(--blue-team)">Team A (Blue) Name</label>
+            <input type="text" id="setupBlueName" placeholder="e.g. RRQ Hoshi" style="padding: 0.75rem;" />
+          </div>
+
+          <div class="form-group">
+            <label>Match Phase</label>
+            <input type="text" id="setupPhase" placeholder="e.g. FINAL, PENYISIHAN" style="padding: 0.75rem;" />
+          </div>
+
+          <div class="form-group">
+            <label style="color: var(--red-team)">Team B (Red) Name</label>
+            <input type="text" id="setupRedName" placeholder="e.g. EVOS Legends" style="padding: 0.75rem;" />
+          </div>
+
+          <div class="form-group" style="display: flex; gap: 1rem; align-items: center;">
+            <label style="color: var(--blue-team)">Score:</label>
+            <input type="number" id="setupBlueScore" class="score-input" value="0" min="0" style="padding: 0.75rem; width: 100px;" />
+          </div>
+
+          <div class="form-group" style="display: flex; gap: 1rem; align-items: center; justify-content: center;">
+            <label>Format:</label>
+            <select id="setupBaseOf" style="padding: 0.75rem; width: auto;">
+              <option value="1">BO1</option>
+              <option value="3">BO3</option>
+              <option value="5">BO5</option>
+              <option value="7">BO7</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="display: flex; gap: 1rem; align-items: center; justify-content: flex-end;">
+            <label style="color: var(--red-team)">Score:</label>
+            <input type="number" id="setupRedScore" class="score-input" value="0" min="0" style="padding: 0.75rem; width: 100px;" />
+          </div>
+          
+        </div>
+        <div style="margin-top: 1.5rem; text-align: center;">
+          <button class="btn-save" onclick="saveMatchSetup()" style="padding: 0.75rem 2rem;">Save Match Setup</button>
         </div>
       </div>
     </div>
@@ -360,13 +365,13 @@
     // UI Elements
     const ui = {
       operatorId: document.getElementById('operatorId'),
-      matchScoreSection: document.getElementById('matchScoreSection'),
-      tblOpId: document.getElementById('tblOpId'),
-      tblBlueName: document.getElementById('tblBlueName'),
-      tblRedName: document.getElementById('tblRedName'),
-      tblBlueScore: document.getElementById('tblBlueScore'),
-      tblRedScore: document.getElementById('tblRedScore'),
-      tblBaseOf: document.getElementById('tblBaseOf'),
+      matchSetupSection: document.getElementById('matchSetupSection'),
+      setupBlueName: document.getElementById('setupBlueName'),
+      setupRedName: document.getElementById('setupRedName'),
+      setupPhase: document.getElementById('setupPhase'),
+      setupBlueScore: document.getElementById('setupBlueScore'),
+      setupRedScore: document.getElementById('setupRedScore'),
+      setupBaseOf: document.getElementById('setupBaseOf'),
       statusText: document.getElementById('statusText'),
       connectionDot: document.getElementById('connectionDot'),
       mapUid: document.getElementById('mapUid'),
@@ -388,15 +393,17 @@
       }
     }
 
+    // Sync Live Data to Match Setup if not actively editing
     function updateDisplay(data) {
-      ui.tblBlueName.textContent = data.blueTeamName || "BLUE TEAM";
-      ui.tblRedName.textContent = data.redTeamName || "RED TEAM";
+      if(document.activeElement !== ui.setupBlueName && data.blueTeamName) ui.setupBlueName.value = data.blueTeamName;
+      if(document.activeElement !== ui.setupRedName && data.redTeamName) ui.setupRedName.value = data.redTeamName;
+      if(document.activeElement !== ui.setupPhase && data.matchPhase) ui.setupPhase.value = data.matchPhase;
       
       const bo = data.baseOf || 3;
       
-      if(document.activeElement !== ui.tblBlueScore) ui.tblBlueScore.value = data.blueScore || 0;
-      if(document.activeElement !== ui.tblRedScore) ui.tblRedScore.value = data.redScore || 0;
-      if(document.activeElement !== ui.tblBaseOf) ui.tblBaseOf.value = bo;
+      if(document.activeElement !== ui.setupBlueScore) ui.setupBlueScore.value = data.blueScore || 0;
+      if(document.activeElement !== ui.setupRedScore) ui.setupRedScore.value = data.redScore || 0;
+      if(document.activeElement !== ui.setupBaseOf) ui.setupBaseOf.value = bo;
     }
 
     async function loadRoomData() {
@@ -410,10 +417,12 @@
         const result = await res.json();
         
         if (result.status === 'success') {
-          ui.matchScoreSection.style.display = 'grid';
-          ui.tblOpId.textContent = opId;
+          ui.matchSetupSection.style.display = 'grid';
           updateDisplay(result.data);
           setStatus(`Connected to ${opId}`, true);
+          
+          // Also fetch Match Setup if available explicitly
+          fetchMatchSetup(opId);
           
           // Load specific mappings for this operator
           loadMappings();
@@ -446,39 +455,50 @@
       }
     }
 
-    async function saveRoomData() {
+    async function fetchMatchSetup(opId) {
+      try {
+        const res = await fetch(`/api/match-setup/${opId}`);
+        const result = await res.json();
+        if (result.status === 'success' && Object.keys(result.data).length > 0) {
+          updateDisplay(result.data);
+        }
+      } catch (err) {
+        console.error("Error fetching match setup:", err);
+      }
+    }
+
+    async function saveMatchSetup() {
       const opId = ui.operatorId.value.trim();
       if (!opId) return alert('Please load a room first');
 
       const payload = {
-        blueScore: parseInt(ui.tblBlueScore.value) || 0,
-        redScore: parseInt(ui.tblRedScore.value) || 0,
-        baseOf: parseInt(ui.tblBaseOf.value) || 3
+        blueTeamName: ui.setupBlueName.value.trim(),
+        redTeamName: ui.setupRedName.value.trim(),
+        matchPhase: ui.setupPhase.value.trim(),
+        blueScore: parseInt(ui.setupBlueScore.value) || 0,
+        redScore: parseInt(ui.setupRedScore.value) || 0,
+        baseOf: parseInt(ui.setupBaseOf.value) || 3
       };
 
       try {
-        // Assume API Key required for PUT, ideally pass via headers or prompt user
-        // If your API requires auth for PUT, you might need to supply x-api-key
-        const res = await fetch(`${API_BASE}/${opId}`, {
-          method: 'PUT',
+        const res = await fetch(`/api/match-setup/${opId}`, {
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-api-key': 'mlbs_secret_token_2026' // Default API key from index.js
+            'x-api-key': 'mlbs_secret_token_2026'
           },
           body: JSON.stringify(payload)
         });
-
+        
         const result = await res.json();
         if (result.status === 'success') {
-          updateDisplay(result.data);
-          setStatus('Saved successfully!', true);
-          setTimeout(() => setStatus(`Connected to ${opId}`, true), 2000);
+          alert('Match Setup Configured! Next live telemetry will pick up these settings.');
         } else {
-          alert('Failed to save: ' + result.message);
+          alert('Error: ' + result.message);
         }
       } catch (err) {
         console.error(err);
-        alert('Error saving data');
+        alert('Error saving match setup');
       }
     }
 

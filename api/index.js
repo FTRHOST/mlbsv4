@@ -177,6 +177,14 @@ app.post("/api/rooms", authenticate, async (req, res) => {
       });
     }
 
+    // Fetch match setup config
+    const setupRef = db.collection("test").doc("OperatorId").collection(operatorId).doc("match_setup");
+    const setupDoc = await setupRef.get();
+    let setupData = {};
+    if (setupDoc.exists) {
+      setupData = setupDoc.data();
+    }
+
     // Fetch existing room to preserve scores if not provided in payload
     const docRef = db
       .collection("test")
@@ -190,16 +198,35 @@ app.post("/api/rooms", authenticate, async (req, res) => {
       currentData = doc.data();
     }
 
-    const { blueTeamName, redTeamName } = await resolveTeamNames(operatorId, payload.players);
+    let { blueTeamName, redTeamName } = await resolveTeamNames(operatorId, payload.players);
+
+    // Override with match_setup if provided
+    if (setupData.blueTeamName) blueTeamName = setupData.blueTeamName;
+    if (setupData.redTeamName) redTeamName = setupData.redTeamName;
+
+    // Determine scores (payload > setupData > currentData > 0)
+    const finalBlueScore = payload.blueScore !== undefined ? Number(payload.blueScore) : (setupData.blueScore !== undefined ? setupData.blueScore : (currentData.blueScore || 0));
+    const finalRedScore = payload.redScore !== undefined ? Number(payload.redScore) : (setupData.redScore !== undefined ? setupData.redScore : (currentData.redScore || 0));
+    const finalBaseOf = payload.baseOf !== undefined ? Number(payload.baseOf) : (setupData.baseOf !== undefined ? setupData.baseOf : (currentData.baseOf || 0));
+    const finalMatchPhase = payload.matchPhase !== undefined ? payload.matchPhase : (setupData.matchPhase || "");
+
+    // Sync back to match_setup if payload provided new scores (so dashboard stays updated if hook updates it)
+    if (payload.blueScore !== undefined || payload.redScore !== undefined) {
+      await setupRef.set({
+        blueScore: finalBlueScore,
+        redScore: finalRedScore
+      }, { merge: true });
+    }
 
     const matchData = {
       operatorId: operatorId,
       players: payload.players || [],
       blueTeamName: blueTeamName,
       redTeamName: redTeamName,
-      blueScore: payload.blueScore !== undefined ? Number(payload.blueScore) : (currentData.blueScore || 0),
-      redScore: payload.redScore !== undefined ? Number(payload.redScore) : (currentData.redScore || 0),
-      baseOf: payload.baseOf !== undefined ? Number(payload.baseOf) : (currentData.baseOf || 0),
+      blueScore: finalBlueScore,
+      redScore: finalRedScore,
+      baseOf: finalBaseOf,
+      matchPhase: finalMatchPhase,
       draftTime: payload.draftTime !== undefined ? Number(payload.draftTime) : 0,
       draftPhase: payload.draftPhase !== undefined ? Number(payload.draftPhase) : 0,
       caption: payload.caption || "",
@@ -456,6 +483,49 @@ app.delete("/api/team-mappings/:operatorId/:uid", authenticate, async (req, res)
     const { operatorId, uid } = req.params;
     await db.collection("test").doc("OperatorId").collection(operatorId).doc("config").collection("team_mappings").doc(String(uid)).delete();
     return res.json({ status: "success", message: "Mapping deleted" });
+  } catch (error) {
+    return res.status(500).json({ status: "error", message: error.message });
+  }
+});
+
+// GET match setup for an operator
+app.get("/api/match-setup/:operatorId", async (req, res) => {
+  try {
+    const { operatorId } = req.params;
+    const docRef = db.collection("test").doc("OperatorId").collection(operatorId).doc("match_setup");
+    const doc = await docRef.get();
+    
+    if (!doc.exists) {
+      return res.json({ status: "success", data: {} });
+    }
+    
+    return res.json({ status: "success", data: doc.data() });
+  } catch (error) {
+    return res.status(500).json({ status: "error", message: error.message });
+  }
+});
+
+// POST to create or update match setup for an operator
+app.post("/api/match-setup/:operatorId", authenticate, async (req, res) => {
+  try {
+    const { operatorId } = req.params;
+    const updates = req.body;
+    
+    const docRef = db.collection("test").doc("OperatorId").collection(operatorId).doc("match_setup");
+    
+    const dataToSave = {
+      ...updates,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    };
+    
+    // Ensure numbers are cast correctly if present
+    if (dataToSave.blueScore !== undefined) dataToSave.blueScore = Number(dataToSave.blueScore);
+    if (dataToSave.redScore !== undefined) dataToSave.redScore = Number(dataToSave.redScore);
+    if (dataToSave.baseOf !== undefined) dataToSave.baseOf = Number(dataToSave.baseOf);
+    
+    await docRef.set(dataToSave, { merge: true });
+    
+    return res.json({ status: "success", message: "Match setup saved", data: dataToSave });
   } catch (error) {
     return res.status(500).json({ status: "error", message: error.message });
   }
