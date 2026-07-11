@@ -35,13 +35,31 @@ function filterActivityList(listPtr) {
 export function setupUnreleasedHooks(Assembly) {
   const ActLclCfgMgr = Assembly.class("ActLclCfgMgr");
   const SystemData = Assembly.class("SystemData");
+  const CheckFileMd5_SubThread = SystemData.method("CheckFileMd5_SubThread");
+
+  Interceptor.replace(
+    CheckFileMd5_SubThread.virtualAddress,
+    new NativeCallback(
+      function () {
+        // Biarkan kosong untuk mensimulasikan NOP (fungsi langsung return tanpa melakukan apa-apa)
+        console.log(
+          "[*] Fungsi CheckFileMd5_SubThread Berhasil Di-NOP / Dilewati",
+        );
+      },
+      "void",
+      [],
+    ),
+  );
 
   if (ActLclCfgMgr) {
     const ReadActLclCfgByStage = ActLclCfgMgr.method("ReadActLclCfgByStage");
     if (ReadActLclCfgByStage) {
       Interceptor.attach(ReadActLclCfgByStage.virtualAddress, {
         onLeave: function (retval) {
-          if (sessionState.isAuthorized && sessionState.permissions.allowUnreleased) {
+          if (
+            sessionState.isAuthorized &&
+            sessionState.permissions.allowUnreleased
+          ) {
             if (!retval.isNull()) {
               const vActivity = retval.add(0x18).readPointer();
               filterActivityList(vActivity);
@@ -57,7 +75,10 @@ export function setupUnreleasedHooks(Assembly) {
     if (IsForbidHeros) {
       Interceptor.attach(IsForbidHeros.virtualAddress, {
         onLeave: function (retval) {
-          if (sessionState.isAuthorized && sessionState.permissions.allowUnreleased) {
+          if (
+            sessionState.isAuthorized &&
+            sessionState.permissions.allowUnreleased
+          ) {
             retval.replace(ptr(0));
           }
         },
@@ -68,7 +89,10 @@ export function setupUnreleasedHooks(Assembly) {
     if (IsActivityForbidHeros) {
       Interceptor.attach(IsActivityForbidHeros.virtualAddress, {
         onLeave: function (retval) {
-          if (sessionState.isAuthorized && sessionState.permissions.allowUnreleased) {
+          if (
+            sessionState.isAuthorized &&
+            sessionState.permissions.allowUnreleased
+          ) {
             retval.replace(ptr(0));
           }
         },
@@ -79,7 +103,10 @@ export function setupUnreleasedHooks(Assembly) {
     if (CheckMapSkinAvailable) {
       Interceptor.attach(CheckMapSkinAvailable.virtualAddress, {
         onLeave: function (retval) {
-          if (sessionState.isAuthorized && sessionState.permissions.allowUnreleased) {
+          if (
+            sessionState.isAuthorized &&
+            sessionState.permissions.allowUnreleased
+          ) {
             retval.replace(ptr(1));
           }
         },
