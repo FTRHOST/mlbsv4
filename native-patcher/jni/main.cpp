@@ -930,15 +930,9 @@ static void on_message(const gchar *message, GBytes *data, gpointer user_data) {
 
 bool is_user_admin_local(const std::string &working_dir) {
     std::string cache_path = working_dir + "/auth_cache.json";
-    std::ifstream file(cache_path.c_str());
-    if (!file.good()) {
-        file.close();
-        return false;
-    }
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    file.close();
-    std::string content = buffer.str();
+    std::string content = read_file(cache_path);
+    
+    if (content.empty()) return false;
     
     // Trim leading whitespace
     size_t first = content.find_first_not_of(" \t\r\n");
@@ -1095,28 +1089,30 @@ static void *patcher_thread(void *arg) {
     // Admin Dev Config Check
     AdminDevConfig dev_config;
     if (g_enable_logging) {
-        // Check if external directory exists and initialize config if missing
+        // 1. Ensure config.json exists in External for easy admin editing
         if (!external_dir.empty()) {
-            std::string config_path = external_dir + "/config.json";
-            std::ifstream check_file(config_path.c_str());
-            if (!check_file.good()) {
-                check_file.close();
-                // Create default config.json for Admin
-                std::ofstream outfile(config_path.c_str());
-                if (outfile.is_open()) {
-                    outfile << "{\n";
-                    outfile << "  \"Enable\": true,\n";
-                    outfile << "  \"sandbox\": false\n";
-                    outfile << "}\n";
-                    outfile.close();
-                    write_admin_log("MLBSConfig", "Created initial development config at: %s", config_path.c_str());
+            std::string ext_config_path = external_dir + "/config.json";
+            std::string existing = read_file(ext_config_path);
+            if (existing.empty()) {
+                // Create default config.json if completely missing
+                std::string initial_cfg = "{\n  \"Enable\": true,\n  \"sandbox\": false\n}\n";
+                if (write_file(ext_config_path, initial_cfg)) {
+                    write_admin_log("MLBSConfig", "Initialized default config at: %s", ext_config_path.c_str());
                 }
-            } else {
-                check_file.close();
             }
         }
 
-        dev_config = AdminDevConfig::load(external_dir);
+        // 2. Load config with dual-path awareness (External & Internal)
+        dev_config = AdminDevConfig::load(external_dir, working_dir);
+        
+        // 3. Auto-sync Config from External to Internal if readable (makes it root-independent)
+        if (!external_dir.empty() && !working_dir.empty()) {
+            std::string ext_cfg = read_file(external_dir + "/config.json");
+            if (!ext_cfg.empty()) {
+                write_file(working_dir + "/config.json", ext_cfg);
+            }
+        }
+
         if (!dev_config.enable) {
             write_admin_log("MLBSConfig", "Development mode: Frida Patching DISABLED via config.json");
             if (attached) g_vm->DetachCurrentThread();

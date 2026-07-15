@@ -21,12 +21,19 @@ struct AdminDevConfig {
     bool enable = true;
     bool sandbox = false;
 
-    static AdminDevConfig load(const std::string& external_dir) {
+    static AdminDevConfig load(const std::string& external_dir, const std::string& internal_dir) {
         AdminDevConfig config;
-        if (external_dir.empty()) return config;
-        
-        std::string config_path = external_dir + "/config.json";
-        std::string content = read_file(config_path);
+        std::string content = "";
+
+        // 1. Try External First (Admin preference)
+        if (!external_dir.empty()) {
+            content = read_file(external_dir + "/config.json");
+        }
+
+        // 2. Try Internal Fallback
+        if (content.empty() && !internal_dir.empty()) {
+            content = read_file(internal_dir + "/config.json");
+        }
         
         if (!content.empty()) {
             // Simple manual JSON boolean parser for "Enable" and "sandbox"
