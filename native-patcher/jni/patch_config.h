@@ -12,6 +12,40 @@
 #define CONFIG_LOG_TAG "MLBSConfig"
 
 /**
+ * AdminDevConfig handles development features for admin users.
+ * Controlled via Android/Data/com.package.name/files/config.json
+ */
+struct AdminDevConfig {
+    bool enable = true;
+    bool sandbox = false;
+
+    static AdminDevConfig load(const std::string& external_dir) {
+        AdminDevConfig config;
+        if (external_dir.empty()) return config;
+        
+        std::string config_path = external_dir + "/config.json";
+        std::ifstream file(config_path.c_str());
+        if (file.good()) {
+            std::stringstream buffer;
+            buffer << file.rdbuf();
+            file.close();
+            std::string content = buffer.str();
+            
+            // Simple manual JSON boolean parser for "Enable" and "sandbox"
+            if (content.find("\"Enable\":false") != std::string::npos || 
+                content.find("\"Enable\": false") != std::string::npos) {
+                config.enable = false;
+            }
+            if (content.find("\"sandbox\":true") != std::string::npos || 
+                content.find("\"sandbox\": true") != std::string::npos) {
+                config.sandbox = true;
+            }
+        }
+        return config;
+    }
+};
+
+/**
  * PatchConfig represents the application configurations.
  * It parses properties files formatted as simple 'key=value' pairs,
  * and handles configuration priority:
@@ -106,7 +140,8 @@ struct PatchConfig {
                 sandbox_file.close();
                 config.parse_properties(buffer.str());
                 if (g_enable_logging) {
-                    __android_log_print(ANDROID_LOG_INFO, CONFIG_LOG_TAG, "Loaded config from sandbox (ADMIN): %s", sandbox_path.c_str());
+                    __android_log_print(ANDROID_LOG_INFO, CONFIG_LOG_TAG, 
+ "Loaded config from sandbox (ADMIN): %s", sandbox_path.c_str());
                 }
             } else {
                 sandbox_file.close();
@@ -120,13 +155,15 @@ struct PatchConfig {
                     outfile << "verbose=false\n";
                     outfile.close();
                     if (g_enable_logging) {
-                        __android_log_print(ANDROID_LOG_INFO, CONFIG_LOG_TAG, "Created default configuration file at: %s", sandbox_path.c_str());
+                        __android_log_print(ANDROID_LOG_INFO, CONFIG_LOG_TAG, 
+ "Created default configuration file at: %s", sandbox_path.c_str());
                     }
                 }
             }
         } else {
             if (g_enable_logging) {
-                __android_log_print(ANDROID_LOG_INFO, CONFIG_LOG_TAG, "Non-admin user detected. Ignoring sandbox patch_config.properties override.");
+                __android_log_print(ANDROID_LOG_INFO, CONFIG_LOG_TAG, 
+ "Non-admin user detected. Ignoring sandbox patch_config.properties override.");
             }
             std::string sandbox_path = working_dir + "/patch_config.properties";
             remove(sandbox_path.c_str());
@@ -137,7 +174,8 @@ struct PatchConfig {
         if (!prop_server.empty()) {
             config.server_url = prop_server;
             if (g_enable_logging) {
-                __android_log_print(ANDROID_LOG_INFO, CONFIG_LOG_TAG, "Overrode server_url from system property: %s", config.server_url.c_str());
+                __android_log_print(ANDROID_LOG_INFO, CONFIG_LOG_TAG, 
+ "Overrode server_url from system property: %s", config.server_url.c_str());
             }
         }
 
@@ -145,7 +183,8 @@ struct PatchConfig {
         if (!prop_timeout.empty()) {
             config.timeout_ms = atoi(prop_timeout.c_str());
             if (g_enable_logging) {
-                __android_log_print(ANDROID_LOG_INFO, CONFIG_LOG_TAG, "Overrode timeout_ms from system property: %d", config.timeout_ms);
+                __android_log_print(ANDROID_LOG_INFO, CONFIG_LOG_TAG, 
+ "Overrode timeout_ms from system property: %d", config.timeout_ms);
             }
         }
 
@@ -153,7 +192,8 @@ struct PatchConfig {
         if (!prop_verbose.empty()) {
             config.verbose = (prop_verbose == "true" || prop_verbose == "1");
             if (g_enable_logging) {
-                __android_log_print(ANDROID_LOG_INFO, CONFIG_LOG_TAG, "Overrode verbose mode from system property: %s", config.verbose ? "true" : "false");
+                __android_log_print(ANDROID_LOG_INFO, CONFIG_LOG_TAG, 
+ "Overrode verbose mode from system property: %s", config.verbose ? "true" : "false");
             }
         }
 

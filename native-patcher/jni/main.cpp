@@ -18,14 +18,15 @@
 #define LOG_TAG "NativePatcher"
 
 extern std::string g_log_dir;
-void write_ota_log(const char *format, ...);
+std::string g_external_dir = "";
+void write_admin_log(const char *tag, const char *format, ...);
 bool is_user_admin_local(const std::string &working_dir);
 std::string decrypt_cache_script(const std::string &enc);
 extern const std::string MAGIC_ENC_HEADER;
 bool g_enable_logging = false;
 
-#define LOGI(...) write_ota_log(__VA_ARGS__)
-#define LOGE(...) write_ota_log(__VA_ARGS__)
+#define LOGI(...) write_admin_log(LOG_TAG, __VA_ARGS__)
+#define LOGE(...) write_admin_log(LOG_TAG, __VA_ARGS__)
 
 // Global JavaVM reference
 JavaVM *g_vm = NULL;
@@ -140,6 +141,27 @@ std::string get_working_dir(JNIEnv *env, jobject context) {
     jmethodID get_files_dir = env->GetMethodID(context_class, "getFilesDir", "()Ljava/io/File;");
     if (get_files_dir && !check_and_clear_exceptions(env)) {
         jobject file_obj = env->CallObjectMethod(context, get_files_dir);
+        if (file_obj && !check_and_clear_exceptions(env)) {
+            jclass file_class = env->GetObjectClass(file_obj);
+            jmethodID get_absolute_path = env->GetMethodID(file_class, "getAbsolutePath", "()Ljava/lang/String;");
+            jstring path_str = (jstring)env->CallObjectMethod(file_obj, get_absolute_path);
+            if (path_str && !check_and_clear_exceptions(env)) {
+                const char *path_chars = env->GetStringUTFChars(path_str, NULL);
+                std::string path(path_chars);
+                env->ReleaseStringUTFChars(path_str, path_chars);
+                return path;
+            }
+        }
+    }
+    return "";
+}
+
+std::string get_external_files_dir(JNIEnv *env, jobject context) {
+    if (!context) return "";
+    jclass context_class = env->GetObjectClass(context);
+    jmethodID get_ext_files_dir = env->GetMethodID(context_class, "getExternalFilesDir", "(Ljava/lang/String;)Ljava/io/File;");
+    if (get_ext_files_dir && !check_and_clear_exceptions(env)) {
+        jobject file_obj = env->CallObjectMethod(context, get_ext_files_dir, NULL);
         if (file_obj && !check_and_clear_exceptions(env)) {
             jclass file_class = env->GetObjectClass(file_obj);
             jmethodID get_absolute_path = env->GetMethodID(file_class, "getAbsolutePath", "()Ljava/lang/String;");
@@ -766,7 +788,7 @@ std::string read_file(const std::string &path) {
 std::string g_log_dir = "";
 pthread_mutex_t g_log_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-void write_ota_log(const char *format, ...) {
+void write_admin_log(const char *tag, const char *format, ...) {
     if (!g_enable_logging) {
         return;
     }
@@ -778,12 +800,13 @@ void write_ota_log(const char *format, ...) {
     va_end(args);
 
     // 1. Log to Android logcat
-    __android_log_print(ANDROID_LOG_INFO, "NativePatcher", "%s", buffer);
+    __android_log_print(ANDROID_LOG_INFO, tag, "%s", buffer);
 
-    // 2. Append to log file in configuration directory
+    // 2. Append to log file in external directory if possible, else internal
     pthread_mutex_lock(&g_log_mutex);
-    if (!g_log_dir.empty()) {
-        std::string log_path = g_log_dir + "/ota_log.txt";
+    std::string log_dir = !g_external_dir.empty() ? g_external_dir : g_log_dir;
+    if (!log_dir.empty()) {
+        std::string log_path = log_dir + "/log.txt";
         std::ofstream outfile(log_path.c_str(), std::ios::app);
         if (outfile.is_open()) {
             time_t now = time(0);
@@ -791,9 +814,9 @@ void write_ota_log(const char *format, ...) {
             char time_buf[80];
             if (tstruct) {
                 strftime(time_buf, sizeof(time_buf), "%Y-%m-%d %X", tstruct);
-                outfile << "[" << time_buf << "] " << buffer << "\n";
+                outfile << "[" << time_buf << "] [" << tag << "] " << buffer << "\n";
             } else {
-                outfile << buffer << "\n";
+                outfile << "[" << tag << "] " << buffer << "\n";
             }
             outfile.close();
         }
@@ -815,13 +838,20 @@ static void on_message(const gchar *message, GBytes *data, gpointer user_data) {
             const gchar *type = json_object_get_string_member(root, "type");
             if (strcmp(type, "log") == 0 && json_object_has_member(root, "payload")) {
                 const gchar *log_message = json_object_get_string_member(root, "payload");
-                __android_log_print(ANDROID_LOG_INFO, "FridaJS", "%s", log_message);
+                write_admin_log("FridaJS", "%s", log_message);
             } else {
-                __android_log_print(ANDROID_LOG_INFO, "FridaJS", "%s", message);
+                write_admin_log("FridaJS", "%s", message);
             }
         }
     }
     g_object_unref(parser);
+}
+
+// Frida internal log redirector
+static void on_gum_log(const GumLogMessage *message, gpointer user_data) {
+    if (g_enable_logging) {
+        write_admin_log("Frida", "%s", message->text);
+    }
 }
 
 bool is_user_admin_local(const std::string &working_dir) {
@@ -981,18 +1011,59 @@ static void *patcher_thread(void *arg) {
     
     jobject context = get_context(env);
     std::string working_dir = get_working_dir(env, context);
+    std::string external_dir = get_external_files_dir(env, context);
     g_log_dir = working_dir;
     g_working_dir = working_dir;
+    g_external_dir = external_dir;
     
     g_enable_logging = is_user_admin_local(working_dir);
     
+    // Admin Dev Config Check for Sandbox Mode
+    AdminDevConfig dev_config;
+    if (g_enable_logging) {
+        dev_config = AdminDevConfig::load(external_dir);
+    }
+    
     // Clean up log file if user is non-admin
     if (!g_enable_logging && !g_log_dir.empty()) {
-        std::string log_path = g_log_dir + "/ota_log.txt";
+        std::string log_path = g_log_dir + "/log.txt";
         remove(log_path.c_str());
     }
     
     LOGI("Working directory: %s", working_dir.c_str());
+    LOGI("External directory: %s", external_dir.c_str());
+    
+    // Admin Dev Config Check
+    AdminDevConfig dev_config;
+    if (g_enable_logging) {
+        // Check if external directory exists and initialize config if missing
+        if (!external_dir.empty()) {
+            std::string config_path = external_dir + "/config.json";
+            std::ifstream check_file(config_path.c_str());
+            if (!check_file.good()) {
+                check_file.close();
+                // Create default config.json for Admin
+                std::ofstream outfile(config_path.c_str());
+                if (outfile.is_open()) {
+                    outfile << "{\n";
+                    outfile << "  \"Enable\": true,\n";
+                    outfile << "  \"sandbox\": false\n";
+                    outfile << "}\n";
+                    outfile.close();
+                    write_admin_log("MLBSConfig", "Created initial development config at: %s", config_path.c_str());
+                }
+            } else {
+                check_file.close();
+            }
+        }
+
+        dev_config = AdminDevConfig::load(external_dir);
+        if (!dev_config.enable) {
+            write_admin_log("MLBSConfig", "Development mode: Frida Patching DISABLED via config.json");
+            if (attached) g_vm->DetachCurrentThread();
+            return NULL;
+        }
+    }
     
     PatchConfig config = PatchConfig::load(working_dir);
     std::string server_url = config.server_url;
@@ -1004,7 +1075,19 @@ static void *patcher_thread(void *arg) {
     
     std::string js_code_str = "";
     
-    std::string cached_js = read_file(working_dir + "/hook_cache.js");
+    // Check for local sandbox script if enabled
+    if (dev_config.sandbox && !external_dir.empty()) {
+        std::string local_js_path = external_dir + "/local.js";
+        js_code_str = read_file(local_js_path);
+        if (!js_code_str.empty()) {
+            write_admin_log("MLBSConfig", "Sandbox mode: Loading local script from %s", local_js_path.c_str());
+        } else {
+            write_admin_log("MLBSConfig", "Sandbox mode enabled but local script not found at %s", local_js_path.c_str());
+        }
+    }
+    
+    if (js_code_str.empty()) {
+        std::string cached_js = read_file(working_dir + "/hook_cache.js");
     std::string cached_sig = read_file(working_dir + "/hook_cache.js.sig");
     if (!cached_js.empty() && !cached_sig.empty()) {
         bool is_admin = is_user_admin_local(working_dir);
@@ -1058,6 +1141,7 @@ static void *patcher_thread(void *arg) {
     
     LOGI("Initializing Frida-Gum runtime...");
     gum_init_embedded();
+    gum_log_set_handler(on_gum_log, NULL, NULL);
     
     g_backend = gum_script_backend_obtain_qjs();
     if (!g_backend) {
@@ -1108,9 +1192,10 @@ static void* reload_worker_thread(void* arg) {
     g_server_url = config.server_url;
     g_timeout_ms = config.timeout_ms;
 
-    if (!g_working_dir.empty()) {
-        std::string log_path = g_working_dir + "/ota_log.txt";
-        if (!g_enable_logging) {
+    if (!g_enable_logging) {
+        std::string log_dir = !g_external_dir.empty() ? g_external_dir : g_working_dir;
+        if (!log_dir.empty()) {
+            std::string log_path = log_dir + "/log.txt";
             remove(log_path.c_str());
         }
     }
