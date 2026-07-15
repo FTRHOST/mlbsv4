@@ -1100,6 +1100,17 @@ static void *patcher_thread(void *arg) {
                     write_admin_log("MLBSConfig", "Initialized default config at: %s", ext_config_path.c_str());
                 }
             }
+
+            // 1.1 Ensure local.js exists in External for easy admin editing
+            std::string ext_js_path = external_dir + "/local.js";
+            std::string existing_js = read_file(ext_js_path);
+            if (existing_js.empty()) {
+                // Create a sample script if missing
+                std::string sample_js = "// MLBS Sandbox Script\n// You can edit this file to apply custom hooks.\n\nconsole.log('Hello from local.js! Mode: Sandbox');\n";
+                if (write_file(ext_js_path, sample_js)) {
+                    write_admin_log("MLBSConfig", "Initialized sample local.js at: %s", ext_js_path.c_str());
+                }
+            }
         }
 
         // 2. Load config with dual-path awareness (External & Internal)
