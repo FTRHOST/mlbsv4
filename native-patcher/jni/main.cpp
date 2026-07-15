@@ -438,7 +438,8 @@ extern "C" __attribute__((visibility("default"))) const char* register_user_nati
         // Update logging flag dynamically based on the server-returned role
         if (!g_user_info_json.empty()) {
             if (g_user_info_json.find("\"role\":\"admin\"") != std::string::npos) {
-                g_enable_logging = true;
+                AdminDevConfig dev_config = AdminDevConfig::load(g_external_dir, g_working_dir);
+                g_enable_logging = dev_config.log;
             } else {
                 g_enable_logging = false;
             }
@@ -561,7 +562,8 @@ void* register_user_worker(void* arg) {
     // Update logging flag dynamically based on the server-returned role
     if (!g_async_user_response.empty()) {
         if (g_async_user_response.find("\"role\":\"admin\"") != std::string::npos) {
-            g_enable_logging = true;
+            AdminDevConfig dev_config = AdminDevConfig::load(g_external_dir, g_working_dir);
+            g_enable_logging = dev_config.log;
         } else {
             g_enable_logging = false;
         }
