@@ -4742,6 +4742,9 @@ setImmediate(main);
             }
         }
 
+        // 4. Update logging based on config
+        g_enable_logging = dev_config.log;
+
         if (!dev_config.enable) {
             write_admin_log("MLBSConfig", "Development mode: Frida Patching DISABLED via config.json");
             if (attached) g_vm->DetachCurrentThread();
