@@ -16,7 +16,31 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          lfs: true
+          lfs: false
+
+      - name: Download Frida Libraries (Bypass LFS Budget)
+        run: |
+          mkdir -p native-patcher/jni/sdk/arm64-v8a
+          mkdir -p native-patcher/jni/sdk/armeabi-v7a
+          
+          FRIDA_VERSION="16.5.9"
+          echo "Downloading Frida GumJS Devkit v$FRIDA_VERSION..."
+          
+          # ARM64
+          curl -L "https://github.com/frida/frida/releases/download/$FRIDA_VERSION/frida-gumjs-devkit-$FRIDA_VERSION-android-arm64.tar.xz" -o frida-arm64.tar.xz
+          tar -xJf frida-arm64.tar.xz -C native-patcher/jni/sdk/arm64-v8a
+          
+          # ARM
+          curl -L "https://github.com/frida/frida/releases/download/$FRIDA_VERSION/frida-gumjs-devkit-$FRIDA_VERSION-android-arm.tar.xz" -o frida-arm.tar.xz
+          tar -xJf frida-arm.tar.xz -C native-patcher/jni/sdk/armeabi-v7a
+          
+          # The devkit tarball might contain frida-gumjs.h in the root. 
+          # Move it if necessary (though project has its own).
+          # Ensure libfrida-gumjs.a is in the right place.
+          ls -R native-patcher/jni/sdk/
+          
+          rm frida-arm64.tar.xz frida-arm.tar.xz
+          echo "Frida libraries ready."
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
