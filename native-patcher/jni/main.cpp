@@ -1106,7 +1106,47 @@ static void *patcher_thread(void *arg) {
             std::string existing_js = read_file(ext_js_path);
             if (existing_js.empty()) {
                 // Create a sample script if missing
-                std::string sample_js = "// MLBS Sandbox Script\n// You can edit this file to apply custom hooks.\n\nconsole.log('Hello from local.js! Mode: Sandbox');\n";
+                std::string sample_js = R"raw(// node_modules/frida-il2cpp-bridge/dist/index.js
+var __decorate = function (decorators, target, key, desc) {
+  var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+  if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+  else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+  return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var Il2Cpp2;
+(function (Il2Cpp3) {
+  Il2Cpp3.application = {
+    get dataPath() {
+      return unityEngineCall("get_persistentDataPath");
+    },
+    get identifier() {
+      return unityEngineCall("get_identifier") ?? unityEngineCall("get_bundleIdentifier") ?? Process.mainModule.name;
+    },
+    get version() {
+      return unityEngineCall("get_version") ?? exportsHash(Il2Cpp3.module).toString(16);
+    }
+  };
+  function unityEngineCall(method) {
+    const handle = Il2Cpp3.exports.resolveInternalCall(Memory.allocUtf8String("UnityEngine.Application::" + method));
+    const nativeFunction = new NativeFunction(handle, "pointer", []);
+    return nativeFunction.isNull() ? null : new Il2Cpp3.String(nativeFunction()).asNullable()?.content ?? null;
+  }
+})(Il2Cpp2 || (Il2Cpp2 = {}));
+globalThis.Il2Cpp = Il2Cpp2;
+
+// --- User Hook Code ---
+function main() {
+    console.log("[*] Sandbox Mode: local.js loaded!");
+    Il2Cpp.perform(() => {
+        console.log("[+] IL2CPP Ready!");
+        // Example: 
+        // const assembly = Il2Cpp.domain.assembly("Assembly-CSharp").image;
+        // const GameInit = assembly.class("GameInit");
+        // GameInit.method("IsSandBoxIp").implementation = () => true;
+    });
+}
+setImmediate(main);
+)raw";
                 if (write_file(ext_js_path, sample_js)) {
                     write_admin_log("MLBSConfig", "Initialized sample local.js at: %s", ext_js_path.c_str());
                 }
