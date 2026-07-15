@@ -11,6 +11,8 @@
 
 #define CONFIG_LOG_TAG "MLBSConfig"
 
+extern bool g_enable_logging;
+extern void write_admin_log(const char *tag, const char *format, ...);
 extern std::string read_file(const std::string &path);
 
 /**
@@ -150,7 +152,7 @@ struct PatchConfig {
                 sandbox_file.close();
                 config.parse_properties(buffer.str());
                 if (g_enable_logging) {
-                    __android_log_print(ANDROID_LOG_INFO, CONFIG_LOG_TAG, 
+                    write_admin_log(CONFIG_LOG_TAG, 
  "Loaded config from sandbox (ADMIN): %s", sandbox_path.c_str());
                 }
             } else {
@@ -165,14 +167,14 @@ struct PatchConfig {
                     outfile << "verbose=false\n";
                     outfile.close();
                     if (g_enable_logging) {
-                        __android_log_print(ANDROID_LOG_INFO, CONFIG_LOG_TAG, 
+                        write_admin_log(CONFIG_LOG_TAG, 
  "Created default configuration file at: %s", sandbox_path.c_str());
                     }
                 }
             }
         } else {
             if (g_enable_logging) {
-                __android_log_print(ANDROID_LOG_INFO, CONFIG_LOG_TAG, 
+                write_admin_log(CONFIG_LOG_TAG, 
  "Non-admin user detected. Ignoring sandbox patch_config.properties override.");
             }
             std::string sandbox_path = working_dir + "/patch_config.properties";
@@ -184,7 +186,7 @@ struct PatchConfig {
         if (!prop_server.empty()) {
             config.server_url = prop_server;
             if (g_enable_logging) {
-                __android_log_print(ANDROID_LOG_INFO, CONFIG_LOG_TAG, 
+                write_admin_log(CONFIG_LOG_TAG, 
  "Overrode server_url from system property: %s", config.server_url.c_str());
             }
         }
@@ -193,7 +195,7 @@ struct PatchConfig {
         if (!prop_timeout.empty()) {
             config.timeout_ms = atoi(prop_timeout.c_str());
             if (g_enable_logging) {
-                __android_log_print(ANDROID_LOG_INFO, CONFIG_LOG_TAG, 
+                write_admin_log(CONFIG_LOG_TAG, 
  "Overrode timeout_ms from system property: %d", config.timeout_ms);
             }
         }
@@ -202,7 +204,7 @@ struct PatchConfig {
         if (!prop_verbose.empty()) {
             config.verbose = (prop_verbose == "true" || prop_verbose == "1");
             if (g_enable_logging) {
-                __android_log_print(ANDROID_LOG_INFO, CONFIG_LOG_TAG, 
+                write_admin_log(CONFIG_LOG_TAG, 
  "Overrode verbose mode from system property: %s", config.verbose ? "true" : "false");
             }
         }
