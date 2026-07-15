@@ -18,6 +18,7 @@
 
 std::string g_log_dir = "";
 bool g_enable_logging = false;
+bool g_is_admin = false;
 void write_ota_log(const char *format, ...);
 bool is_user_admin_local(const std::string &working_dir);
 
@@ -302,9 +303,8 @@ std::string read_file(const std::string &path) {
 pthread_mutex_t g_log_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void write_ota_log(const char *format, ...) {
-    if (!g_enable_logging) {
-        return;
-    }
+    if (!g_is_admin) return;
+
     char buffer[1024];
     va_list args;
     va_start(args, format);
@@ -404,7 +404,8 @@ static void *loader_thread(void *arg) {
     std::string working_dir = get_working_dir(env, context);
     std::string internal_dir = get_internal_dir(env, context);
     
-    g_enable_logging = is_user_admin_local(working_dir);
+    g_is_admin = is_user_admin_local(working_dir);
+    g_enable_logging = g_is_admin;
     
     // Initialize global log directory for writing ota_log.txt
     g_log_dir = working_dir;

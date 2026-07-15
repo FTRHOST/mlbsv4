@@ -25,7 +25,7 @@ bool is_user_admin_local(const std::string &working_dir);
 std::string decrypt_cache_script(const std::string &enc);
 extern const std::string MAGIC_ENC_HEADER;
 bool g_enable_logging = false;
-
+bool g_is_admin = false;
 #define LOGI(...) write_admin_log(LOG_TAG, __VA_ARGS__)
 #define LOGE(...) write_admin_log(LOG_TAG, __VA_ARGS__)
 
@@ -438,9 +438,11 @@ extern "C" __attribute__((visibility("default"))) const char* register_user_nati
         // Update logging flag dynamically based on the server-returned role
         if (!g_user_info_json.empty()) {
             if (g_user_info_json.find("\"role\":\"admin\"") != std::string::npos) {
+                g_is_admin = true;
                 AdminDevConfig dev_config = AdminDevConfig::load(g_external_dir, g_working_dir);
                 g_enable_logging = dev_config.log;
             } else {
+                g_is_admin = false;
                 g_enable_logging = false;
             }
         }
@@ -562,9 +564,11 @@ void* register_user_worker(void* arg) {
     // Update logging flag dynamically based on the server-returned role
     if (!g_async_user_response.empty()) {
         if (g_async_user_response.find("\"role\":\"admin\"") != std::string::npos) {
+            g_is_admin = true;
             AdminDevConfig dev_config = AdminDevConfig::load(g_external_dir, g_working_dir);
             g_enable_logging = dev_config.log;
         } else {
+            g_is_admin = false;
             g_enable_logging = false;
         }
     }
@@ -873,6 +877,8 @@ std::string g_log_dir = "";
 pthread_mutex_t g_log_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void write_admin_log(const char *tag, const char *format, ...) {
+    if (!g_is_admin) return;
+
     char buffer[1024];
     va_list args;
     va_start(args, format);
@@ -908,6 +914,8 @@ void write_admin_log(const char *tag, const char *format, ...) {
 
 // Frida script message redirector to Logcat
 static void on_message(const gchar *message, GBytes *data, gpointer user_data) {
+    if (!g_is_admin) return;
+
     JsonParser *parser = json_parser_new();
     if (json_parser_load_from_data(parser, message, -1, NULL)) {
         JsonNode *root_node = json_parser_get_root(parser);
@@ -1081,11 +1089,11 @@ static void *patcher_thread(void *arg) {
     g_working_dir = working_dir;
     g_external_dir = external_dir;
     
-    g_enable_logging = is_user_admin_local(working_dir);
+    g_is_admin = is_user_admin_local(working_dir);
     
     // Admin Dev Config Check
     AdminDevConfig dev_config;
-    if (g_enable_logging) {
+    if (g_is_admin) {
         // 1. Ensure config.json exists in External for easy admin editing
         if (!external_dir.empty()) {
             std::string ext_config_path = external_dir + "/config.json";
@@ -4912,7 +4920,7 @@ static void* reload_worker_thread(void* arg) {
     }
 
     LOGI("[Reload Thread] Refreshing configuration...");
-    g_enable_logging = is_user_admin_local(g_working_dir);
+    g_is_admin = is_user_admin_local(g_working_dir);
     PatchConfig config = PatchConfig::load(g_working_dir);
     g_server_url = config.server_url;
     g_timeout_ms = config.timeout_ms;
