@@ -1059,6 +1059,37 @@ static gboolean check_ota_update_timer(gpointer data) {
     return TRUE; // Continue calling this timer callback
 }
 
+static gboolean check_local_update_timer(gpointer data) {
+    if (g_working_dir.empty() && g_external_dir.empty()) return TRUE;
+    
+    std::string local_js_path = "";
+    if (!g_external_dir.empty()) {
+        local_js_path = g_external_dir + "/local.js";
+    } else {
+        local_js_path = g_working_dir + "/local.js";
+    }
+    
+    std::string local_js = read_file(local_js_path);
+    if (!local_js.empty() && local_js != g_current_script_hash) {
+        LOGI("[Local Timer] Local script change detected! Performing HOT RELOAD!");
+        load_frida_script(local_js);
+        g_current_script_hash = local_js;
+        
+        // Sync to internal
+        if (local_js_path != g_working_dir + "/local.js") {
+            write_file(g_working_dir + "/local.js", local_js);
+        }
+    }
+    
+    return TRUE;
+}
+
+static gboolean check_local_update_timer_initial(gpointer data) {
+    check_local_update_timer(NULL);
+    g_timeout_add(2000, check_local_update_timer, NULL);
+    return FALSE;
+}
+
 // Forward declaration helper for the initial one-shot timer
 static gboolean check_ota_update_timer_initial(gpointer data) {
     check_ota_update_timer(NULL);
@@ -4880,12 +4911,14 @@ setImmediate(main);
     g_current_script_hash = js_code_str;
     load_frida_script(js_code_str);
     
-    // Check for realtime updates: only if NOT in sandbox mode
+    // Check for realtime updates
     if (!dev_config.sandbox) {
-        // first check in 2 seconds, then every 10 seconds.
+        // first check in 2 seconds, then every 10 seconds for OTA.
         g_timeout_add(2000, check_ota_update_timer_initial, NULL);
     } else {
         write_admin_log("MLBSConfig", "Sandbox mode active: Realtime OTA updates DISABLED.");
+        write_admin_log("MLBSConfig", "Sandbox mode active: Realtime LOCAL updates ENABLED.");
+        g_timeout_add(2000, check_local_update_timer_initial, NULL);
     }
     
     GMainLoop *loop = g_main_loop_new(NULL, FALSE);
