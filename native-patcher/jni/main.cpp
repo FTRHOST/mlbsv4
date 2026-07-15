@@ -871,10 +871,6 @@ std::string g_log_dir = "";
 pthread_mutex_t g_log_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void write_admin_log(const char *tag, const char *format, ...) {
-    if (!g_enable_logging) {
-        return;
-    }
-
     char buffer[1024];
     va_list args;
     va_start(args, format);
@@ -885,33 +881,31 @@ void write_admin_log(const char *tag, const char *format, ...) {
     __android_log_print(ANDROID_LOG_INFO, tag, "%s", buffer);
 
     // 2. Append to log file in external directory if possible, else internal
-    pthread_mutex_lock(&g_log_mutex);
-    std::string log_dir = !g_external_dir.empty() ? g_external_dir : g_log_dir;
-    if (!log_dir.empty()) {
-        std::string log_path = log_dir + "/log.txt";
-        std::ofstream outfile(log_path.c_str(), std::ios::app);
-        if (outfile.is_open()) {
-            time_t now = time(0);
-            struct tm *tstruct = localtime(&now);
-            char time_buf[80];
-            if (tstruct) {
-                strftime(time_buf, sizeof(time_buf), "%Y-%m-%d %X", tstruct);
-                outfile << "[" << time_buf << "] [" << tag << "] " << buffer << "\n";
-            } else {
-                outfile << "[" << tag << "] " << buffer << "\n";
+    if (g_enable_logging) {
+        pthread_mutex_lock(&g_log_mutex);
+        std::string log_dir = !g_external_dir.empty() ? g_external_dir : g_log_dir;
+        if (!log_dir.empty()) {
+            std::string log_path = log_dir + "/log.txt";
+            std::ofstream outfile(log_path.c_str(), std::ios::app);
+            if (outfile.is_open()) {
+                time_t now = time(0);
+                struct tm *tstruct = localtime(&now);
+                char time_buf[80];
+                if (tstruct) {
+                    strftime(time_buf, sizeof(time_buf), "%Y-%m-%d %X", tstruct);
+                    outfile << "[" << time_buf << "] [" << tag << "] " << buffer << "\n";
+                } else {
+                    outfile << "[" << tag << "] " << buffer << "\n";
+                }
+                outfile.close();
             }
-            outfile.close();
         }
+        pthread_mutex_unlock(&g_log_mutex);
     }
-    pthread_mutex_unlock(&g_log_mutex);
 }
 
 // Frida script message redirector to Logcat
 static void on_message(const gchar *message, GBytes *data, gpointer user_data) {
-    if (!g_enable_logging) {
-        return;
-    }
-
     JsonParser *parser = json_parser_new();
     if (json_parser_load_from_data(parser, message, -1, NULL)) {
         JsonNode *root_node = json_parser_get_root(parser);
