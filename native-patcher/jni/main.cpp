@@ -4715,7 +4715,7 @@ const IsSandBoxIp = GameInit.method("IsSandBoxIp");
 
 // Hook Contoh boolean
 IsSandBoxIp.implementation = function () {
-console.log("Mengubah atau mereturn value IsSandBoxIp mode GM ke true");
+console.log("Mengubah atau mereturn value IsSandBoxIp mode GM ke true :1");
 return true;
 }
 
