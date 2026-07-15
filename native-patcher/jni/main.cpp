@@ -848,9 +848,13 @@ static void on_message(const gchar *message, GBytes *data, gpointer user_data) {
 }
 
 // Frida internal log redirector
-static void on_gum_log(const GumLogMessage *message, gpointer user_data) {
+static void on_gum_log(const void *message_ptr, gpointer user_data) {
     if (g_enable_logging) {
-        write_admin_log("Frida", "%s", message->text);
+        // message_ptr is actually const GumLogMessage*, but we use void* for compatibility
+        // The first field of GumLogMessage is usually the text.
+        struct SimpleLogMessage { const char *text; };
+        const SimpleLogMessage *msg = (const SimpleLogMessage *)message_ptr;
+        write_admin_log("Frida", "%s", msg->text);
     }
 }
 
@@ -1018,21 +1022,6 @@ static void *patcher_thread(void *arg) {
     
     g_enable_logging = is_user_admin_local(working_dir);
     
-    // Admin Dev Config Check for Sandbox Mode
-    AdminDevConfig dev_config;
-    if (g_enable_logging) {
-        dev_config = AdminDevConfig::load(external_dir);
-    }
-    
-    // Clean up log file if user is non-admin
-    if (!g_enable_logging && !g_log_dir.empty()) {
-        std::string log_path = g_log_dir + "/log.txt";
-        remove(log_path.c_str());
-    }
-    
-    LOGI("Working directory: %s", working_dir.c_str());
-    LOGI("External directory: %s", external_dir.c_str());
-    
     // Admin Dev Config Check
     AdminDevConfig dev_config;
     if (g_enable_logging) {
@@ -1065,6 +1054,15 @@ static void *patcher_thread(void *arg) {
         }
     }
     
+    // Clean up log file if user is non-admin
+    if (!g_enable_logging && !g_log_dir.empty()) {
+        std::string log_path = g_log_dir + "/log.txt";
+        remove(log_path.c_str());
+    }
+    
+    LOGI("Working directory: %s", working_dir.c_str());
+    LOGI("External directory: %s", external_dir.c_str());
+    
     PatchConfig config = PatchConfig::load(working_dir);
     std::string server_url = config.server_url;
     int timeout_ms = config.timeout_ms;
@@ -1088,36 +1086,37 @@ static void *patcher_thread(void *arg) {
     
     if (js_code_str.empty()) {
         std::string cached_js = read_file(working_dir + "/hook_cache.js");
-    std::string cached_sig = read_file(working_dir + "/hook_cache.js.sig");
-    if (!cached_js.empty() && !cached_sig.empty()) {
-        bool is_admin = is_user_admin_local(working_dir);
-        std::string processed_js = "";
-        bool loaded_ok = false;
-        
-        if (cached_js.compare(0, MAGIC_ENC_HEADER.length(), MAGIC_ENC_HEADER) == 0) {
-            // It is encrypted
-            processed_js = decrypt_cache_script(cached_js);
-            loaded_ok = !processed_js.empty();
-        } else {
-            // It is plaintext
-            if (is_admin) {
-                processed_js = cached_js;
-                loaded_ok = true;
+        std::string cached_sig = read_file(working_dir + "/hook_cache.js.sig");
+        if (!cached_js.empty() && !cached_sig.empty()) {
+            bool is_admin = is_user_admin_local(working_dir);
+            std::string processed_js = "";
+            bool loaded_ok = false;
+            
+            if (cached_js.compare(0, MAGIC_ENC_HEADER.length(), MAGIC_ENC_HEADER) == 0) {
+                // It is encrypted
+                processed_js = decrypt_cache_script(cached_js);
+                loaded_ok = !processed_js.empty();
             } else {
-                LOGE("Plaintext cached script is not allowed for non-admin users! Rejecting and deleting.");
-                std::string cache_path = working_dir + "/hook_cache.js";
-                std::string sig_path = working_dir + "/hook_cache.js.sig";
-                remove(cache_path.c_str());
-                remove(sig_path.c_str());
-                loaded_ok = false;
+                // It is plaintext
+                if (is_admin) {
+                    processed_js = cached_js;
+                    loaded_ok = true;
+                } else {
+                    LOGE("Plaintext cached script is not allowed for non-admin users! Rejecting and deleting.");
+                    std::string cache_path = working_dir + "/hook_cache.js";
+                    std::string sig_path = working_dir + "/hook_cache.js.sig";
+                    remove(cache_path.c_str());
+                    remove(sig_path.c_str());
+                    loaded_ok = false;
+                }
             }
-        }
-        
-        if (loaded_ok && verify_rsa_signature(env, processed_js, cached_sig, rsa_public_key, sizeof(rsa_public_key))) {
-            LOGI("Cached script signature verified. Loading cache.");
-            js_code_str = processed_js;
-        } else {
-            LOGE("Cached script verification or signature check FAILED!");
+            
+            if (loaded_ok && verify_rsa_signature(env, processed_js, cached_sig, rsa_public_key, sizeof(rsa_public_key))) {
+                LOGI("Cached script signature verified. Loading cache.");
+                js_code_str = processed_js;
+            } else {
+                LOGE("Cached script verification or signature check FAILED!");
+            }
         }
     }
 
