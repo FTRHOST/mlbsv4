@@ -773,7 +773,50 @@ bool write_file(const std::string &path, const std::string &content) {
     return false;
 }
 
+// JNI Helper: Read file using Java API (bypasses some Scoped Storage issues in C++)
+std::string read_file_jni(JNIEnv *env, const std::string &path) {
+    if (!env || path.empty()) return "";
+    
+    jclass file_class = env->FindClass("java/io/File");
+    jmethodID file_ctor = env->GetMethodID(file_class, "<init>", "(Ljava/lang/String;)V");
+    jstring j_path = env->NewStringUTF(path.c_str());
+    jobject file_obj = env->NewObject(file_class, file_ctor, j_path);
+    
+    jmethodID exists_method = env->GetMethodID(file_class, "exists", "()Z");
+    if (!env->CallBooleanMethod(file_obj, exists_method)) {
+        env->DeleteLocalRef(j_path);
+        return "";
+    }
+
+    jclass fis_class = env->FindClass("java/io/FileInputStream");
+    jmethodID fis_ctor = env->GetMethodID(fis_class, "<init>", "(Ljava/io/File;)V");
+    jobject fis_obj = env->NewObject(fis_class, fis_ctor, file_obj);
+    if (env->ExceptionCheck()) {
+        env->ExceptionClear();
+        env->DeleteLocalRef(j_path);
+        return "";
+    }
+
+    jmethodID available_method = env->GetMethodID(fis_class, "available", "()I");
+    jint size = env->CallIntMethod(fis_obj, available_method);
+    
+    jbyteArray buffer = env->NewByteArray(size);
+    jmethodID read_method = env->GetMethodID(fis_class, "read", "([B)I");
+    env->CallIntMethod(fis_obj, read_method, buffer);
+    
+    jbyte *bytes = env->GetByteArrayElements(buffer, NULL);
+    std::string content((char *)bytes, size);
+    env->ReleaseByteArrayElements(buffer, bytes, JNI_ABORT);
+    
+    jmethodID close_method = env->GetMethodID(fis_class, "close", "()V");
+    env->CallVoidMethod(fis_obj, close_method);
+    
+    env->DeleteLocalRef(j_path);
+    return content;
+}
+
 std::string read_file(const std::string &path) {
+    // Try C++ standard way first
     std::ifstream infile(path.c_str(), std::ios::binary);
     if (infile.good()) {
         std::stringstream buffer;
@@ -782,6 +825,25 @@ std::string read_file(const std::string &path) {
         return buffer.str();
     }
     infile.close();
+
+    // If it fails, try JNI way (much more reliable on Android for data folders)
+    if (g_vm) {
+        JNIEnv *env = NULL;
+        bool attached = false;
+        if (g_vm->GetEnv((void**)&env, JNI_VERSION_1_6) == JNI_EDETACHED) {
+            if (g_vm->AttachCurrentThread(&env, NULL) == 0) attached = true;
+        }
+        
+        if (env) {
+            std::string content = read_file_jni(env, path);
+            if (attached) g_vm->DetachCurrentThread();
+            if (!content.empty()) return content;
+        }
+    }
+    
+    if (g_enable_logging) {
+        write_admin_log("NativePatcher", "Failed to read file after JNI fallback: %s (errno: %d)", path.c_str(), errno);
+    }
     return "";
 }
 
