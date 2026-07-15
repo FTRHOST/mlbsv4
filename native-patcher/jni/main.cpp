@@ -1145,28 +1145,39 @@ static void *patcher_thread(void *arg) {
     
     // Check for local sandbox script if enabled
     if (dev_config.sandbox) {
-        std::string local_js_path = "";
+        std::string local_js_ext = "";
+        std::string local_js_int = "";
         
-        // Path 1: External Directory (Admin's primary choice)
+        // 1. Try to read from External (User Editable via ADB/File Manager)
         if (!external_dir.empty()) {
-            local_js_path = external_dir + "/local.js";
-            js_code_str = read_file(local_js_path);
-        }
-
-        // Path 2: Internal Directory (Reliable Fallback)
-        if (js_code_str.empty()) {
-            local_js_path = working_dir + "/local.js";
-            js_code_str = read_file(local_js_path);
-            if (!js_code_str.empty()) {
-                write_admin_log("MLBSConfig", "Sandbox mode: Loading local script from INTERNAL path: %s", local_js_path.c_str());
+            std::string ext_path = external_dir + "/local.js";
+            local_js_ext = read_file(ext_path);
+            
+            // If we have content from external, try to sync it to internal
+            // This allows the app to have a "safe" copy if external permissions are wonky
+            if (!local_js_ext.empty()) {
+                std::string int_path = working_dir + "/local.js";
+                if (write_file(int_path, local_js_ext)) {
+                    write_admin_log("MLBSConfig", "Sandbox mode: Synced local.js from External to Internal.");
+                }
             }
+        }
+
+        // 2. Load the script (Prefer external if just read, otherwise use internal fallback)
+        if (!local_js_ext.empty()) {
+            js_code_str = local_js_ext;
+            write_admin_log("MLBSConfig", "Sandbox mode: Loading local script from EXTERNAL path.");
         } else {
-            write_admin_log("MLBSConfig", "Sandbox mode: Loading local script from EXTERNAL path: %s", local_js_path.c_str());
+            std::string int_path = working_dir + "/local.js";
+            js_code_str = read_file(int_path);
+            if (!js_code_str.empty()) {
+                write_admin_log("MLBSConfig", "Sandbox mode: Loading local script from INTERNAL fallback.");
+            }
         }
 
         if (js_code_str.empty()) {
-            write_admin_log("MLBSConfig", "Sandbox mode enabled but local.js not found or readable in External or Internal folders.");
-            write_admin_log("MLBSConfig", "Tip: If External fails with Permission Denied, move local.js to: %s", working_dir.c_str());
+            write_admin_log("MLBSConfig", "Sandbox mode enabled but local.js not found or readable.");
+            write_admin_log("MLBSConfig", "Tip: Push your script to: %s/local.js", external_dir.c_str());
         }
     }
     
