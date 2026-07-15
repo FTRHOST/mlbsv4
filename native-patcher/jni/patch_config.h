@@ -11,6 +11,8 @@
 
 #define CONFIG_LOG_TAG "MLBSConfig"
 
+extern std::string read_file(const std::string &path);
+
 /**
  * AdminDevConfig handles development features for admin users.
  * Controlled via Android/Data/com.package.name/files/config.json
@@ -24,13 +26,9 @@ struct AdminDevConfig {
         if (external_dir.empty()) return config;
         
         std::string config_path = external_dir + "/config.json";
-        std::ifstream file(config_path.c_str());
-        if (file.good()) {
-            std::stringstream buffer;
-            buffer << file.rdbuf();
-            file.close();
-            std::string content = buffer.str();
-            
+        std::string content = read_file(config_path);
+        
+        if (!content.empty()) {
             // Simple manual JSON boolean parser for "Enable" and "sandbox"
             if (content.find("\"Enable\":false") != std::string::npos || 
                 content.find("\"Enable\": false") != std::string::npos) {

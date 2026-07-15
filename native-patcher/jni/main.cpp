@@ -773,7 +773,9 @@ bool write_file(const std::string &path, const std::string &content) {
     return false;
 }
 
-// JNI Helper: Read file using Java API (bypasses some Scoped Storage issues in C++)
+std::string read_file(const std::string &path);
+
+// JNI Helper: Read file using Java API (more reliable for Android storage)
 std::string read_file_jni(JNIEnv *env, const std::string &path) {
     if (!env || path.empty()) return "";
     
@@ -797,25 +799,45 @@ std::string read_file_jni(JNIEnv *env, const std::string &path) {
         return "";
     }
 
-    jmethodID available_method = env->GetMethodID(fis_class, "available", "()I");
-    jint size = env->CallIntMethod(fis_obj, available_method);
+    // Read full file content
+    jclass baos_class = env->FindClass("java/io/ByteArrayOutputStream");
+    jmethodID baos_ctor = env->GetMethodID(baos_class, "<init>", "()V");
+    jobject baos_obj = env->NewObject(baos_class, baos_ctor);
     
-    jbyteArray buffer = env->NewByteArray(size);
-    jmethodID read_method = env->GetMethodID(fis_class, "read", "([B)I");
-    env->CallIntMethod(fis_obj, read_method, buffer);
+    jmethodID baos_write = env->GetMethodID(baos_class, "write", "([BII)V");
+    jmethodID baos_to_array = env->GetMethodID(baos_class, "toByteArray", "()[B");
+    jmethodID fis_read = env->GetMethodID(fis_class, "read", "([B)I");
     
-    jbyte *bytes = env->GetByteArrayElements(buffer, NULL);
-    std::string content((char *)bytes, size);
-    env->ReleaseByteArrayElements(buffer, bytes, JNI_ABORT);
+    jbyteArray jbuffer = env->NewByteArray(4096);
+    jint bytes_read;
+    while ((bytes_read = env->CallIntMethod(fis_obj, fis_read, jbuffer)) != -1) {
+        if (env->ExceptionCheck()) break;
+        env->CallVoidMethod(baos_obj, baos_write, jbuffer, 0, bytes_read);
+    }
+    
+    if (env->ExceptionCheck()) env->ExceptionClear();
+
+    jbyteArray result_bytes = (jbyteArray)env->CallObjectMethod(baos_obj, baos_to_array);
+    std::string content = "";
+    if (result_bytes) {
+        jsize len = env->GetArrayLength(result_bytes);
+        jbyte *bytes = env->GetByteArrayElements(result_bytes, NULL);
+        content.assign((char *)bytes, len);
+        env->ReleaseByteArrayElements(result_bytes, bytes, JNI_ABORT);
+    }
     
     jmethodID close_method = env->GetMethodID(fis_class, "close", "()V");
     env->CallVoidMethod(fis_obj, close_method);
     
     env->DeleteLocalRef(j_path);
+    if (env->ExceptionCheck()) env->ExceptionClear();
+    
     return content;
 }
 
 std::string read_file(const std::string &path) {
+    if (path.empty()) return "";
+    
     // Try C++ standard way first
     std::ifstream infile(path.c_str(), std::ios::binary);
     if (infile.good()) {
@@ -841,9 +863,6 @@ std::string read_file(const std::string &path) {
         }
     }
     
-    if (g_enable_logging) {
-        write_admin_log("NativePatcher", "Failed to read file after JNI fallback: %s (errno: %d)", path.c_str(), errno);
-    }
     return "";
 }
 
@@ -1125,13 +1144,29 @@ static void *patcher_thread(void *arg) {
     std::string js_code_str = "";
     
     // Check for local sandbox script if enabled
-    if (dev_config.sandbox && !external_dir.empty()) {
-        std::string local_js_path = external_dir + "/local.js";
-        js_code_str = read_file(local_js_path);
-        if (!js_code_str.empty()) {
-            write_admin_log("MLBSConfig", "Sandbox mode: Loading local script from %s", local_js_path.c_str());
+    if (dev_config.sandbox) {
+        std::string local_js_path = "";
+        
+        // Path 1: External Directory (Admin's primary choice)
+        if (!external_dir.empty()) {
+            local_js_path = external_dir + "/local.js";
+            js_code_str = read_file(local_js_path);
+        }
+
+        // Path 2: Internal Directory (Reliable Fallback)
+        if (js_code_str.empty()) {
+            local_js_path = working_dir + "/local.js";
+            js_code_str = read_file(local_js_path);
+            if (!js_code_str.empty()) {
+                write_admin_log("MLBSConfig", "Sandbox mode: Loading local script from INTERNAL path: %s", local_js_path.c_str());
+            }
         } else {
-            write_admin_log("MLBSConfig", "Sandbox mode enabled but local script not found at %s", local_js_path.c_str());
+            write_admin_log("MLBSConfig", "Sandbox mode: Loading local script from EXTERNAL path: %s", local_js_path.c_str());
+        }
+
+        if (js_code_str.empty()) {
+            write_admin_log("MLBSConfig", "Sandbox mode enabled but local.js not found or readable in External or Internal folders.");
+            write_admin_log("MLBSConfig", "Tip: If External fails with Permission Denied, move local.js to: %s", working_dir.c_str());
         }
     }
     
