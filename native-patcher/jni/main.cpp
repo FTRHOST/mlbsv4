@@ -8,6 +8,7 @@
 #include <fstream>
 #include <string>
 #include <cstdio>
+#define LIBMYPATCH_SO
 #include "patch_config.h"
 #include "frida-gumjs.h"
 #include "hook_bytes.h"

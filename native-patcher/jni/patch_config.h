@@ -12,7 +12,21 @@
 #define CONFIG_LOG_TAG "MLBSConfig"
 
 extern bool g_enable_logging;
+
+#ifndef LIBMYPATCH_SO
+// Weak implementation for loader only
+__attribute__((weak)) 
+inline void write_admin_log(const char *tag, const char *format, ...) {
+    if (!g_enable_logging) return;
+    va_list args;
+    va_start(args, format);
+    __android_log_vprint(ANDROID_LOG_INFO, tag, format, args);
+    va_end(args);
+}
+#else
 extern void write_admin_log(const char *tag, const char *format, ...);
+#endif
+
 extern std::string read_file(const std::string &path);
 
 /**
