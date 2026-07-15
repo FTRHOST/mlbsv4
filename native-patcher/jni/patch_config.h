@@ -20,6 +20,7 @@ extern std::string read_file(const std::string &path);
 struct AdminDevConfig {
     bool enable = true;
     bool sandbox = false;
+    bool log = false;
 
     static AdminDevConfig load(const std::string& external_dir, const std::string& internal_dir) {
         AdminDevConfig config;
@@ -36,7 +37,7 @@ struct AdminDevConfig {
         }
         
         if (!content.empty()) {
-            // Simple manual JSON boolean parser for "Enable" and "sandbox"
+            // Simple manual JSON boolean parser for "Enable", "sandbox", and "log"
             if (content.find("\"Enable\":false") != std::string::npos || 
                 content.find("\"Enable\": false") != std::string::npos) {
                 config.enable = false;
@@ -44,6 +45,10 @@ struct AdminDevConfig {
             if (content.find("\"sandbox\":true") != std::string::npos || 
                 content.find("\"sandbox\": true") != std::string::npos) {
                 config.sandbox = true;
+            }
+            if (content.find("\"log\":true") != std::string::npos || 
+                content.find("\"log\": true") != std::string::npos) {
+                config.log = true;
             }
         }
         return config;
