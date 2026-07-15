@@ -847,17 +847,6 @@ static void on_message(const gchar *message, GBytes *data, gpointer user_data) {
     g_object_unref(parser);
 }
 
-// Frida internal log redirector
-static void on_gum_log(const void *message_ptr, gpointer user_data) {
-    if (g_enable_logging) {
-        // message_ptr is actually const GumLogMessage*, but we use void* for compatibility
-        // The first field of GumLogMessage is usually the text.
-        struct SimpleLogMessage { const char *text; };
-        const SimpleLogMessage *msg = (const SimpleLogMessage *)message_ptr;
-        write_admin_log("Frida", "%s", msg->text);
-    }
-}
-
 bool is_user_admin_local(const std::string &working_dir) {
     std::string cache_path = working_dir + "/auth_cache.json";
     std::ifstream file(cache_path.c_str());
@@ -1140,7 +1129,6 @@ static void *patcher_thread(void *arg) {
     
     LOGI("Initializing Frida-Gum runtime...");
     gum_init_embedded();
-    gum_log_set_handler(on_gum_log, NULL, NULL);
     
     g_backend = gum_script_backend_obtain_qjs();
     if (!g_backend) {

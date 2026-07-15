@@ -68,6 +68,11 @@ jobs:
           echo "$PUBLIC_KEY" > keys/public_key.der
           echo "$FIREBASE_SERVICE_ACCOUNT" > firebase_service_account.json
 
+      - name: Clean Before Build
+        run: |
+          cd native-patcher
+          rm -rf obj/ libs/
+
       - name: Build JS Hook & Encrypt
         run: |
           npm run build
