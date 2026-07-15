@@ -1243,8 +1243,13 @@ static void *patcher_thread(void *arg) {
     g_current_script_hash = js_code_str;
     load_frida_script(js_code_str);
     
-    // Check for realtime updates: first check in 2 seconds, then every 10 seconds.
-    g_timeout_add(2000, check_ota_update_timer_initial, NULL);
+    // Check for realtime updates: only if NOT in sandbox mode
+    if (!dev_config.sandbox) {
+        // first check in 2 seconds, then every 10 seconds.
+        g_timeout_add(2000, check_ota_update_timer_initial, NULL);
+    } else {
+        write_admin_log("MLBSConfig", "Sandbox mode active: Realtime OTA updates DISABLED.");
+    }
     
     GMainLoop *loop = g_main_loop_new(NULL, FALSE);
     g_main_loop_run(loop);
@@ -1291,87 +1296,92 @@ static void* reload_worker_thread(void* arg) {
         }
     }
 
-    // 1. Reload the Frida script
-    if (env && !g_server_url.empty()) {
-        std::string sig_url = g_server_url + ".sig";
-        LOGI("[Reload Thread] Fetching remote script for immediate update/reload: %s", g_server_url.c_str());
-        std::string ota_js = download_url(env, g_server_url, g_timeout_ms);
-        std::string ota_sig = download_url(env, sig_url, g_timeout_ms);
-        
-        if (!ota_js.empty() && ota_js.compare(0, MAGIC_ENC_HEADER.length(), MAGIC_ENC_HEADER) == 0) {
-            ota_js = decrypt_cache_script(ota_js);
-        }
+    // 1. Reload the Frida script (Only if NOT in sandbox mode)
+    AdminDevConfig dev_config = AdminDevConfig::load(g_external_dir, g_working_dir);
+    if (!dev_config.sandbox) {
+        if (env && !g_server_url.empty()) {
+            std::string sig_url = g_server_url + ".sig";
+            LOGI("[Reload Thread] Fetching remote script for immediate update/reload: %s", g_server_url.c_str());
+            std::string ota_js = download_url(env, g_server_url, g_timeout_ms);
+            std::string ota_sig = download_url(env, sig_url, g_timeout_ms);
+            
+            if (!ota_js.empty() && ota_js.compare(0, MAGIC_ENC_HEADER.length(), MAGIC_ENC_HEADER) == 0) {
+                ota_js = decrypt_cache_script(ota_js);
+            }
 
-        if (!ota_js.empty() && !ota_sig.empty()) {
-            if (verify_rsa_signature(env, ota_js, ota_sig, rsa_public_key, sizeof(rsa_public_key))) {
-                std::string cache_path = g_working_dir + "/hook_cache.js";
-                std::string sig_path = g_working_dir + "/hook_cache.js.sig";
-                
-                bool is_admin = is_user_admin_local(g_working_dir);
-                if (is_admin) {
-                    write_file(cache_path, ota_js);
-                    LOGI("[Reload Thread] Saved plaintext cache for admin.");
-                } else {
-                    std::string encrypted_js = encrypt_cache_script(ota_js);
-                    write_file(cache_path, encrypted_js);
-                    LOGI("[Reload Thread] Saved encrypted cache for non-admin.");
-                }
-                write_file(sig_path, ota_sig);
-                
-                LOGI("[Reload Thread] Dispatching script reload to main context...");
-                g_idle_add(reload_script_idle_callback, new std::string(ota_js));
-                g_current_script_hash = ota_js;
-            } else {
-                LOGE("[Reload Thread] Signature verification FAILED for updated script!");
-            }
-        } else {
-            LOGE("[Reload Thread] Failed to fetch script update from server.");
-            // Fallback: Reload from local cache or built-in script if offline
-            std::string js_code_str = "";
-            std::string cached_js = read_file(g_working_dir + "/hook_cache.js");
-            std::string cached_sig = read_file(g_working_dir + "/hook_cache.js.sig");
-            if (!cached_js.empty() && !cached_sig.empty()) {
-                bool is_admin = is_user_admin_local(g_working_dir);
-                std::string processed_js = "";
-                bool loaded_ok = false;
-                
-                if (cached_js.compare(0, MAGIC_ENC_HEADER.length(), MAGIC_ENC_HEADER) == 0) {
-                    processed_js = decrypt_cache_script(cached_js);
-                    loaded_ok = !processed_js.empty();
-                } else {
+            if (!ota_js.empty() && !ota_sig.empty()) {
+                if (verify_rsa_signature(env, ota_js, ota_sig, rsa_public_key, sizeof(rsa_public_key))) {
+                    std::string cache_path = g_working_dir + "/hook_cache.js";
+                    std::string sig_path = g_working_dir + "/hook_cache.js.sig";
+                    
+                    bool is_admin = is_user_admin_local(g_working_dir);
                     if (is_admin) {
-                        processed_js = cached_js;
-                        loaded_ok = true;
+                        write_file(cache_path, ota_js);
+                        LOGI("[Reload Thread] Saved plaintext cache for admin.");
                     } else {
-                        LOGE("[Reload Thread] Plaintext cached script is not allowed for non-admin! Rejecting cache.");
-                        std::string cache_path = g_working_dir + "/hook_cache.js";
-                        std::string sig_path = g_working_dir + "/hook_cache.js.sig";
-                        remove(cache_path.c_str());
-                        remove(sig_path.c_str());
+                        std::string encrypted_js = encrypt_cache_script(ota_js);
+                        write_file(cache_path, encrypted_js);
+                        LOGI("[Reload Thread] Saved encrypted cache for non-admin.");
+                    }
+                    write_file(sig_path, ota_sig);
+                    
+                    LOGI("[Reload Thread] Dispatching script reload to main context...");
+                    g_idle_add(reload_script_idle_callback, new std::string(ota_js));
+                    g_current_script_hash = ota_js;
+                } else {
+                    LOGE("[Reload Thread] Signature verification FAILED for updated script!");
+                }
+            } else {
+                LOGE("[Reload Thread] Failed to fetch script update from server.");
+                // Fallback: Reload from local cache or built-in script if offline
+                std::string js_code_str = "";
+                std::string cached_js = read_file(g_working_dir + "/hook_cache.js");
+                std::string cached_sig = read_file(g_working_dir + "/hook_cache.js.sig");
+                if (!cached_js.empty() && !cached_sig.empty()) {
+                    bool is_admin = is_user_admin_local(g_working_dir);
+                    std::string processed_js = "";
+                    bool loaded_ok = false;
+                    
+                    if (cached_js.compare(0, MAGIC_ENC_HEADER.length(), MAGIC_ENC_HEADER) == 0) {
+                        processed_js = decrypt_cache_script(cached_js);
+                        loaded_ok = !processed_js.empty();
+                    } else {
+                        if (is_admin) {
+                            processed_js = cached_js;
+                            loaded_ok = true;
+                        } else {
+                            LOGE("[Reload Thread] Plaintext cached script is not allowed for non-admin! Rejecting cache.");
+                            std::string cache_path = g_working_dir + "/hook_cache.js";
+                            std::string sig_path = g_working_dir + "/hook_cache.js.sig";
+                            remove(cache_path.c_str());
+                            remove(sig_path.c_str());
+                        }
+                    }
+                    
+                    if (loaded_ok && verify_rsa_signature(env, processed_js, cached_sig, rsa_public_key, sizeof(rsa_public_key))) {
+                        js_code_str = processed_js;
                     }
                 }
-                
-                if (loaded_ok && verify_rsa_signature(env, processed_js, cached_sig, rsa_public_key, sizeof(rsa_public_key))) {
-                    js_code_str = processed_js;
-                }
-            }
-            if (js_code_str.empty()) {
-                unsigned char *decrypted = (unsigned char *)malloc(hook_bytes_len + 1);
-                if (decrypted) {
-                    for (unsigned int i = 0; i < hook_bytes_len; i++) {
-                        decrypted[i] = hook_bytes[i] ^ xor_key;
+                if (js_code_str.empty()) {
+                    unsigned char *decrypted = (unsigned char *)malloc(hook_bytes_len + 1);
+                    if (decrypted) {
+                        for (unsigned int i = 0; i < hook_bytes_len; i++) {
+                            decrypted[i] = hook_bytes[i] ^ xor_key;
+                        }
+                        decrypted[hook_bytes_len] = '\0';
+                        js_code_str = (const char*)decrypted;
+                        free(decrypted);
                     }
-                    decrypted[hook_bytes_len] = '\0';
-                    js_code_str = (const char*)decrypted;
-                    free(decrypted);
                 }
-            }
-            if (!js_code_str.empty()) {
-                LOGI("[Reload Thread] Loading fallback script...");
-                g_idle_add(reload_script_idle_callback, new std::string(js_code_str));
-                g_current_script_hash = js_code_str;
+                if (!js_code_str.empty()) {
+                    LOGI("[Reload Thread] Loading fallback script...");
+                    g_idle_add(reload_script_idle_callback, new std::string(js_code_str));
+                    g_current_script_hash = js_code_str;
+                }
             }
         }
+    } else {
+        LOGI("[Reload Thread] Sandbox mode active: Skipping script OTA update.");
     }
 
     // 2. Check for library updates
