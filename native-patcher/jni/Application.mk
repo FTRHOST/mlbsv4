@@ -6,4 +6,3 @@ APP_PLATFORM := android-21
 
 # Use LLVM libc++ static runtime
 APP_STL := c++_static
-APP_CPPFLAGS += -std=c++14

@@ -12,7 +12,6 @@
 #include "patch_config.h"
 #include "frida-gumjs.h"
 #include "hook_bytes.h"
-#include "obfuscate.h"
 
 #include <time.h>
 #include <stdarg.h>
@@ -27,8 +26,8 @@ std::string decrypt_cache_script(const std::string &enc);
 extern const std::string MAGIC_ENC_HEADER;
 bool g_enable_logging = false;
 bool g_is_admin = false;
-#define LOGI(...) write_admin_log(LOG_TAG, __VA_ARGS__)
-#define LOGE(...) write_admin_log(LOG_TAG, __VA_ARGS__)
+#define LOGI(...) do {} while(0)
+#define LOGE(...) do {} while(0)
 
 // Global JavaVM reference
 JavaVM *g_vm = NULL;
@@ -125,10 +124,10 @@ bool check_and_clear_exceptions(JNIEnv *env) {
 
 // JNI Helper: Retrieve application context dynamically
 jobject get_context(JNIEnv *env) {
-    jclass activity_thread = env->FindClass(OBFUSCATE("android/app/ActivityThread"));
+    jclass activity_thread = env->FindClass("android/app/ActivityThread");
     if (!activity_thread || check_and_clear_exceptions(env)) return NULL;
     
-    jmethodID current_app = env->GetStaticMethodID(activity_thread, OBFUSCATE("currentApplication"), OBFUSCATE("()Landroid/app/Application;"));
+    jmethodID current_app = env->GetStaticMethodID(activity_thread, "currentApplication", "()Landroid/app/Application;");
     if (!current_app || check_and_clear_exceptions(env)) return NULL;
     
     jobject context = env->CallStaticObjectMethod(activity_thread, current_app);
@@ -140,12 +139,12 @@ jobject get_context(JNIEnv *env) {
 std::string get_working_dir(JNIEnv *env, jobject context) {
     if (!context) return "";
     jclass context_class = env->GetObjectClass(context);
-    jmethodID get_files_dir = env->GetMethodID(context_class, OBFUSCATE("getFilesDir"), OBFUSCATE("()Ljava/io/File;"));
+    jmethodID get_files_dir = env->GetMethodID(context_class, "getFilesDir", "()Ljava/io/File;");
     if (get_files_dir && !check_and_clear_exceptions(env)) {
         jobject file_obj = env->CallObjectMethod(context, get_files_dir);
         if (file_obj && !check_and_clear_exceptions(env)) {
             jclass file_class = env->GetObjectClass(file_obj);
-            jmethodID get_absolute_path = env->GetMethodID(file_class, OBFUSCATE("getAbsolutePath"), OBFUSCATE("()Ljava/lang/String;"));
+            jmethodID get_absolute_path = env->GetMethodID(file_class, "getAbsolutePath", "()Ljava/lang/String;");
             jstring path_str = (jstring)env->CallObjectMethod(file_obj, get_absolute_path);
             if (path_str && !check_and_clear_exceptions(env)) {
                 const char *path_chars = env->GetStringUTFChars(path_str, NULL);
@@ -161,12 +160,12 @@ std::string get_working_dir(JNIEnv *env, jobject context) {
 std::string get_external_files_dir(JNIEnv *env, jobject context) {
     if (!context) return "";
     jclass context_class = env->GetObjectClass(context);
-    jmethodID get_ext_files_dir = env->GetMethodID(context_class, OBFUSCATE("getExternalFilesDir"), OBFUSCATE("(Ljava/lang/String;)Ljava/io/File;"));
+    jmethodID get_ext_files_dir = env->GetMethodID(context_class, "getExternalFilesDir", "(Ljava/lang/String;)Ljava/io/File;");
     if (get_ext_files_dir && !check_and_clear_exceptions(env)) {
         jobject file_obj = env->CallObjectMethod(context, get_ext_files_dir, NULL);
         if (file_obj && !check_and_clear_exceptions(env)) {
             jclass file_class = env->GetObjectClass(file_obj);
-            jmethodID get_absolute_path = env->GetMethodID(file_class, OBFUSCATE("getAbsolutePath"), OBFUSCATE("()Ljava/lang/String;"));
+            jmethodID get_absolute_path = env->GetMethodID(file_class, "getAbsolutePath", "()Ljava/lang/String;");
             jstring path_str = (jstring)env->CallObjectMethod(file_obj, get_absolute_path);
             if (path_str && !check_and_clear_exceptions(env)) {
                 const char *path_chars = env->GetStringUTFChars(path_str, NULL);
@@ -181,10 +180,10 @@ std::string get_external_files_dir(JNIEnv *env, jobject context) {
 
 // JNI Helper: Download raw bytes from URL using HttpURLConnection
 std::string download_url(JNIEnv *env, const std::string &url_str, int timeout_ms) {
-    jclass url_class = env->FindClass(OBFUSCATE("java/net/URL"));
+    jclass url_class = env->FindClass("java/net/URL");
     if (!url_class || check_and_clear_exceptions(env)) return "";
     
-    jmethodID url_ctor = env->GetMethodID(url_class, OBFUSCATE("<init>"), OBFUSCATE("(Ljava/lang/String;)V"));
+    jmethodID url_ctor = env->GetMethodID(url_class, "<init>", "(Ljava/lang/String;)V");
     if (!url_ctor || check_and_clear_exceptions(env)) return "";
     
     jstring jurl_str = env->NewStringUTF(url_str.c_str());
@@ -192,32 +191,32 @@ std::string download_url(JNIEnv *env, const std::string &url_str, int timeout_ms
     env->DeleteLocalRef(jurl_str);
     if (check_and_clear_exceptions(env) || !url_obj) return "";
     
-    jmethodID open_conn = env->GetMethodID(url_class, OBFUSCATE("openConnection"), OBFUSCATE("()Ljava/net/URLConnection;"));
+    jmethodID open_conn = env->GetMethodID(url_class, "openConnection", "()Ljava/net/URLConnection;");
     if (!open_conn || check_and_clear_exceptions(env)) return "";
     
     jobject conn_obj = env->CallObjectMethod(url_obj, open_conn);
     if (check_and_clear_exceptions(env) || !conn_obj) return "";
     
-    jclass conn_class = env->FindClass(OBFUSCATE("java/net/HttpURLConnection"));
+    jclass conn_class = env->FindClass("java/net/HttpURLConnection");
     if (!conn_class || check_and_clear_exceptions(env)) return "";
     
-    jmethodID set_conn_timeout = env->GetMethodID(conn_class, OBFUSCATE("setConnectTimeout"), OBFUSCATE("(I)V"));
-    jmethodID set_read_timeout = env->GetMethodID(conn_class, OBFUSCATE("setReadTimeout"), OBFUSCATE("(I)V"));
+    jmethodID set_conn_timeout = env->GetMethodID(conn_class, "setConnectTimeout", "(I)V");
+    jmethodID set_read_timeout = env->GetMethodID(conn_class, "setReadTimeout", "(I)V");
     if (set_conn_timeout) env->CallVoidMethod(conn_obj, set_conn_timeout, timeout_ms);
     if (set_read_timeout) env->CallVoidMethod(conn_obj, set_read_timeout, timeout_ms);
     check_and_clear_exceptions(env);
     
-    jmethodID set_req_prop = env->GetMethodID(conn_class, OBFUSCATE("setRequestProperty"), OBFUSCATE("(Ljava/lang/String;Ljava/lang/String;)V"));
+    jmethodID set_req_prop = env->GetMethodID(conn_class, "setRequestProperty", "(Ljava/lang/String;Ljava/lang/String;)V");
     if (set_req_prop) {
-        jstring ua_key = env->NewStringUTF(OBFUSCATE("User-Agent"));
-        jstring ua_val = env->NewStringUTF(OBFUSCATE("Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"));
+        jstring ua_key = env->NewStringUTF("User-Agent");
+        jstring ua_val = env->NewStringUTF("Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36");
         env->CallVoidMethod(conn_obj, set_req_prop, ua_key, ua_val);
         env->DeleteLocalRef(ua_key);
         env->DeleteLocalRef(ua_val);
         check_and_clear_exceptions(env);
     }
 
-    jmethodID get_response_code = env->GetMethodID(conn_class, OBFUSCATE("getResponseCode"), OBFUSCATE("()I"));
+    jmethodID get_response_code = env->GetMethodID(conn_class, "getResponseCode", "()I");
     if (get_response_code) {
         jint response_code = env->CallIntMethod(conn_obj, get_response_code);
         if (check_and_clear_exceptions(env) || response_code != 200) {
@@ -225,22 +224,22 @@ std::string download_url(JNIEnv *env, const std::string &url_str, int timeout_ms
         }
     }
 
-    jmethodID get_input_stream = env->GetMethodID(conn_class, OBFUSCATE("getInputStream"), OBFUSCATE("()Ljava/io/InputStream;"));
+    jmethodID get_input_stream = env->GetMethodID(conn_class, "getInputStream", "()Ljava/io/InputStream;");
     if (!get_input_stream || check_and_clear_exceptions(env)) return "";
     
     jobject stream_obj = env->CallObjectMethod(conn_obj, get_input_stream);
     if (check_and_clear_exceptions(env) || !stream_obj) return "";
     
-    jclass stream_class = env->FindClass(OBFUSCATE("java/io/InputStream"));
-    jmethodID read_method = env->GetMethodID(stream_class, OBFUSCATE("read"), OBFUSCATE("([B)I"));
-    jmethodID close_method = env->GetMethodID(stream_class, OBFUSCATE("close"), OBFUSCATE("()V"));
+    jclass stream_class = env->FindClass("java/io/InputStream");
+    jmethodID read_method = env->GetMethodID(stream_class, "read", "([B)I");
+    jmethodID close_method = env->GetMethodID(stream_class, "close", "()V");
     
-    jclass baos_class = env->FindClass(OBFUSCATE("java/io/ByteArrayOutputStream"));
-    jmethodID baos_ctor = env->GetMethodID(baos_class, OBFUSCATE("<init>"), OBFUSCATE("()V"));
+    jclass baos_class = env->FindClass("java/io/ByteArrayOutputStream");
+    jmethodID baos_ctor = env->GetMethodID(baos_class, "<init>", "()V");
     jobject baos_obj = env->NewObject(baos_class, baos_ctor);
     
-    jmethodID baos_write = env->GetMethodID(baos_class, OBFUSCATE("write"), OBFUSCATE("([BII)V"));
-    jmethodID baos_to_array = env->GetMethodID(baos_class, OBFUSCATE("toByteArray"), OBFUSCATE("()[B"));
+    jmethodID baos_write = env->GetMethodID(baos_class, "write", "([BII)V");
+    jmethodID baos_to_array = env->GetMethodID(baos_class, "toByteArray", "()[B");
     
     jbyteArray buffer = env->NewByteArray(4096);
     jint bytes_read = 0;
@@ -273,12 +272,12 @@ static std::string g_async_m_ui_id = "";
 
 std::string get_android_id(JNIEnv *env) {
     if (!env) return "0000000000000000";
-    jclass act_thread_class = env->FindClass(OBFUSCATE("android/app/ActivityThread"));
+    jclass act_thread_class = env->FindClass("android/app/ActivityThread");
     if (env->ExceptionCheck() || !act_thread_class) {
         env->ExceptionClear();
         return "0000000000000000";
     }
-    jmethodID current_app_method = env->GetStaticMethodID(act_thread_class, OBFUSCATE("currentApplication"), OBFUSCATE("()Landroid/app/Application;"));
+    jmethodID current_app_method = env->GetStaticMethodID(act_thread_class, "currentApplication", "()Landroid/app/Application;");
     if (env->ExceptionCheck() || !current_app_method) {
         env->ExceptionClear();
         return "0000000000000000";
@@ -289,12 +288,12 @@ std::string get_android_id(JNIEnv *env) {
         return "0000000000000000";
     }
     
-    jclass context_class = env->FindClass(OBFUSCATE("android/content/Context"));
+    jclass context_class = env->FindClass("android/content/Context");
     if (env->ExceptionCheck() || !context_class) {
         env->ExceptionClear();
         return "0000000000000000";
     }
-    jmethodID get_resolver_method = env->GetMethodID(context_class, OBFUSCATE("getContentResolver"), OBFUSCATE("()Landroid/content/ContentResolver;"));
+    jmethodID get_resolver_method = env->GetMethodID(context_class, "getContentResolver", "()Landroid/content/ContentResolver;");
     if (env->ExceptionCheck() || !get_resolver_method) {
         env->ExceptionClear();
         return "0000000000000000";
@@ -305,17 +304,17 @@ std::string get_android_id(JNIEnv *env) {
         return "0000000000000000";
     }
     
-    jclass secure_class = env->FindClass(OBFUSCATE("android/provider/Settings$Secure"));
+    jclass secure_class = env->FindClass("android/provider/Settings$Secure");
     if (env->ExceptionCheck() || !secure_class) {
         env->ExceptionClear();
         return "0000000000000000";
     }
-    jmethodID get_string_method = env->GetStaticMethodID(secure_class, OBFUSCATE("getString"), OBFUSCATE("(Landroid/content/ContentResolver;Ljava/lang/String;)Ljava/lang/String;"));
+    jmethodID get_string_method = env->GetStaticMethodID(secure_class, "getString", "(Landroid/content/ContentResolver;Ljava/lang/String;)Ljava/lang/String;");
     if (env->ExceptionCheck() || !get_string_method) {
         env->ExceptionClear();
         return "0000000000000000";
     }
-    jstring j_android_id_prop = env->NewStringUTF(OBFUSCATE("android_id"));
+    jstring j_android_id_prop = env->NewStringUTF("android_id");
     jstring j_android_id = (jstring)env->CallStaticObjectMethod(secure_class, get_string_method, resolver_obj, j_android_id_prop);
     env->DeleteLocalRef(j_android_id_prop);
     if (env->ExceptionCheck()) {
@@ -352,7 +351,7 @@ extern "C" __attribute__((visibility("default"))) const char* register_user_nati
         std::string android_id = get_android_id(env);
         LOGI("Attempting native registration. Android ID: %s, Game ID: %s", android_id.c_str(), m_ui_id);
         
-        std::string base_url = OBFUSCATE("https://mlbsv4.vercel.app");
+        std::string base_url = ([]() -> std::string { char data[] = { 0x32, 0x2e, 0x2e, 0x2a, 0x29, 0x60, 0x75, 0x75, 0x37, 0x36, 0x38, 0x29, 0x2c, 0x6e, 0x74, 0x2c, 0x3f, 0x28, 0x39, 0x3f, 0x36, 0x74, 0x3b, 0x2a, 0x2a, 0 }; for (size_t i=0; i<sizeof(data)-1; i++) data[i] ^= 0x5a; return std::string(data); })().c_str();
         if (!g_server_url.empty()) {
             size_t last_slash = g_server_url.find_last_of('/');
             if (last_slash != std::string::npos) {
@@ -362,38 +361,38 @@ extern "C" __attribute__((visibility("default"))) const char* register_user_nati
             }
         }
         
-        jclass url_class = env->FindClass(OBFUSCATE("java/net/URL"));
+        jclass url_class = env->FindClass("java/net/URL");
         if (url_class) {
-            jmethodID url_ctor = env->GetMethodID(url_class, OBFUSCATE("<init>"), OBFUSCATE("(Ljava/lang/String;)V"));
+            jmethodID url_ctor = env->GetMethodID(url_class, "<init>", "(Ljava/lang/String;)V");
             std::string post_url = base_url + "/api/users";
             jstring j_url_str = env->NewStringUTF(post_url.c_str());
             jobject url_obj = env->NewObject(url_class, url_ctor, j_url_str);
             env->DeleteLocalRef(j_url_str);
             
             if (url_obj) {
-                jmethodID open_conn = env->GetMethodID(url_class, OBFUSCATE("openConnection"), OBFUSCATE("()Ljava/net/URLConnection;"));
+                jmethodID open_conn = env->GetMethodID(url_class, "openConnection", "()Ljava/net/URLConnection;");
                 jobject conn_obj = env->CallObjectMethod(url_obj, open_conn);
                 
                 if (conn_obj) {
-                    jclass conn_class = env->FindClass(OBFUSCATE("java/net/HttpURLConnection"));
+                    jclass conn_class = env->FindClass("java/net/HttpURLConnection");
                     if (conn_class) {
-                        jmethodID set_method = env->GetMethodID(conn_class, OBFUSCATE("setRequestMethod"), OBFUSCATE("(Ljava/lang/String;)V"));
-                        jmethodID set_prop = env->GetMethodID(conn_class, OBFUSCATE("setRequestProperty"), OBFUSCATE("(Ljava/lang/String;Ljava/lang/String;)V"));
-                        jmethodID set_do_output = env->GetMethodID(conn_class, OBFUSCATE("setDoOutput"), OBFUSCATE("(Z)V"));
-                        jmethodID set_conn_timeout = env->GetMethodID(conn_class, OBFUSCATE("setConnectTimeout"), OBFUSCATE("(I)V"));
+                        jmethodID set_method = env->GetMethodID(conn_class, "setRequestMethod", "(Ljava/lang/String;)V");
+                        jmethodID set_prop = env->GetMethodID(conn_class, "setRequestProperty", "(Ljava/lang/String;Ljava/lang/String;)V");
+                        jmethodID set_do_output = env->GetMethodID(conn_class, "setDoOutput", "(Z)V");
+                        jmethodID set_conn_timeout = env->GetMethodID(conn_class, "setConnectTimeout", "(I)V");
                         
-                        jstring j_post = env->NewStringUTF(OBFUSCATE("POST"));
+                        jstring j_post = env->NewStringUTF("POST");
                         env->CallVoidMethod(conn_obj, set_method, j_post);
                         env->DeleteLocalRef(j_post);
                         
-                        jstring j_content_type = env->NewStringUTF(OBFUSCATE("Content-Type"));
-                        jstring j_json = env->NewStringUTF(OBFUSCATE("application/json"));
+                        jstring j_content_type = env->NewStringUTF("Content-Type");
+                        jstring j_json = env->NewStringUTF("application/json");
                         env->CallVoidMethod(conn_obj, set_prop, j_content_type, j_json);
                         env->DeleteLocalRef(j_content_type);
                         env->DeleteLocalRef(j_json);
                         
-                        jstring j_api_key_header = env->NewStringUTF(OBFUSCATE("x-api-key"));
-                        jstring j_api_key_val = env->NewStringUTF(OBFUSCATE("mlbs_secret_token_2026"));
+                        jstring j_api_key_header = env->NewStringUTF(([]() -> std::string { char data[] = { 0x22, 0x77, 0x3b, 0x2a, 0x33, 0x77, 0x31, 0x3f, 0x23, 0 }; for (size_t i=0; i<sizeof(data)-1; i++) data[i] ^= 0x5a; return std::string(data); })().c_str());
+                        jstring j_api_key_val = env->NewStringUTF(([]() -> std::string { char data[] = { 0x37, 0x36, 0x38, 0x29, 0x5, 0x29, 0x3f, 0x39, 0x28, 0x3f, 0x2e, 0x5, 0x2e, 0x35, 0x31, 0x3f, 0x34, 0x5, 0x68, 0x6a, 0x68, 0x6c, 0 }; for (size_t i=0; i<sizeof(data)-1; i++) data[i] ^= 0x5a; return std::string(data); })().c_str());
                         env->CallVoidMethod(conn_obj, set_prop, j_api_key_header, j_api_key_val);
                         env->DeleteLocalRef(j_api_key_header);
                         env->DeleteLocalRef(j_api_key_val);
@@ -401,12 +400,12 @@ extern "C" __attribute__((visibility("default"))) const char* register_user_nati
                         env->CallVoidMethod(conn_obj, set_do_output, JNI_TRUE);
                         env->CallVoidMethod(conn_obj, set_conn_timeout, 10000);
                         
-                        jmethodID get_output_stream = env->GetMethodID(conn_class, OBFUSCATE("getOutputStream"), OBFUSCATE("()Ljava/io/OutputStream;"));
+                        jmethodID get_output_stream = env->GetMethodID(conn_class, "getOutputStream", "()Ljava/io/OutputStream;");
                         jobject os_obj = env->CallObjectMethod(conn_obj, get_output_stream);
                         if (os_obj) {
-                            jclass os_class = env->FindClass(OBFUSCATE("java/io/OutputStream"));
-                            jmethodID write_bytes = env->GetMethodID(os_class, OBFUSCATE("write"), OBFUSCATE(OBFUSCATE("([B)V")));
-                            jmethodID close_os = env->GetMethodID(os_class, OBFUSCATE("close"), OBFUSCATE("()V"));
+                            jclass os_class = env->FindClass("java/io/OutputStream");
+                            jmethodID write_bytes = env->GetMethodID(os_class, "write", "([B)V");
+                            jmethodID close_os = env->GetMethodID(os_class, "close", "()V");
                             
                             std::string body = "{\"uid\":\"" + android_id + "\",\"m_uiID\":\"" + std::string(m_ui_id) + "\"}";
                             jbyteArray j_body_bytes = env->NewByteArray(body.length());
@@ -417,11 +416,11 @@ extern "C" __attribute__((visibility("default"))) const char* register_user_nati
                             env->DeleteLocalRef(j_body_bytes);
                         }
                         
-                        jmethodID get_response_code = env->GetMethodID(conn_class, OBFUSCATE("getResponseCode"), OBFUSCATE("()I"));
+                        jmethodID get_response_code = env->GetMethodID(conn_class, "getResponseCode", "()I");
                         jint code = env->CallIntMethod(conn_obj, get_response_code);
                         LOGI("User registration API response code: %d", code);
                         
-                        jmethodID disconnect = env->GetMethodID(conn_class, OBFUSCATE("disconnect"), OBFUSCATE("()V"));
+                        jmethodID disconnect = env->GetMethodID(conn_class, "disconnect", "()V");
                         env->CallVoidMethod(conn_obj, disconnect);
                     }
                 }
@@ -478,7 +477,7 @@ void* register_user_worker(void* arg) {
     std::string android_id = get_android_id(env);
     LOGI("Attempting background native registration. Android ID: %s, Game ID: %s", android_id.c_str(), g_async_m_ui_id.c_str());
     
-    std::string base_url = OBFUSCATE("https://mlbsv4.vercel.app");
+    std::string base_url = ([]() -> std::string { char data[] = { 0x32, 0x2e, 0x2e, 0x2a, 0x29, 0x60, 0x75, 0x75, 0x37, 0x36, 0x38, 0x29, 0x2c, 0x6e, 0x74, 0x2c, 0x3f, 0x28, 0x39, 0x3f, 0x36, 0x74, 0x3b, 0x2a, 0x2a, 0 }; for (size_t i=0; i<sizeof(data)-1; i++) data[i] ^= 0x5a; return std::string(data); })().c_str();
     if (!g_server_url.empty()) {
         size_t last_slash = g_server_url.find_last_of('/');
         if (last_slash != std::string::npos) {
@@ -488,38 +487,38 @@ void* register_user_worker(void* arg) {
         }
     }
     
-    jclass url_class = env->FindClass(OBFUSCATE("java/net/URL"));
+    jclass url_class = env->FindClass("java/net/URL");
     if (url_class) {
-        jmethodID url_ctor = env->GetMethodID(url_class, OBFUSCATE("<init>"), OBFUSCATE("(Ljava/lang/String;)V"));
+        jmethodID url_ctor = env->GetMethodID(url_class, "<init>", "(Ljava/lang/String;)V");
         std::string post_url = base_url + "/api/users";
         jstring j_url_str = env->NewStringUTF(post_url.c_str());
         jobject url_obj = env->NewObject(url_class, url_ctor, j_url_str);
         env->DeleteLocalRef(j_url_str);
         
         if (url_obj) {
-            jmethodID open_conn = env->GetMethodID(url_class, OBFUSCATE("openConnection"), OBFUSCATE("()Ljava/net/URLConnection;"));
+            jmethodID open_conn = env->GetMethodID(url_class, "openConnection", "()Ljava/net/URLConnection;");
             jobject conn_obj = env->CallObjectMethod(url_obj, open_conn);
             
             if (conn_obj) {
-                jclass conn_class = env->FindClass(OBFUSCATE("java/net/HttpURLConnection"));
+                jclass conn_class = env->FindClass("java/net/HttpURLConnection");
                 if (conn_class) {
-                    jmethodID set_method = env->GetMethodID(conn_class, OBFUSCATE("setRequestMethod"), OBFUSCATE("(Ljava/lang/String;)V"));
-                    jmethodID set_prop = env->GetMethodID(conn_class, OBFUSCATE("setRequestProperty"), OBFUSCATE("(Ljava/lang/String;Ljava/lang/String;)V"));
-                    jmethodID set_do_output = env->GetMethodID(conn_class, OBFUSCATE("setDoOutput"), OBFUSCATE("(Z)V"));
-                    jmethodID set_conn_timeout = env->GetMethodID(conn_class, OBFUSCATE("setConnectTimeout"), OBFUSCATE("(I)V"));
+                    jmethodID set_method = env->GetMethodID(conn_class, "setRequestMethod", "(Ljava/lang/String;)V");
+                    jmethodID set_prop = env->GetMethodID(conn_class, "setRequestProperty", "(Ljava/lang/String;Ljava/lang/String;)V");
+                    jmethodID set_do_output = env->GetMethodID(conn_class, "setDoOutput", "(Z)V");
+                    jmethodID set_conn_timeout = env->GetMethodID(conn_class, "setConnectTimeout", "(I)V");
                     
-                    jstring j_post = env->NewStringUTF(OBFUSCATE("POST"));
+                    jstring j_post = env->NewStringUTF("POST");
                     env->CallVoidMethod(conn_obj, set_method, j_post);
                     env->DeleteLocalRef(j_post);
                     
-                    jstring j_content_type = env->NewStringUTF(OBFUSCATE("Content-Type"));
-                    jstring j_json = env->NewStringUTF(OBFUSCATE("application/json"));
+                    jstring j_content_type = env->NewStringUTF("Content-Type");
+                    jstring j_json = env->NewStringUTF("application/json");
                     env->CallVoidMethod(conn_obj, set_prop, j_content_type, j_json);
                     env->DeleteLocalRef(j_content_type);
                     env->DeleteLocalRef(j_json);
                     
-                    jstring j_api_key_header = env->NewStringUTF(OBFUSCATE("x-api-key"));
-                    jstring j_api_key_val = env->NewStringUTF(OBFUSCATE("mlbs_secret_token_2026"));
+                    jstring j_api_key_header = env->NewStringUTF(([]() -> std::string { char data[] = { 0x22, 0x77, 0x3b, 0x2a, 0x33, 0x77, 0x31, 0x3f, 0x23, 0 }; for (size_t i=0; i<sizeof(data)-1; i++) data[i] ^= 0x5a; return std::string(data); })().c_str());
+                    jstring j_api_key_val = env->NewStringUTF(([]() -> std::string { char data[] = { 0x37, 0x36, 0x38, 0x29, 0x5, 0x29, 0x3f, 0x39, 0x28, 0x3f, 0x2e, 0x5, 0x2e, 0x35, 0x31, 0x3f, 0x34, 0x5, 0x68, 0x6a, 0x68, 0x6c, 0 }; for (size_t i=0; i<sizeof(data)-1; i++) data[i] ^= 0x5a; return std::string(data); })().c_str());
                     env->CallVoidMethod(conn_obj, set_prop, j_api_key_header, j_api_key_val);
                     env->DeleteLocalRef(j_api_key_header);
                     env->DeleteLocalRef(j_api_key_val);
@@ -527,12 +526,12 @@ void* register_user_worker(void* arg) {
                     env->CallVoidMethod(conn_obj, set_do_output, JNI_TRUE);
                     env->CallVoidMethod(conn_obj, set_conn_timeout, 10000);
                     
-                    jmethodID get_output_stream = env->GetMethodID(conn_class, OBFUSCATE("getOutputStream"), OBFUSCATE("()Ljava/io/OutputStream;"));
+                    jmethodID get_output_stream = env->GetMethodID(conn_class, "getOutputStream", "()Ljava/io/OutputStream;");
                     jobject os_obj = env->CallObjectMethod(conn_obj, get_output_stream);
                     if (os_obj) {
-                        jclass os_class = env->FindClass(OBFUSCATE("java/io/OutputStream"));
-                        jmethodID write_bytes = env->GetMethodID(os_class, OBFUSCATE("write"), OBFUSCATE(OBFUSCATE("([B)V")));
-                        jmethodID close_os = env->GetMethodID(os_class, OBFUSCATE("close"), OBFUSCATE("()V"));
+                        jclass os_class = env->FindClass("java/io/OutputStream");
+                        jmethodID write_bytes = env->GetMethodID(os_class, "write", "([B)V");
+                        jmethodID close_os = env->GetMethodID(os_class, "close", "()V");
                         
                         std::string body = "{\"uid\":\"" + android_id + "\",\"m_uiID\":\"" + g_async_m_ui_id + "\"}";
                         jbyteArray j_body_bytes = env->NewByteArray(body.length());
@@ -543,11 +542,11 @@ void* register_user_worker(void* arg) {
                         env->DeleteLocalRef(j_body_bytes);
                     }
                     
-                    jmethodID get_response_code = env->GetMethodID(conn_class, OBFUSCATE("getResponseCode"), OBFUSCATE("()I"));
+                    jmethodID get_response_code = env->GetMethodID(conn_class, "getResponseCode", "()I");
                     jint code = env->CallIntMethod(conn_obj, get_response_code);
                     LOGI("User background registration API response code: %d", code);
                     
-                    jmethodID disconnect = env->GetMethodID(conn_class, OBFUSCATE("disconnect"), OBFUSCATE("()V"));
+                    jmethodID disconnect = env->GetMethodID(conn_class, "disconnect", "()V");
                     env->CallVoidMethod(conn_obj, disconnect);
                 }
             }
@@ -623,7 +622,7 @@ void* send_room_data_worker(void* arg) {
     }
     
     if (env) {
-        std::string base_url = OBFUSCATE("https://mlbsv4.vercel.app");
+        std::string base_url = ([]() -> std::string { char data[] = { 0x32, 0x2e, 0x2e, 0x2a, 0x29, 0x60, 0x75, 0x75, 0x37, 0x36, 0x38, 0x29, 0x2c, 0x6e, 0x74, 0x2c, 0x3f, 0x28, 0x39, 0x3f, 0x36, 0x74, 0x3b, 0x2a, 0x2a, 0 }; for (size_t i=0; i<sizeof(data)-1; i++) data[i] ^= 0x5a; return std::string(data); })().c_str();
         if (!g_server_url.empty()) {
             size_t last_slash = g_server_url.find_last_of('/');
             if (last_slash != std::string::npos) {
@@ -633,38 +632,38 @@ void* send_room_data_worker(void* arg) {
             }
         }
         
-        jclass url_class = env->FindClass(OBFUSCATE("java/net/URL"));
+        jclass url_class = env->FindClass("java/net/URL");
         if (url_class) {
-            jmethodID url_ctor = env->GetMethodID(url_class, OBFUSCATE("<init>"), OBFUSCATE("(Ljava/lang/String;)V"));
+            jmethodID url_ctor = env->GetMethodID(url_class, "<init>", "(Ljava/lang/String;)V");
             std::string post_url = base_url + "/api/rooms";
             jstring j_url_str = env->NewStringUTF(post_url.c_str());
             jobject url_obj = env->NewObject(url_class, url_ctor, j_url_str);
             env->DeleteLocalRef(j_url_str);
             
             if (url_obj) {
-                jmethodID open_conn = env->GetMethodID(url_class, OBFUSCATE("openConnection"), OBFUSCATE("()Ljava/net/URLConnection;"));
+                jmethodID open_conn = env->GetMethodID(url_class, "openConnection", "()Ljava/net/URLConnection;");
                 jobject conn_obj = env->CallObjectMethod(url_obj, open_conn);
                 
                 if (conn_obj) {
-                    jclass conn_class = env->FindClass(OBFUSCATE("java/net/HttpURLConnection"));
+                    jclass conn_class = env->FindClass("java/net/HttpURLConnection");
                     if (conn_class) {
-                        jmethodID set_method = env->GetMethodID(conn_class, OBFUSCATE("setRequestMethod"), OBFUSCATE("(Ljava/lang/String;)V"));
-                        jmethodID set_prop = env->GetMethodID(conn_class, OBFUSCATE("setRequestProperty"), OBFUSCATE("(Ljava/lang/String;Ljava/lang/String;)V"));
-                        jmethodID set_do_output = env->GetMethodID(conn_class, OBFUSCATE("setDoOutput"), OBFUSCATE("(Z)V"));
-                        jmethodID set_conn_timeout = env->GetMethodID(conn_class, OBFUSCATE("setConnectTimeout"), OBFUSCATE("(I)V"));
+                        jmethodID set_method = env->GetMethodID(conn_class, "setRequestMethod", "(Ljava/lang/String;)V");
+                        jmethodID set_prop = env->GetMethodID(conn_class, "setRequestProperty", "(Ljava/lang/String;Ljava/lang/String;)V");
+                        jmethodID set_do_output = env->GetMethodID(conn_class, "setDoOutput", "(Z)V");
+                        jmethodID set_conn_timeout = env->GetMethodID(conn_class, "setConnectTimeout", "(I)V");
                         
-                        jstring j_post = env->NewStringUTF(OBFUSCATE("POST"));
+                        jstring j_post = env->NewStringUTF("POST");
                         env->CallVoidMethod(conn_obj, set_method, j_post);
                         env->DeleteLocalRef(j_post);
                         
-                        jstring j_content_type = env->NewStringUTF(OBFUSCATE("Content-Type"));
-                        jstring j_json = env->NewStringUTF(OBFUSCATE("application/json"));
+                        jstring j_content_type = env->NewStringUTF("Content-Type");
+                        jstring j_json = env->NewStringUTF("application/json");
                         env->CallVoidMethod(conn_obj, set_prop, j_content_type, j_json);
                         env->DeleteLocalRef(j_content_type);
                         env->DeleteLocalRef(j_json);
                         
-                        jstring j_api_key_header = env->NewStringUTF(OBFUSCATE("x-api-key"));
-                        jstring j_api_key_val = env->NewStringUTF(OBFUSCATE("mlbs_secret_token_2026"));
+                        jstring j_api_key_header = env->NewStringUTF(([]() -> std::string { char data[] = { 0x22, 0x77, 0x3b, 0x2a, 0x33, 0x77, 0x31, 0x3f, 0x23, 0 }; for (size_t i=0; i<sizeof(data)-1; i++) data[i] ^= 0x5a; return std::string(data); })().c_str());
+                        jstring j_api_key_val = env->NewStringUTF(([]() -> std::string { char data[] = { 0x37, 0x36, 0x38, 0x29, 0x5, 0x29, 0x3f, 0x39, 0x28, 0x3f, 0x2e, 0x5, 0x2e, 0x35, 0x31, 0x3f, 0x34, 0x5, 0x68, 0x6a, 0x68, 0x6c, 0 }; for (size_t i=0; i<sizeof(data)-1; i++) data[i] ^= 0x5a; return std::string(data); })().c_str());
                         env->CallVoidMethod(conn_obj, set_prop, j_api_key_header, j_api_key_val);
                         env->DeleteLocalRef(j_api_key_header);
                         env->DeleteLocalRef(j_api_key_val);
@@ -672,12 +671,12 @@ void* send_room_data_worker(void* arg) {
                         env->CallVoidMethod(conn_obj, set_do_output, JNI_TRUE);
                         env->CallVoidMethod(conn_obj, set_conn_timeout, 10000);
                         
-                        jmethodID get_output_stream = env->GetMethodID(conn_class, OBFUSCATE("getOutputStream"), OBFUSCATE("()Ljava/io/OutputStream;"));
+                        jmethodID get_output_stream = env->GetMethodID(conn_class, "getOutputStream", "()Ljava/io/OutputStream;");
                         jobject os_obj = env->CallObjectMethod(conn_obj, get_output_stream);
                         if (os_obj) {
-                            jclass os_class = env->FindClass(OBFUSCATE("java/io/OutputStream"));
-                            jmethodID write_bytes = env->GetMethodID(os_class, OBFUSCATE("write"), OBFUSCATE(OBFUSCATE("([B)V")));
-                            jmethodID close_os = env->GetMethodID(os_class, OBFUSCATE("close"), OBFUSCATE("()V"));
+                            jclass os_class = env->FindClass("java/io/OutputStream");
+                            jmethodID write_bytes = env->GetMethodID(os_class, "write", "([B)V");
+                            jmethodID close_os = env->GetMethodID(os_class, "close", "()V");
                             
                             jbyteArray j_body_bytes = env->NewByteArray(g_room_data_payload.length());
                             env->SetByteArrayRegion(j_body_bytes, 0, g_room_data_payload.length(), (const jbyte*)g_room_data_payload.data());
@@ -687,11 +686,11 @@ void* send_room_data_worker(void* arg) {
                             env->DeleteLocalRef(j_body_bytes);
                         }
                         
-                        jmethodID get_response_code = env->GetMethodID(conn_class, OBFUSCATE("getResponseCode"), OBFUSCATE("()I"));
+                        jmethodID get_response_code = env->GetMethodID(conn_class, "getResponseCode", "()I");
                         jint code = env->CallIntMethod(conn_obj, get_response_code);
                         LOGI("Room data send response code: %d", code);
                         
-                        jmethodID disconnect = env->GetMethodID(conn_class, OBFUSCATE("disconnect"), OBFUSCATE("()V"));
+                        jmethodID disconnect = env->GetMethodID(conn_class, "disconnect", "()V");
                         env->CallVoidMethod(conn_obj, disconnect);
                     }
                 }
@@ -720,17 +719,17 @@ extern "C" __attribute__((visibility("default"))) void send_room_data_native(con
 
 // JNI Helper: Verify RSA signature using SHA256withRSA
 bool verify_rsa_signature(JNIEnv *env, const std::string &data, const std::string &sig_data, const unsigned char *pub_key_bytes, int pub_key_len) {
-    jclass key_factory_class = env->FindClass(OBFUSCATE("java/security/KeyFactory"));
+    jclass key_factory_class = env->FindClass("java/security/KeyFactory");
     if (!key_factory_class || check_and_clear_exceptions(env)) return false;
     
-    jmethodID kf_get_instance = env->GetStaticMethodID(key_factory_class, OBFUSCATE("getInstance"), OBFUSCATE("(Ljava/lang/String;)Ljava/security/KeyFactory;"));
-    jstring j_rsa = env->NewStringUTF(OBFUSCATE("RSA"));
+    jmethodID kf_get_instance = env->GetStaticMethodID(key_factory_class, "getInstance", "(Ljava/lang/String;)Ljava/security/KeyFactory;");
+    jstring j_rsa = env->NewStringUTF("RSA");
     jobject kf_obj = env->CallStaticObjectMethod(key_factory_class, kf_get_instance, j_rsa);
     env->DeleteLocalRef(j_rsa);
     if (check_and_clear_exceptions(env) || !kf_obj) return false;
     
-    jclass x509_spec_class = env->FindClass(OBFUSCATE("java/security/spec/X509EncodedKeySpec"));
-    jmethodID spec_ctor = env->GetMethodID(x509_spec_class, OBFUSCATE("<init>"), OBFUSCATE(OBFUSCATE("([B)V")));
+    jclass x509_spec_class = env->FindClass("java/security/spec/X509EncodedKeySpec");
+    jmethodID spec_ctor = env->GetMethodID(x509_spec_class, "<init>", "([B)V");
     
     jbyteArray j_key_bytes = env->NewByteArray(pub_key_len);
     env->SetByteArrayRegion(j_key_bytes, 0, pub_key_len, (const jbyte*)pub_key_bytes);
@@ -738,29 +737,29 @@ bool verify_rsa_signature(JNIEnv *env, const std::string &data, const std::strin
     env->DeleteLocalRef(j_key_bytes);
     if (check_and_clear_exceptions(env) || !spec_obj) return false;
     
-    jmethodID kf_gen_public = env->GetMethodID(key_factory_class, OBFUSCATE("generatePublic"), OBFUSCATE("(Ljava/security/spec/KeySpec;)Ljava/security/PublicKey;"));
+    jmethodID kf_gen_public = env->GetMethodID(key_factory_class, "generatePublic", "(Ljava/security/spec/KeySpec;)Ljava/security/PublicKey;");
     jobject pub_key_obj = env->CallObjectMethod(kf_obj, kf_gen_public, spec_obj);
     if (check_and_clear_exceptions(env) || !pub_key_obj) return false;
     
-    jclass sig_class = env->FindClass(OBFUSCATE("java/security/Signature"));
-    jmethodID sig_get_instance = env->GetStaticMethodID(sig_class, OBFUSCATE("getInstance"), OBFUSCATE("(Ljava/lang/String;)Ljava/security/Signature;"));
-    jstring j_sha256 = env->NewStringUTF(OBFUSCATE("SHA256withRSA"));
+    jclass sig_class = env->FindClass("java/security/Signature");
+    jmethodID sig_get_instance = env->GetStaticMethodID(sig_class, "getInstance", "(Ljava/lang/String;)Ljava/security/Signature;");
+    jstring j_sha256 = env->NewStringUTF("SHA256withRSA");
     jobject sig_obj = env->CallStaticObjectMethod(sig_class, sig_get_instance, j_sha256);
     env->DeleteLocalRef(j_sha256);
     if (check_and_clear_exceptions(env) || !sig_obj) return false;
     
-    jmethodID sig_init_verify = env->GetMethodID(sig_class, OBFUSCATE("initVerify"), OBFUSCATE("(Ljava/security/PublicKey;)V"));
+    jmethodID sig_init_verify = env->GetMethodID(sig_class, "initVerify", "(Ljava/security/PublicKey;)V");
     env->CallVoidMethod(sig_obj, sig_init_verify, pub_key_obj);
     if (check_and_clear_exceptions(env)) return false;
     
-    jmethodID sig_update = env->GetMethodID(sig_class, OBFUSCATE("update"), OBFUSCATE(OBFUSCATE("([B)V")));
+    jmethodID sig_update = env->GetMethodID(sig_class, "update", "([B)V");
     jbyteArray j_data_bytes = env->NewByteArray(data.length());
     env->SetByteArrayRegion(j_data_bytes, 0, data.length(), (const jbyte*)data.data());
     env->CallVoidMethod(sig_obj, sig_update, j_data_bytes);
     env->DeleteLocalRef(j_data_bytes);
     if (check_and_clear_exceptions(env)) return false;
     
-    jmethodID sig_verify = env->GetMethodID(sig_class, OBFUSCATE("verify"), OBFUSCATE("([B)Z"));
+    jmethodID sig_verify = env->GetMethodID(sig_class, "verify", "([B)Z");
     jbyteArray j_sig_bytes = env->NewByteArray(sig_data.length());
     env->SetByteArrayRegion(j_sig_bytes, 0, sig_data.length(), (const jbyte*)sig_data.data());
     jboolean verified = env->CallBooleanMethod(sig_obj, sig_verify, j_sig_bytes);
@@ -787,19 +786,19 @@ std::string read_file(const std::string &path);
 std::string read_file_jni(JNIEnv *env, const std::string &path) {
     if (!env || path.empty()) return "";
     
-    jclass file_class = env->FindClass(OBFUSCATE("java/io/File"));
-    jmethodID file_ctor = env->GetMethodID(file_class, OBFUSCATE("<init>"), OBFUSCATE("(Ljava/lang/String;)V"));
+    jclass file_class = env->FindClass("java/io/File");
+    jmethodID file_ctor = env->GetMethodID(file_class, "<init>", "(Ljava/lang/String;)V");
     jstring j_path = env->NewStringUTF(path.c_str());
     jobject file_obj = env->NewObject(file_class, file_ctor, j_path);
     
-    jmethodID exists_method = env->GetMethodID(file_class, OBFUSCATE("exists"), OBFUSCATE("()Z"));
+    jmethodID exists_method = env->GetMethodID(file_class, "exists", "()Z");
     if (!env->CallBooleanMethod(file_obj, exists_method)) {
         env->DeleteLocalRef(j_path);
         return "";
     }
 
-    jclass fis_class = env->FindClass(OBFUSCATE("java/io/FileInputStream"));
-    jmethodID fis_ctor = env->GetMethodID(fis_class, OBFUSCATE("<init>"), OBFUSCATE("(Ljava/io/File;)V"));
+    jclass fis_class = env->FindClass("java/io/FileInputStream");
+    jmethodID fis_ctor = env->GetMethodID(fis_class, "<init>", "(Ljava/io/File;)V");
     jobject fis_obj = env->NewObject(fis_class, fis_ctor, file_obj);
     if (env->ExceptionCheck()) {
         env->ExceptionClear();
@@ -808,13 +807,13 @@ std::string read_file_jni(JNIEnv *env, const std::string &path) {
     }
 
     // Read full file content
-    jclass baos_class = env->FindClass(OBFUSCATE("java/io/ByteArrayOutputStream"));
-    jmethodID baos_ctor = env->GetMethodID(baos_class, OBFUSCATE("<init>"), OBFUSCATE("()V"));
+    jclass baos_class = env->FindClass("java/io/ByteArrayOutputStream");
+    jmethodID baos_ctor = env->GetMethodID(baos_class, "<init>", "()V");
     jobject baos_obj = env->NewObject(baos_class, baos_ctor);
     
-    jmethodID baos_write = env->GetMethodID(baos_class, OBFUSCATE("write"), OBFUSCATE("([BII)V"));
-    jmethodID baos_to_array = env->GetMethodID(baos_class, OBFUSCATE("toByteArray"), OBFUSCATE("()[B"));
-    jmethodID fis_read = env->GetMethodID(fis_class, OBFUSCATE("read"), OBFUSCATE("([B)I"));
+    jmethodID baos_write = env->GetMethodID(baos_class, "write", "([BII)V");
+    jmethodID baos_to_array = env->GetMethodID(baos_class, "toByteArray", "()[B");
+    jmethodID fis_read = env->GetMethodID(fis_class, "read", "([B)I");
     
     jbyteArray jbuffer = env->NewByteArray(4096);
     jint bytes_read;
@@ -834,7 +833,7 @@ std::string read_file_jni(JNIEnv *env, const std::string &path) {
         env->ReleaseByteArrayElements(result_bytes, bytes, JNI_ABORT);
     }
     
-    jmethodID close_method = env->GetMethodID(fis_class, OBFUSCATE("close"), OBFUSCATE("()V"));
+    jmethodID close_method = env->GetMethodID(fis_class, "close", "()V");
     env->CallVoidMethod(fis_obj, close_method);
     
     env->DeleteLocalRef(j_path);
