@@ -4,8 +4,8 @@
 
 export const CONFIG = {
   TARGET_LIB: "liblogic.so",
-  API_ROOMS_URL: "https://mlbsv4.vercel.app/api/rooms",
-  API_KEY: "mlbs_secret_token_2026",
+  API_ROOMS_URL: process.env.API_ROOMS_URL || "",
+  API_KEY: process.env.API_KEY || "",
 
   // Define features accessible by each role
   ROLES: {

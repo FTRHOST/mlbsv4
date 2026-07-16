@@ -5,7 +5,7 @@
 
 const API_BASE = process.argv[2] || process.env.API_URL || 'https://mlbsv4.vercel.app/api';
 const TEST_OP_ID = 'test_operator_999';
-const API_KEY = process.env.API_KEY || 'mlbs_secret_token_2026';
+const API_KEY = process.env.API_KEY || '';
 
 async function runTests() {
   console.log("=================================================");

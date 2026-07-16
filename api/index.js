@@ -41,7 +41,7 @@ app.use(cors({ origin: true }));
 app.use(express.json());
 
 // API Key configuration (default fallback if process.env.API_KEY is not defined)
-const API_KEY = process.env.API_KEY || "mlbs_secret_token_2026";
+const API_KEY = process.env.API_KEY || "";
 
 // Helper to resolve team names from players' ID and ipos
 const resolveTeamNames = async (operatorId, players) => {

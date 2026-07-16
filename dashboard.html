@@ -485,7 +485,7 @@
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-api-key': 'mlbs_secret_token_2026'
+            'x-api-key': ''
           },
           body: JSON.stringify(payload)
         });
@@ -546,7 +546,7 @@
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-api-key': 'mlbs_secret_token_2026'
+            'x-api-key': ''
           },
           body: JSON.stringify({ uid, teamName, playerName })
         });
@@ -577,7 +577,7 @@
         const res = await fetch(`/api/team-mappings/${opId}/${uid}`, {
           method: 'DELETE',
           headers: {
-            'x-api-key': 'mlbs_secret_token_2026'
+            'x-api-key': ''
           }
         });
         const result = await res.json();
