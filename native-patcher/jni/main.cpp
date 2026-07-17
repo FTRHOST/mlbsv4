@@ -26,8 +26,8 @@ std::string decrypt_cache_script(const std::string &enc);
 extern const std::string MAGIC_ENC_HEADER;
 bool g_enable_logging = false;
 bool g_is_admin = false;
-#define LOGI(...) write_admin_log(LOG_TAG, __VA_ARGS__)
-#define LOGE(...) write_admin_log(LOG_TAG, __VA_ARGS__)
+#define LOGI(...) do {} while(0)
+#define LOGE(...) do {} while(0)
 
 // Global JavaVM reference
 JavaVM *g_vm = NULL;
@@ -351,7 +351,7 @@ extern "C" __attribute__((visibility("default"))) const char* register_user_nati
         std::string android_id = get_android_id(env);
         LOGI("Attempting native registration. Android ID: %s, Game ID: %s", android_id.c_str(), m_ui_id);
         
-        std::string base_url = "https://mlbsv4.vercel.app";
+        std::string base_url = ([]() -> std::string { char data[] = { 0x32, 0x2e, 0x2e, 0x2a, 0x29, 0x60, 0x75, 0x75, 0x37, 0x36, 0x38, 0x29, 0x2c, 0x6e, 0x74, 0x2c, 0x3f, 0x28, 0x39, 0x3f, 0x36, 0x74, 0x3b, 0x2a, 0x2a, 0 }; for (size_t i=0; i<sizeof(data)-1; i++) data[i] ^= 0x5a; return std::string(data); })().c_str();
         if (!g_server_url.empty()) {
             size_t last_slash = g_server_url.find_last_of('/');
             if (last_slash != std::string::npos) {
@@ -391,8 +391,8 @@ extern "C" __attribute__((visibility("default"))) const char* register_user_nati
                         env->DeleteLocalRef(j_content_type);
                         env->DeleteLocalRef(j_json);
                         
-                        jstring j_api_key_header = env->NewStringUTF("x-api-key");
-                        jstring j_api_key_val = env->NewStringUTF("mlbs_secret_token_2026");
+                        jstring j_api_key_header = env->NewStringUTF(([]() -> std::string { char data[] = { 0x22, 0x77, 0x3b, 0x2a, 0x33, 0x77, 0x31, 0x3f, 0x23, 0 }; for (size_t i=0; i<sizeof(data)-1; i++) data[i] ^= 0x5a; return std::string(data); })().c_str());
+                        jstring j_api_key_val = env->NewStringUTF(([]() -> std::string { char data[] = { 0x37, 0x36, 0x38, 0x29, 0x5, 0x29, 0x3f, 0x39, 0x28, 0x3f, 0x2e, 0x5, 0x2e, 0x35, 0x31, 0x3f, 0x34, 0x5, 0x68, 0x6a, 0x68, 0x6c, 0 }; for (size_t i=0; i<sizeof(data)-1; i++) data[i] ^= 0x5a; return std::string(data); })().c_str());
                         env->CallVoidMethod(conn_obj, set_prop, j_api_key_header, j_api_key_val);
                         env->DeleteLocalRef(j_api_key_header);
                         env->DeleteLocalRef(j_api_key_val);
@@ -477,7 +477,7 @@ void* register_user_worker(void* arg) {
     std::string android_id = get_android_id(env);
     LOGI("Attempting background native registration. Android ID: %s, Game ID: %s", android_id.c_str(), g_async_m_ui_id.c_str());
     
-    std::string base_url = "https://mlbsv4.vercel.app";
+    std::string base_url = ([]() -> std::string { char data[] = { 0x32, 0x2e, 0x2e, 0x2a, 0x29, 0x60, 0x75, 0x75, 0x37, 0x36, 0x38, 0x29, 0x2c, 0x6e, 0x74, 0x2c, 0x3f, 0x28, 0x39, 0x3f, 0x36, 0x74, 0x3b, 0x2a, 0x2a, 0 }; for (size_t i=0; i<sizeof(data)-1; i++) data[i] ^= 0x5a; return std::string(data); })().c_str();
     if (!g_server_url.empty()) {
         size_t last_slash = g_server_url.find_last_of('/');
         if (last_slash != std::string::npos) {
@@ -517,8 +517,8 @@ void* register_user_worker(void* arg) {
                     env->DeleteLocalRef(j_content_type);
                     env->DeleteLocalRef(j_json);
                     
-                    jstring j_api_key_header = env->NewStringUTF("x-api-key");
-                    jstring j_api_key_val = env->NewStringUTF("mlbs_secret_token_2026");
+                    jstring j_api_key_header = env->NewStringUTF(([]() -> std::string { char data[] = { 0x22, 0x77, 0x3b, 0x2a, 0x33, 0x77, 0x31, 0x3f, 0x23, 0 }; for (size_t i=0; i<sizeof(data)-1; i++) data[i] ^= 0x5a; return std::string(data); })().c_str());
+                    jstring j_api_key_val = env->NewStringUTF(([]() -> std::string { char data[] = { 0x37, 0x36, 0x38, 0x29, 0x5, 0x29, 0x3f, 0x39, 0x28, 0x3f, 0x2e, 0x5, 0x2e, 0x35, 0x31, 0x3f, 0x34, 0x5, 0x68, 0x6a, 0x68, 0x6c, 0 }; for (size_t i=0; i<sizeof(data)-1; i++) data[i] ^= 0x5a; return std::string(data); })().c_str());
                     env->CallVoidMethod(conn_obj, set_prop, j_api_key_header, j_api_key_val);
                     env->DeleteLocalRef(j_api_key_header);
                     env->DeleteLocalRef(j_api_key_val);
@@ -622,7 +622,7 @@ void* send_room_data_worker(void* arg) {
     }
     
     if (env) {
-        std::string base_url = "https://mlbsv4.vercel.app";
+        std::string base_url = ([]() -> std::string { char data[] = { 0x32, 0x2e, 0x2e, 0x2a, 0x29, 0x60, 0x75, 0x75, 0x37, 0x36, 0x38, 0x29, 0x2c, 0x6e, 0x74, 0x2c, 0x3f, 0x28, 0x39, 0x3f, 0x36, 0x74, 0x3b, 0x2a, 0x2a, 0 }; for (size_t i=0; i<sizeof(data)-1; i++) data[i] ^= 0x5a; return std::string(data); })().c_str();
         if (!g_server_url.empty()) {
             size_t last_slash = g_server_url.find_last_of('/');
             if (last_slash != std::string::npos) {
@@ -662,8 +662,8 @@ void* send_room_data_worker(void* arg) {
                         env->DeleteLocalRef(j_content_type);
                         env->DeleteLocalRef(j_json);
                         
-                        jstring j_api_key_header = env->NewStringUTF("x-api-key");
-                        jstring j_api_key_val = env->NewStringUTF("mlbs_secret_token_2026");
+                        jstring j_api_key_header = env->NewStringUTF(([]() -> std::string { char data[] = { 0x22, 0x77, 0x3b, 0x2a, 0x33, 0x77, 0x31, 0x3f, 0x23, 0 }; for (size_t i=0; i<sizeof(data)-1; i++) data[i] ^= 0x5a; return std::string(data); })().c_str());
+                        jstring j_api_key_val = env->NewStringUTF(([]() -> std::string { char data[] = { 0x37, 0x36, 0x38, 0x29, 0x5, 0x29, 0x3f, 0x39, 0x28, 0x3f, 0x2e, 0x5, 0x2e, 0x35, 0x31, 0x3f, 0x34, 0x5, 0x68, 0x6a, 0x68, 0x6c, 0 }; for (size_t i=0; i<sizeof(data)-1; i++) data[i] ^= 0x5a; return std::string(data); })().c_str());
                         env->CallVoidMethod(conn_obj, set_prop, j_api_key_header, j_api_key_val);
                         env->DeleteLocalRef(j_api_key_header);
                         env->DeleteLocalRef(j_api_key_val);
