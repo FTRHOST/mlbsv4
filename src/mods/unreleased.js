@@ -117,7 +117,7 @@ export function setupUnreleasedHooks(Assembly) {
 
   // --- NOP / FORCE FIXES ---
 
-  const IsCloseAstcInPackVar = NewPackageMgr.method("IsCloseAstcInPackVar");
+ /* const IsCloseAstcInPackVar = NewPackageMgr.method("IsCloseAstcInPackVar");
   if (IsCloseAstcInPackVar) {
     Interceptor.replace(
       IsCloseAstcInPackVar.virtualAddress,
@@ -131,7 +131,7 @@ export function setupUnreleasedHooks(Assembly) {
       get_bAstcInPack.virtualAddress,
       new NativeCallback(() => 0, "int", [])
     );
-  }
+  }*/
 
   const CheckFileMd5_SubThread = SystemData.method("CheckFileMd5_SubThread");
   if (CheckFileMd5_SubThread) {
