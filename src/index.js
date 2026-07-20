@@ -207,12 +207,9 @@ function executeSimpleHooks() {
 
   const Assembly = Il2Cpp.domain.assembly("Assembly-CSharp").image;
 
-  const mlleakVer = "MLLEAK v.0.6";
+  const mlleakVer = "MLLEAK v.0.7";
   setTimeout(() => {
-    showGameNotification(
-      mlleakVer,
-      "Hi Leaker, Sorry to say method for hide ui has been change by moonton. stay tuned for the new feature. from mlleak dev :)",
-    );
+    showGameNotification(mlleakVer, "Hi Leaker, from mlleak dev :)");
   }, 2000);
 
   // Setup Modular Mod Functions
