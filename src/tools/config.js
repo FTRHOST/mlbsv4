@@ -11,7 +11,7 @@ export const CONFIG = {
   ROLES: {
     admin: {
       allowFreeSkin: true,
-      allowGMMode: false,
+      allowGMMode: true,
       allowUnreleased: true,
       allowTelemetry: true,
       description: "Administrator Access - All Features Enabled",

@@ -14,9 +14,15 @@ export function setupGMHooks(Assembly) {
     if (method) {
       Interceptor.attach(method.virtualAddress, {
         onLeave: function (retval) {
-          if (sessionState.isAuthorized && sessionState.permissions.allowGMMode) {
+          if (
+            sessionState.isAuthorized &&
+            sessionState.permissions.allowGMMode
+          ) {
             retval.replace(ptr(1));
-            debugLog("GM Mod", `${className}.${methodName} hook applied. Returning true.`);
+            debugLog(
+              "GM Mod",
+              `${className}.${methodName} hook applied. Returning true.`,
+            );
           }
         },
       });
@@ -24,6 +30,8 @@ export function setupGMHooks(Assembly) {
   };
 
   hookSandboxMethod("GameInit", "IsSandBoxIp");
+
+  /*
   hookSandboxMethod("BattleStaticInit", "IsAdjustSandBox");
   hookSandboxMethod("SDKCommon", "IsSandbox");
   hookSandboxMethod("LogicExtension", "IsAdjustSandBox");
@@ -75,5 +83,5 @@ export function setupGMHooks(Assembly) {
         }
       });
     }
-  }
+  } */
 }
