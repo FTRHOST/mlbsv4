@@ -125,13 +125,13 @@ export function setupUnreleasedHooks(Assembly) {
     );
   }*/
 
-  const get_bAstcInPack = GameInit.method("get_bAstcInPack");
+  /* const get_bAstcInPack = GameInit.method("get_bAstcInPack");
   if (get_bAstcInPack) {
     Interceptor.replace(
       get_bAstcInPack.virtualAddress,
       new NativeCallback(() => 0, "int", []),
     );
-  }
+  } */
 
   const CheckFileMd5_SubThread = SystemData.method("CheckFileMd5_SubThread");
   if (CheckFileMd5_SubThread) {
