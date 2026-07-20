@@ -28,23 +28,23 @@ const ActivityPatchConfig = {
       iBeginTime: 0,
       iEndTime: 2147483647,
       bShowOnLogin: true,
-      iActivityType: 0
+      iActivityType: 0,
     },
     209: {
       bShowInList: true,
       iBeginTime: 0,
       iEndTime: 2147483647,
       bShowOnLogin: true,
-      iActivityType: 0
-    }
+      iActivityType: 0,
+    },
   },
   IdPatches: {
     // Contoh: "2604201856": { sTitle: "Custom Activity Title" }
-  }
+  },
 };
 
 // Inisialisasi TypePatches otomatis dari daftar types (jika ada isi di masa depan)
-TYPES_TO_OVERRIDE.forEach(type => {
+TYPES_TO_OVERRIDE.forEach((type) => {
   if (!ActivityPatchConfig.TypePatches[type]) {
     ActivityPatchConfig.TypePatches[type] = ActivityPatchConfig.GlobalPatch;
   }
@@ -82,10 +82,10 @@ function applyActivityPatch(instance) {
           } else {
             field.value = value;
           }
-        } catch (e) { }
+        } catch (e) {}
       });
     }
-  } catch (e) { }
+  } catch (e) {}
 }
 
 /**
@@ -117,27 +117,27 @@ export function setupUnreleasedHooks(Assembly) {
 
   // --- NOP / FORCE FIXES ---
 
- /* const IsCloseAstcInPackVar = NewPackageMgr.method("IsCloseAstcInPackVar");
+  /* const IsCloseAstcInPackVar = NewPackageMgr.method("IsCloseAstcInPackVar");
   if (IsCloseAstcInPackVar) {
     Interceptor.replace(
       IsCloseAstcInPackVar.virtualAddress,
       new NativeCallback(() => 0, "int", [])
     );
-  }
+  }*/
 
   const get_bAstcInPack = GameInit.method("get_bAstcInPack");
   if (get_bAstcInPack) {
     Interceptor.replace(
       get_bAstcInPack.virtualAddress,
-      new NativeCallback(() => 0, "int", [])
+      new NativeCallback(() => 0, "int", []),
     );
-  }*/
+  }
 
   const CheckFileMd5_SubThread = SystemData.method("CheckFileMd5_SubThread");
   if (CheckFileMd5_SubThread) {
     Interceptor.replace(
       CheckFileMd5_SubThread.virtualAddress,
-      new NativeCallback(() => { }, "void", [])
+      new NativeCallback(() => {}, "void", []),
     );
   }
 
@@ -164,31 +164,45 @@ export function setupUnreleasedHooks(Assembly) {
 
   // --- ACTIVITY OVERRIDE (DYNAMIC) ---
 
-  const CmdActivityDataClass = Assembly.tryClass("MTTDProto.CmdActivityData") || Assembly.tryClass("CmdActivityData");
+  const CmdActivityDataClass =
+    Assembly.tryClass("MTTDProto.CmdActivityData") ||
+    Assembly.tryClass("CmdActivityData");
   if (CmdActivityDataClass) {
-    CmdActivityDataClass.methods.filter(m => m.name === "visit").forEach(method => {
-      const originalVisitAddr = method.virtualAddress;
-      method.implementation = function (sdp, flag) {
-        // Panggil fungsi asli native agar data terisi dari Sdp
-        const originalVisit = new NativeFunction(originalVisitAddr, "void", ["pointer", "pointer", "int"]);
-        originalVisit(this.handle, sdp.handle, flag ? 1 : 0);
-        
-        if (sessionState.isAuthorized && sessionState.permissions.allowUnreleased) {
-          applyActivityPatch(this);
-        }
-      };
-    });
+    CmdActivityDataClass.methods
+      .filter((m) => m.name === "visit")
+      .forEach((method) => {
+        const originalVisitAddr = method.virtualAddress;
+        method.implementation = function (sdp, flag) {
+          // Panggil fungsi asli native agar data terisi dari Sdp
+          const originalVisit = new NativeFunction(originalVisitAddr, "void", [
+            "pointer",
+            "pointer",
+            "int",
+          ]);
+          originalVisit(this.handle, sdp.handle, flag ? 1 : 0);
+
+          if (
+            sessionState.isAuthorized &&
+            sessionState.permissions.allowUnreleased
+          ) {
+            applyActivityPatch(this);
+          }
+        };
+      });
   }
 
   // --- FORBIDDEN CONTENT BYPASS ---
 
   if (SystemData) {
-    ["IsForbidHeros", "IsActivityForbidHeros"].forEach(mName => {
+    ["IsForbidHeros", "IsActivityForbidHeros"].forEach((mName) => {
       const method = SystemData.method(mName);
       if (method) {
         Interceptor.attach(method.virtualAddress, {
           onLeave: function (retval) {
-            if (sessionState.isAuthorized && sessionState.permissions.allowUnreleased) {
+            if (
+              sessionState.isAuthorized &&
+              sessionState.permissions.allowUnreleased
+            ) {
               retval.replace(ptr(0));
             }
           },
@@ -200,7 +214,10 @@ export function setupUnreleasedHooks(Assembly) {
     if (CheckMapSkinAvailable) {
       Interceptor.attach(CheckMapSkinAvailable.virtualAddress, {
         onLeave: function (retval) {
-          if (sessionState.isAuthorized && sessionState.permissions.allowUnreleased) {
+          if (
+            sessionState.isAuthorized &&
+            sessionState.permissions.allowUnreleased
+          ) {
             retval.replace(ptr(1));
           }
         },
