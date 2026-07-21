@@ -7,6 +7,8 @@ let noCdHook = null;
 
 export function setupBattleCommands(Assembly) {
   const BattleBridge = Assembly.class("BattleBridge");
+  const EntityBaseGlobalVar = Assembly.class("Battle.EntityBaseGlobalVar");
+  const TrainingGuide = Assembly.class("TrainingGuide");
   const CoolDownData = Assembly.class("Battle.CoolDownData");
   const EnterCoolDown = CoolDownData.method("EnterCoolDown");
 
@@ -73,4 +75,13 @@ export function setupBattleCommands(Assembly) {
       return ShowChatHistoryText.invoke(this, messageStr);
     };
   }
+
+  TrainingGuide.method("OnCoolDown").implementation = function (
+    iParam,
+    bState,
+  ) {
+    const ori = this.method("OnCoolDown").invoke(iParam, bState);
+    EntityBaseGlobalVar.field("m_bCloseCD").value = bState;
+    return ori;
+  };
 }
