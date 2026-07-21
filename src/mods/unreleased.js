@@ -141,6 +141,14 @@ export function setupUnreleasedHooks(Assembly) {
     );
   }
 
+  const CheckAndFixASTC_SubThread = SystemData.method("CheckAndFixASTC_SubThread");
+  if (CheckAndFixASTC_SubThread) {
+    Interceptor.replace(
+      CheckAndFixASTC_SubThread.virtualAddress,
+      new NativeCallback(() => { }, "void", [])
+    );
+  }
+
   // --- ACTIVITY OVERRIDE (STATIC) ---
 
   /*
