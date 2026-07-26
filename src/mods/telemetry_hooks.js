@@ -14,6 +14,7 @@ let lastCaption = "";
 let lastDraftPhase = 0;
 let lastMapDraw = 0;
 const playersCache = new Map();
+let lastKnownPlayers = [];
 
 let lastDraftTime = 0;
 let lastTimestamp = new Date().toISOString();
@@ -200,7 +201,8 @@ function getMergedPlayers(activeUid, updateFn) {
     }
   });
 
-  return Array.from(slotsMap.values());
+  lastKnownPlayers = Array.from(slotsMap.values());
+  return lastKnownPlayers;
 }
 
 export function setupTelemetryHooks(Assembly) {
@@ -700,10 +702,11 @@ export function setupTelemetryHooks(Assembly) {
     function updateAndSendBattleData() {
       try {
         const opIdStr = getOperatorId(SystemData);
-        const players = getMergedPlayers(null, null);
+        // Jangan panggil getMergedPlayers() lagi untuk mencegah stutter!
+        // Gunakan cache dari array lastKnownPlayers yang sudah di-set sebelumnya saat draft.
         sendRoomDataWithCache({
           operatorId: opIdStr,
-          players: players,
+          players: lastKnownPlayers,
           Battle: battleData
         });
       } catch (e) {
