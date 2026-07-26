@@ -232,6 +232,7 @@ app.post("/api/rooms", authenticate, async (req, res) => {
       caption: payload.caption || "",
       mapDraw: payload.mapDraw !== undefined && payload.mapDraw !== null ? Number(payload.mapDraw) : 0,
       agentTimestamp: payload.timestamp || new Date().toISOString(),
+      Battle: payload.Battle || null,
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     };
 
@@ -301,6 +302,7 @@ app.put("/api/rooms/:operatorId", authenticate, async (req, res) => {
     if (updates.blueScore !== undefined) updatedData.blueScore = Number(updates.blueScore);
     if (updates.redScore !== undefined) updatedData.redScore = Number(updates.redScore);
     if (updates.baseOf !== undefined) updatedData.baseOf = Number(updates.baseOf);
+    if (updates.Battle !== undefined) updatedData.Battle = updates.Battle;
 
     await docRef.set(updatedData);
 
