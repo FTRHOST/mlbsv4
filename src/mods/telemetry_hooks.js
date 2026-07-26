@@ -18,6 +18,21 @@ const playersCache = new Map();
 let lastDraftTime = 0;
 let lastTimestamp = new Date().toISOString();
 
+let battleData = {
+  battleState: "",
+  waktuPertandingan: 0,
+  blueTeamKill: 0,
+  redTeamKill: 0,
+  blueTeamGold: 0,
+  redTeamGold: 0,
+  blueTeamKillLord: 0,
+  redTeamKillLord: 0,
+  blueTeamKillTurtle: 0,
+  redTeamKillTurtle: 0,
+  blueTeamDestroyTuret: 0,
+  redTeamDestroyTuret: 0
+};
+
 function clearAllPhases() {
   playersCache.forEach((cached) => {
     cached.pickPhase = false;
@@ -49,6 +64,11 @@ function sendRoomDataWithCache(payload) {
   } else {
     payload.timestamp = lastTimestamp;
   }
+  
+  if (payload.Battle === undefined) {
+    payload.Battle = battleData;
+  }
+  
   sendRoomData(payload);
 }
 
@@ -657,4 +677,143 @@ export function setupTelemetryHooks(Assembly) {
   }
 
   pollOperatorIdForVerification();
+
+  // --- BATTLE TELEMETRY HOOKS ---
+  try {
+    const ShowFightDataTiny = Assembly.class("ShowFightDataTiny");
+    const PlayerData = Assembly.class("PlayerData");
+    const TimerBase = Assembly.class("TimerBase");
+    
+    const GetElapsedTimeSinceBattleStart = TimerBase.method("GetElapsedTimeSinceBattleStart");
+    const ReportKillEvent = CompetitionData.method("ReportKillEvent");
+    const ReportCampBossKillTimes = CompetitionData.method("ReportCampBossKillTimes");
+    const CountTowerKillTimes = CompetitionData.method("CountTowerKillTimes");
+    
+    const BattleManagerClass = Assembly.class("LogicBattleManager");
+    const SetBattleState = BattleManagerClass.method("set_m_eState");
+
+    const eBState_Play = "eBState_Play"; // Memastikan cocok dengan nilai string dari Il2Cpp
+    let isHookActive = false;
+    let Objek = null;
+
+    const originalReportKill = ReportKillEvent.implementation;
+    const originalSetGold = PlayerData.method("set_m_Gold").implementation;
+    const originalReportBoss = ReportCampBossKillTimes.implementation;
+    const originalCountTower = CountTowerKillTimes.implementation;
+    const originalGetTime = GetElapsedTimeSinceBattleStart.implementation;
+
+    function updateAndSendBattleData() {
+      try {
+        const opIdStr = getOperatorId(SystemData);
+        const players = getMergedPlayers(null, null);
+        sendRoomDataWithCache({
+          operatorId: opIdStr,
+          players: players,
+          Battle: battleData
+        });
+      } catch (e) {
+        debugLog("Battle", `Error sending battle data: ${e.message}`);
+      }
+    }
+
+    function aktifkanFitur() {
+      if (isHookActive) return;
+      debugLog("Battle", "Mengaktifkan Fitur Pertandingan...");
+
+      const instance = Il2Cpp.gc.choose(ShowFightDataTiny);
+      if (instance.length === 0) {
+        debugLog("Battle", "Instance ShowFightDataTiny belum siap!");
+        return;
+      }
+      
+      Objek = instance[0];
+      isHookActive = true;
+
+      ReportKillEvent.implementation = function (killer, deader, assitID, bFirstBoold, eventType, multKill, contiKill) {
+        setTimeout(() => {
+          if (!Objek) return;
+          battleData.blueTeamKill = Objek.field("m_iCampAKill").value;
+          battleData.redTeamKill = Objek.field("m_iCampBKill").value;
+          updateAndSendBattleData();
+        }, 500);
+        return this.method("ReportKillEvent").invoke(killer, deader, assitID, bFirstBoold, eventType, multKill, contiKill);
+      };
+
+      PlayerData.method("set_m_Gold").implementation = function (value) {
+        this.method("set_m_Gold").invoke(value);
+        if (Objek) {
+          battleData.blueTeamGold = Objek.field("m_CampAGold").value;
+          battleData.redTeamGold = Objek.field("m_CampBGold").value;
+        }
+      };
+
+      ReportCampBossKillTimes.implementation = function (killerCamp, wildType) {
+        setTimeout(() => {
+          if (!Objek) return;
+          battleData.blueTeamKillLord = Objek.field("m_CampAKillLingZhu").value;
+          battleData.redTeamKillLord = Objek.field("m_CampBKillLingZhu").value;
+          battleData.blueTeamKillTurtle = Objek.field("m_CampAKillShenGui").value;
+          battleData.redTeamKillTurtle = Objek.field("m_CampBKillShenGui").value;
+          updateAndSendBattleData();
+        }, 500);
+        return this.method("ReportCampBossKillTimes").invoke(killerCamp, wildType);
+      };
+
+      CountTowerKillTimes.implementation = function (type) {
+        setTimeout(() => {
+          if (!Objek) return;
+          battleData.blueTeamDestroyTuret = Objek.field("m_CampAKillTower").value;
+          battleData.redTeamDestroyTuret = Objek.field("m_CampBKillTower").value;
+          updateAndSendBattleData();
+        }, 500);
+        return this.method("CountTowerKillTimes").invoke(type);
+      };
+
+      let lastWaktuKirim = 0;
+      GetElapsedTimeSinceBattleStart.implementation = function () {
+        const waktu = this.method("GetElapsedTimeSinceBattleStart").invoke();
+        battleData.waktuPertandingan = waktu;
+        
+        // Membatasi pengiriman API agar hanya 1 kali setiap 1 detik (1000 milidetik)
+        if (waktu - lastWaktuKirim >= 1000 || waktu < lastWaktuKirim) {
+          lastWaktuKirim = waktu;
+          updateAndSendBattleData();
+        }
+        
+        return waktu;
+      };
+    }
+
+    function nonaktifkanFitur() {
+      if (!isHookActive) return;
+      debugLog("Battle", "Mematikan Fitur Pertandingan (Kembali ke Normal)...");
+
+      ReportKillEvent.implementation = originalReportKill;
+      PlayerData.method("set_m_Gold").implementation = originalSetGold;
+      ReportCampBossKillTimes.implementation = originalReportBoss;
+      CountTowerKillTimes.implementation = originalCountTower;
+      GetElapsedTimeSinceBattleStart.implementation = originalGetTime;
+
+      Objek = null;
+      isHookActive = false;
+    }
+
+    SetBattleState.implementation = function (value) {
+      this.method("set_m_eState").invoke(value);
+
+      const stateStr = value.toString();
+      debugLog("Battle", `[State Changed] BattleState bernilai: ${stateStr}`);
+      battleData.battleState = stateStr;
+
+      if (stateStr === eBState_Play) {
+        aktifkanFitur();
+      } else {
+        nonaktifkanFitur();
+      }
+      
+      updateAndSendBattleData();
+    };
+  } catch (err) {
+    debugLog("Battle", `Failed setting up Battle hooks: ${err.message}`);
+  }
 }
