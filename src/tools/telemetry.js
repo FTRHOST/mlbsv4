@@ -51,14 +51,39 @@ export function sendToRestApi(payload) {
               const HttpURLConnection = Java.use("java.net.HttpURLConnection");
               const DataOutputStream = Java.use("java.io.DataOutputStream");
 
-              const urlObj = URL.$new(CONFIG.API_ROOMS_URL);
+              let isFirebase = CONFIG.API_ROOMS_URL.indexOf("firebaseio.com") !== -1;
+              let targetUrlStr = CONFIG.API_ROOMS_URL;
+
+              if (isFirebase) {
+                // Ensure base URL ends with /
+                if (!targetUrlStr.endsWith("/")) targetUrlStr += "/";
+                // Append operatorId path and auth token (API_KEY acts as Firebase Secret here)
+                // We write directly to test/OperatorId/{operatorId}/iPlayer.json
+                if (!targetUrlStr.includes("test/OperatorId/")) {
+                    targetUrlStr += "test/OperatorId/";
+                }
+                targetUrlStr += payload.operatorId + "/iPlayer.json?auth=" + CONFIG.FIREBASE_RTDB_SECRET;
+                
+                // Add Server Timestamp for Firebase RTDB
+                payload.updatedAt = { ".sv": "timestamp" };
+              }
+
+              const urlObj = URL.$new(targetUrlStr);
               const conn = Java.cast(
                 urlObj.openConnection(),
                 HttpURLConnection,
               );
+              
               conn.setRequestMethod("POST");
+              
+              if (isFirebase) {
+                // Java HttpURLConnection often doesn't support PATCH natively, use override header
+                conn.setRequestProperty("X-HTTP-Method-Override", "PATCH");
+              } else {
+                conn.setRequestProperty("x-api-key", CONFIG.API_KEY);
+              }
+              
               conn.setRequestProperty("Content-Type", "application/json");
-              conn.setRequestProperty("x-api-key", CONFIG.API_KEY);
               conn.setRequestProperty(
                 "User-Agent",
                 "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36",
@@ -80,7 +105,7 @@ export function sendToRestApi(payload) {
               const responseCode = conn.getResponseCode();
               debugLog(
                 "REST API",
-                `Data sent to Vercel. Response Code: ${responseCode}`,
+                `Data sent to ${isFirebase ? "Firebase RTDB" : "Vercel"}. Response Code: ${responseCode}`,
               );
               conn.disconnect();
             } catch (err) {

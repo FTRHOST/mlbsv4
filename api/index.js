@@ -9,8 +9,10 @@ if (admin.apps.length === 0) {
   if (process.env.FIREBASE_SERVICE_ACCOUNT) {
     try {
       const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+      const projectId = serviceAccount.project_id;
       admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount)
+        credential: admin.credential.cert(serviceAccount),
+        databaseURL: process.env.FIREBASE_DATABASE_URL || `https://${projectId}-default-rtdb.firebaseio.com`
       });
       console.log("[+] Firebase Admin SDK initialized using Environment Variable.");
     } catch (e) {
@@ -21,19 +23,24 @@ if (admin.apps.length === 0) {
     const keyPath = path.join(process.cwd(), "serviceAccountKey.json");
     if (fs.existsSync(keyPath)) {
       const serviceAccount = require(keyPath);
+      const projectId = serviceAccount.project_id;
       admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount)
+        credential: admin.credential.cert(serviceAccount),
+        databaseURL: process.env.FIREBASE_DATABASE_URL || `https://${projectId}-default-rtdb.firebaseio.com`
       });
       console.log("[+] Firebase Admin SDK initialized using serviceAccountKey.json.");
     } else {
       // Fallback to default
-      admin.initializeApp();
+      admin.initializeApp({
+        databaseURL: process.env.FIREBASE_DATABASE_URL
+      });
       console.log("[+] Firebase Admin SDK initialized using default credentials.");
     }
   }
 }
 
 const db = admin.firestore();
+const rtdb = admin.database();
 
 // Initialize Express App
 const app = express();
@@ -110,14 +117,15 @@ app.get("/api", (req, res) => {
 // GET all rooms
 app.get("/api/rooms", async (req, res) => {
   try {
-    const parentDocRef = db.collection("test").doc("OperatorId");
-    const collections = await parentDocRef.listCollections();
+    const snapshot = await rtdb.ref("test/OperatorId").once("value");
+    const data = snapshot.val();
     const rooms = [];
 
-    for (const col of collections) {
-      const doc = await col.doc("iPlayer").get();
-      if (doc.exists) {
-        rooms.push(doc.data());
+    if (data) {
+      for (const operatorId in data) {
+        if (data[operatorId].iPlayer) {
+          rooms.push(data[operatorId].iPlayer);
+        }
       }
     }
 
@@ -138,14 +146,9 @@ app.get("/api/rooms", async (req, res) => {
 app.get("/api/rooms/:operatorId", async (req, res) => {
   try {
     const { operatorId } = req.params;
-    const docRef = db
-      .collection("test")
-      .doc("OperatorId")
-      .collection(operatorId)
-      .doc("iPlayer");
+    const snapshot = await rtdb.ref(`test/OperatorId/${operatorId}/iPlayer`).once("value");
     
-    const doc = await docRef.get();
-    if (!doc.exists) {
+    if (!snapshot.exists()) {
       return res.status(404).json({
         status: "error",
         message: `Room with Operator ID ${operatorId} not found`
@@ -154,7 +157,7 @@ app.get("/api/rooms/:operatorId", async (req, res) => {
 
     return res.json({
       status: "success",
-      data: doc.data()
+      data: snapshot.val()
     });
   } catch (error) {
     return res.status(500).json({
@@ -177,7 +180,7 @@ app.post("/api/rooms", authenticate, async (req, res) => {
       });
     }
 
-    // Fetch match setup config
+    // Fetch match setup config from Firestore
     const setupRef = db.collection("test").doc("OperatorId").collection(operatorId).doc("match_setup");
     const setupDoc = await setupRef.get();
     let setupData = {};
@@ -185,17 +188,12 @@ app.post("/api/rooms", authenticate, async (req, res) => {
       setupData = setupDoc.data();
     }
 
-    // Fetch existing room to preserve scores if not provided in payload
-    const docRef = db
-      .collection("test")
-      .doc("OperatorId")
-      .collection(operatorId)
-      .doc("iPlayer");
-
-    const doc = await docRef.get();
+    // Fetch existing room from RTDB to preserve scores if not provided in payload
+    const rtdbRef = rtdb.ref(`test/OperatorId/${operatorId}/iPlayer`);
+    const snapshot = await rtdbRef.once("value");
     let currentData = {};
-    if (doc.exists) {
-      currentData = doc.data();
+    if (snapshot.exists()) {
+      currentData = snapshot.val();
     }
 
     let { blueTeamName, redTeamName } = await resolveTeamNames(operatorId, payload.players);
@@ -233,17 +231,14 @@ app.post("/api/rooms", authenticate, async (req, res) => {
       mapDraw: payload.mapDraw !== undefined && payload.mapDraw !== null ? Number(payload.mapDraw) : 0,
       agentTimestamp: payload.timestamp || new Date().toISOString(),
       Battle: payload.Battle || null,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      updatedAt: admin.database.ServerValue.TIMESTAMP
     };
 
-    // 1. Write parent doc to activate it in Firebase Console
-    await db.collection("test").doc("OperatorId").set({
-      last_active: admin.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
+    // 1. Write parent doc to RTDB instead of Firestore
+    await rtdb.ref(`test/OperatorId/${operatorId}/last_active`).set(admin.database.ServerValue.TIMESTAMP);
 
-    // 2. Write player data in subcollection (docRef already defined above)
-
-    await docRef.set(matchData);
+    // 2. Write player data to RTDB
+    await rtdbRef.set(matchData);
 
     return res.status(200).json({
       status: "success",
@@ -264,21 +259,16 @@ app.put("/api/rooms/:operatorId", authenticate, async (req, res) => {
     const { operatorId } = req.params;
     const updates = req.body;
 
-    const docRef = db
-      .collection("test")
-      .doc("OperatorId")
-      .collection(operatorId)
-      .doc("iPlayer");
-
-    const doc = await docRef.get();
-    if (!doc.exists) {
+    const rtdbRef = rtdb.ref(`test/OperatorId/${operatorId}/iPlayer`);
+    const snapshot = await rtdbRef.once("value");
+    if (!snapshot.exists()) {
       return res.status(404).json({
         status: "error",
         message: `Room with Operator ID ${operatorId} not found`
       });
     }
 
-    const currentData = doc.data();
+    const currentData = snapshot.val();
 
     // Merge updates
     let blueTeamName = currentData.blueTeamName || "BLUE TEAM";
@@ -296,7 +286,7 @@ app.put("/api/rooms/:operatorId", authenticate, async (req, res) => {
       blueTeamName: updates.blueTeamName !== undefined ? updates.blueTeamName : blueTeamName,
       redTeamName: updates.redTeamName !== undefined ? updates.redTeamName : redTeamName,
       operatorId: operatorId, // ensure operatorId cannot be overwritten
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      updatedAt: admin.database.ServerValue.TIMESTAMP
     };
 
     if (updates.blueScore !== undefined) updatedData.blueScore = Number(updates.blueScore);
@@ -304,7 +294,7 @@ app.put("/api/rooms/:operatorId", authenticate, async (req, res) => {
     if (updates.baseOf !== undefined) updatedData.baseOf = Number(updates.baseOf);
     if (updates.Battle !== undefined) updatedData.Battle = updates.Battle;
 
-    await docRef.set(updatedData);
+    await rtdbRef.set(updatedData);
 
     return res.json({
       status: "success",
@@ -323,21 +313,17 @@ app.put("/api/rooms/:operatorId", authenticate, async (req, res) => {
 app.delete("/api/rooms/:operatorId", authenticate, async (req, res) => {
   try {
     const { operatorId } = req.params;
-    const docRef = db
-      .collection("test")
-      .doc("OperatorId")
-      .collection(operatorId)
-      .doc("iPlayer");
-
-    const doc = await docRef.get();
-    if (!doc.exists) {
+    const rtdbRef = rtdb.ref(`test/OperatorId/${operatorId}`);
+    
+    const snapshot = await rtdbRef.once("value");
+    if (!snapshot.exists()) {
       return res.status(404).json({
         status: "error",
         message: `Room with Operator ID ${operatorId} not found`
       });
     }
 
-    await docRef.delete();
+    await rtdbRef.remove();
 
     return res.json({
       status: "success",
