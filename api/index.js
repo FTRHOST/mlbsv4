@@ -58,6 +58,7 @@ const resolveTeamNames = async (operatorId, players) => {
   let redTeamFound = false;
 
   if (Array.isArray(players) && players.length > 0) {
+    const fetchPromises = [];
     for (const player of players) {
       if (!player.id) continue;
       
@@ -65,28 +66,32 @@ const resolveTeamNames = async (operatorId, players) => {
       const isBlue = ipos >= 1 && ipos <= 5;
       const isRed = ipos >= 6 && ipos <= 10;
       
-      if ((isBlue && blueTeamFound) || (isRed && redTeamFound)) continue;
-      
       if (isBlue || isRed) {
-        try {
-          const mappingDoc = await db.collection("test").doc("OperatorId").collection(operatorId).doc("config").collection("team_mappings").doc(String(player.id)).get();
-          if (mappingDoc.exists) {
-            const mappingData = mappingDoc.data();
-            if (mappingData.teamName) {
-              if (isBlue && !blueTeamFound) {
-                blueTeamName = mappingData.teamName;
-                blueTeamFound = true;
-              } else if (isRed && !redTeamFound) {
-                redTeamName = mappingData.teamName;
-                redTeamFound = true;
-              }
-            }
+        const promise = db.collection("test").doc("OperatorId").collection(operatorId)
+          .doc("config").collection("team_mappings").doc(String(player.id)).get()
+          .then(mappingDoc => ({ isBlue, isRed, mappingDoc }))
+          .catch(e => {
+            console.error("Error fetching player team:", e);
+            return null;
+          });
+        fetchPromises.push(promise);
+      }
+    }
+
+    const results = await Promise.all(fetchPromises);
+    for (const res of results) {
+      if (res && res.mappingDoc.exists) {
+        const mappingData = res.mappingDoc.data();
+        if (mappingData.teamName) {
+          if (res.isBlue && !blueTeamFound) {
+            blueTeamName = mappingData.teamName;
+            blueTeamFound = true;
+          } else if (res.isRed && !redTeamFound) {
+            redTeamName = mappingData.teamName;
+            redTeamFound = true;
           }
-        } catch (e) {
-          console.error("Error fetching player team:", e);
         }
       }
-      
       if (blueTeamFound && redTeamFound) break;
     }
   }

@@ -107,7 +107,27 @@ export function getOperatorId(SystemData) {
   return "";
 }
 
-function getMergedPlayers(activeUid, updateFn) {
+function getMergedPlayers(activeUid, updateFn, forceScan = false) {
+  if (!forceScan && lastKnownPlayers && lastKnownPlayers.length > 0) {
+    if (activeUid && updateFn) {
+      let cached = playersCache.get(activeUid);
+      if (!cached) {
+        cached = { pickPhase: false, banPhase: false, SelHeroID: 0, banHero: 0 };
+        playersCache.set(activeUid, cached);
+      }
+      updateFn(activeUid, cached);
+      
+      const pIndex = lastKnownPlayers.findIndex(p => p.id === activeUid);
+      if (pIndex !== -1) {
+        lastKnownPlayers[pIndex].pickPhase = cached.pickPhase;
+        lastKnownPlayers[pIndex].banPhase = cached.banPhase;
+        lastKnownPlayers[pIndex].SelHeroID = cached.SelHeroID;
+        lastKnownPlayers[pIndex].banHero = cached.banHero;
+      }
+    }
+    return lastKnownPlayers;
+  }
+
   const RoomData = Il2Cpp.domain
     .assembly("Assembly-CSharp")
     .image.class("SystemData/RoomData");
@@ -251,7 +271,7 @@ export function setupTelemetryHooks(Assembly) {
           const opIdStr = getOperatorId(SystemData);
           debugLog("Hook", `Operator account ID: ${opIdStr}`);
           playersCache.clear();
-          const players = getMergedPlayers(null, null);
+          const players = getMergedPlayers(null, null, true);
 
           sendRoomDataWithCache({
             operatorId: opIdStr,
@@ -492,13 +512,12 @@ export function setupTelemetryHooks(Assembly) {
           const players = getMergedPlayers(null, null);
           let phase = 7;
           let caption = "Change";
-          let iChangeHeroTimeSpan;
+          let iChangeHeroTimeSpan = 0;
 
-          const instances = Il2Cpp.gc.choose(UIRankHero);
-          instances.forEach((uirankObject) => {
-            const val = uirankObject.field("iChangeHeroTimeSpan").value;
-            iChangeHeroTimeSpan = val;
-          });
+          try {
+            const uirankObject = new Il2Cpp.Object(args[0]);
+            iChangeHeroTimeSpan = uirankObject.field("iChangeHeroTimeSpan").value;
+          } catch (e) {}
 
           sendRoomDataWithCache({
             operatorId: opIdStr,
@@ -524,13 +543,12 @@ export function setupTelemetryHooks(Assembly) {
           clearAllPhases();
           const opIdStr = getOperatorId(SystemData);
           const players = getMergedPlayers(null, null);
-          let iBanTimeSpan;
+          let iBanTimeSpan = 0;
 
-          const instances = Il2Cpp.gc.choose(UIRankHero);
-          instances.forEach((uirankObject) => {
-            const val = uirankObject.field("iBanTimeSpan").value;
-            iBanTimeSpan = val;
-          });
+          try {
+            const uirankObject = new Il2Cpp.Object(args[0]);
+            iBanTimeSpan = uirankObject.field("iBanTimeSpan").value;
+          } catch (e) {}
 
           sendRoomDataWithCache({
             operatorId: opIdStr,
@@ -558,13 +576,12 @@ export function setupTelemetryHooks(Assembly) {
             clearAllPhases();
             const opIdStr = getOperatorId(SystemData);
             const players = getMergedPlayers(null, null);
-            let iBanTimeSpan;
+            let iBanTimeSpan = 0;
 
-            const instances = Il2Cpp.gc.choose(UIRankHero);
-            instances.forEach((uirankObject) => {
-              const val = uirankObject.field("iBanTimeSpan").value;
-              iBanTimeSpan = val;
-            });
+            try {
+              const uirankObject = new Il2Cpp.Object(args[0]);
+              iBanTimeSpan = uirankObject.field("iBanTimeSpan").value;
+            } catch (e) {}
 
             sendRoomDataWithCache({
               operatorId: opIdStr,
@@ -589,13 +606,12 @@ export function setupTelemetryHooks(Assembly) {
             clearAllPhases();
             const opIdStr = getOperatorId(SystemData);
             const players = getMergedPlayers(null, null);
-            let iSecondBanTimeSpan;
+            let iSecondBanTimeSpan = 0;
 
-            const instances = Il2Cpp.gc.choose(UIRankHero);
-            instances.forEach((uirankObject) => {
-              const val = uirankObject.field("iSecondBanTimeSpan").value;
-              iSecondBanTimeSpan = val;
-            });
+            try {
+              const uirankObject = new Il2Cpp.Object(args[0]);
+              iSecondBanTimeSpan = uirankObject.field("iSecondBanTimeSpan").value;
+            } catch (e) {}
 
             sendRoomDataWithCache({
               operatorId: opIdStr,
