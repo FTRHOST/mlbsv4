@@ -234,9 +234,6 @@ app.post("/api/rooms", authenticate, async (req, res) => {
       updatedAt: admin.database.ServerValue.TIMESTAMP
     };
 
-    // 1. Write parent doc to RTDB instead of Firestore
-    await rtdb.ref(`test/OperatorId/${operatorId}/last_active`).set(admin.database.ServerValue.TIMESTAMP);
-
     // 2. Write player data to RTDB
     await rtdbRef.set(matchData);
 
@@ -358,11 +355,16 @@ app.get("/api/users/:uid", async (req, res) => {
       });
     }
 
+    // Fetch last_login from RTDB
+    const rtdbSnapshot = await rtdb.ref(`users/${uid}/last_login`).once("value");
+    const lastLogin = rtdbSnapshot.val();
+
     return res.json({
       status: "success",
       data: {
         uid: doc.id,
-        ...doc.data()
+        ...doc.data(),
+        last_login: lastLogin || doc.data().last_login || null
       }
     });
   } catch (error) {
@@ -384,31 +386,41 @@ app.post("/api/users", authenticate, async (req, res) => {
       });
     }
 
+    // Always write last_login to Realtime Database to avoid Firestore limits
+    const currentLogin = last_login || new Date().toISOString();
+    await rtdb.ref(`users/${uid}/last_login`).set(currentLogin);
+
     const docRef = db.collection("users").doc(uid);
     const doc = await docRef.get();
 
     let userData = {};
+    let needsFirestoreUpdate = false;
+
     if (doc.exists) {
-      userData = {
-        ...doc.data(),
-        last_login: last_login || new Date().toISOString()
-      };
-      if (m_uiID && m_uiID !== "0") {
+      userData = doc.data();
+      // Only update Firestore if m_uiID changed and is valid
+      if (m_uiID && m_uiID !== "0" && userData.m_uiID !== m_uiID) {
         userData.m_uiID = m_uiID;
+        needsFirestoreUpdate = true;
       }
     } else {
       userData = {
         created_at: new Date().toISOString(),
         expired: "NEVER",
         is_allowed: true,
-        last_login: last_login || new Date().toISOString(),
         role: "user",
         ban: false,
         m_uiID: m_uiID || ""
       };
+      needsFirestoreUpdate = true;
     }
 
-    await docRef.set(userData, { merge: true });
+    if (needsFirestoreUpdate) {
+      await docRef.set(userData, { merge: true });
+    }
+
+    // Attach last_login dynamically for the response
+    userData.last_login = currentLogin;
 
     return res.json({
       status: "success",
