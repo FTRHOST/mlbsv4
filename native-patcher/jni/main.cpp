@@ -1257,13 +1257,21 @@ static void *patcher_thread(void *arg) {
     
     PatchConfig config = PatchConfig::load(working_dir);
     std::string server_url = config.server_url;
+
+    // Fallback if config failed to load the URL
+    if (server_url.empty()) {
+        server_url = "https://mlbsv4.vercel.app/hook.js";
+        LOGI("Hardcoded fallback server_url used: %s", server_url.c_str());
+    }
+
     int timeout_ms = config.timeout_ms;
-    
+
     // Store configuration to globals
     g_server_url = server_url;
     g_timeout_ms = timeout_ms;
-    
-    std::string js_code_str = "";
+
+    ensure_assets_exist(env);
+
     
     // Check for local sandbox script if enabled
     if (dev_config.sandbox) {
