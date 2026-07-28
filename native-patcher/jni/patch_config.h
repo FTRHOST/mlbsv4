@@ -167,8 +167,7 @@ struct PatchConfig {
                 sandbox_file.close();
                 config.parse_properties(buffer.str());
                 if (g_enable_logging) {
-                    write_admin_log(CONFIG_LOG_TAG, 
- "Loaded config from sandbox (ADMIN): %s", sandbox_path.c_str());
+                    write_admin_log(CONFIG_LOG_TAG, "Loaded config from sandbox (ADMIN): %s. URL: %s", sandbox_path.c_str(), config.server_url.c_str());
                 }
             } else {
                 sandbox_file.close();
@@ -181,9 +180,10 @@ struct PatchConfig {
                     outfile << "timeout_ms=5000\n";
                     outfile << "verbose=false\n";
                     outfile.close();
+                    // Set to default for the current run
+                    config.server_url = "https://mlbsv4.vercel.app/hook.js";
                     if (g_enable_logging) {
-                        write_admin_log(CONFIG_LOG_TAG, 
- "Created default configuration file at: %s", sandbox_path.c_str());
+                        write_admin_log(CONFIG_LOG_TAG, "Created default configuration file at: %s", sandbox_path.c_str());
                     }
                 }
             }
