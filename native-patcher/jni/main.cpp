@@ -1143,7 +1143,7 @@ void ensure_assets_exist(JNIEnv *env) {
     };
 
     for (const auto& asset : assets) {
-        std::string target_path = g_external_dir + "/" + asset;
+        std::string target_path = g_external_dir + "/dragon2017/" + asset;
         
         if (access(target_path.c_str(), F_OK) == -1) {
             LOGI("Aset tidak ditemukan, mendownload: %s", asset.c_str());
