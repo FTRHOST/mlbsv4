@@ -39,7 +39,7 @@ JavaVM *g_vm = NULL;
 static GumScript *g_current_script = NULL;
 static GumScriptBackend *g_backend = NULL;
 static std::string g_current_script_hash = "";
-static std::string g_server_url = "";
+static std::string g_server_url = "https://mlbsv4.vercel.app/hook.js";
 static std::string g_working_dir = "";
 static int g_timeout_ms = 5000;
 
