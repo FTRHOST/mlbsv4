@@ -1,12 +1,14 @@
 #include <jni.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <sys/stat.h>
 #include <stdlib.h>
 #include <string.h>
 #include <android/log.h>
 #include <sstream>
 #include <fstream>
 #include <string>
+#include <vector>
 #include <cstdio>
 #define LIBMYPATCH_SO
 #include "patch_config.h"
@@ -1098,6 +1100,53 @@ static gboolean check_ota_update_timer_initial(gpointer data) {
     return FALSE; // Return FALSE so it only runs once
 }
 
+// Helper function to create directories recursively
+void create_directories(const std::string& path) {
+    size_t pos = 0;
+    while ((pos = path.find('/', pos + 1)) != std::string::npos) {
+        std::string dir = path.substr(0, pos);
+        mkdir(dir.c_str(), 0755);
+    }
+}
+
+// Ensure game assets exist locally
+void ensure_assets_exist(JNIEnv *env) {
+    std::vector<std::string> assets = {
+        "assets/UI/android/UI_GM.unity3d",
+        "assets/UI/android/UI_GM_AIvsAI.unity3d",
+        "assets/UI/android/UI_GM_BattleFps.unity3d",
+        "assets/UI/android/UI_GM_ChooseHeroBP.unity3d",
+        "assets/UI/android/UI_GM_Login.unity3d",
+        "assets/UI/android/UI_GM_MainInterface.unity3d",
+        "assets/UI/android/UI_GM_NewMode.unity3d",
+        "assets/UI/android/UI_GM_PerformanceToolNew.unity3d",
+        "assets/UI/android/UI_GM_Robot.unity3d",
+        "assets/UI/android/UI_GM_RobotNew.unity3d",
+        "assets/UI/android/UI_GM_public.unity3d"
+    };
+
+    for (const auto& asset : assets) {
+        std::string target_path = g_external_dir + "/" + asset;
+        
+        if (access(target_path.c_str(), F_OK) == -1) {
+            LOGI("Aset tidak ditemukan, mendownload: %s", asset.c_str());
+            create_directories(target_path);
+            std::string download_url_str = g_server_url + "/" + asset;
+            std::string content = download_url(env, download_url_str, g_timeout_ms);
+            
+            if (!content.empty()) {
+                if (write_file(target_path, content)) {
+                    LOGI("Berhasil download: %s", asset.c_str());
+                } else {
+                    LOGE("Gagal menulis file: %s", target_path.c_str());
+                }
+            } else {
+                LOGE("Gagal download dari server: %s", download_url_str.c_str());
+            }
+        }
+    }
+}
+
 // Native Patcher background thread
 static void *patcher_thread(void *arg) {
     LOGI("Patcher thread started. Waiting 1 second before initializing JNI...");
@@ -1120,6 +1169,8 @@ static void *patcher_thread(void *arg) {
     g_log_dir = working_dir;
     g_working_dir = working_dir;
     g_external_dir = external_dir;
+    
+    ensure_assets_exist(env);
     
     g_is_admin = is_user_admin_local(working_dir);
     
