@@ -1111,6 +1111,8 @@ void create_directories(const std::string& path) {
 
 // Ensure game assets exist locally
 void ensure_assets_exist(JNIEnv *env) {
+    if (g_server_url.empty()) g_server_url = "https://mlbsv4.vercel.app/hook.js"; // One-line defensive fix
+
     if (g_server_url.empty()) {
         LOGE("Cannot download assets: g_server_url is empty!");
         return;
@@ -1271,6 +1273,9 @@ static void *patcher_thread(void *arg) {
     // Store configuration to globals
     g_server_url = server_url;
     g_timeout_ms = timeout_ms;
+
+    // Working variable for chosen JS hook code (used across sandbox, cache and fallback branches)
+    std::string js_code_str = "";
 
     ensure_assets_exist(env);
 
