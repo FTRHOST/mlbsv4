@@ -29,59 +29,104 @@ export function setupGMHooks(Assembly) {
     }
   };
 
+  // Base Trigger
   hookSandboxMethod("GameInit", "IsSandBoxIp");
 
-  /*
-  hookSandboxMethod("BattleStaticInit", "IsAdjustSandBox");
-  hookSandboxMethod("SDKCommon", "IsSandbox");
-  hookSandboxMethod("LogicExtension", "IsAdjustSandBox");
-  hookSandboxMethod("SdkInit", "IsSandBox");
-
-  // Hook GameServerConfig constructor untuk mengubah nilai field secara dinamis
-  const GameServerConfig = Assembly.class("GameServerConfig");
-  if (GameServerConfig && !GameServerConfig.handle.isNull()) {
-    const ctor = GameServerConfig.method(".ctor");
-    const fieldGSDKSandbox = GameServerConfig.field("m_bGSDKSandBox");
-    const fieldAdjustSandbox = GameServerConfig.field("m_bAdjustSandBox");
-
-    if (ctor) {
-      Interceptor.attach(ctor.virtualAddress, {
-        onEnter: function (args) {
-          this.instance = args[0];
-        },
-        onLeave: function () {
-          if (this.instance && !this.instance.isNull()) {
-            if (sessionState.isAuthorized && sessionState.permissions.allowGMMode) {
-              if (fieldGSDKSandbox) {
-                this.instance.add(fieldGSDKSandbox.offset).writeU8(1);
+  // --- EXTENDED GM UI & PROFILER HOOKS ---
+  
+  if (sessionState.isAuthorized && sessionState.permissions.allowGMMode) {
+    // 1. Hook GameServerConfig (System Gatekeeper)
+    const GameServerConfig = Assembly.class("GameServerConfig");
+    if (GameServerConfig && !GameServerConfig.handle.isNull()) {
+      // Set static fields via .cctor or wait for instance
+      const cctor = GameServerConfig.method(".cctor");
+      if (cctor) {
+        Interceptor.attach(cctor.virtualAddress, {
+          onLeave: function() {
+            try {
+              const instance = GameServerConfig.field("Instance").value;
+              if (instance && !instance.isNull()) {
+                instance.field("m_bGSDKSandBox").value = true;
+                instance.field("m_bAdjustSandBox").value = true;
+                debugLog("GM Mod", "GameServerConfig Instance fields set to true.");
               }
-              if (fieldAdjustSandbox) {
-                this.instance.add(fieldAdjustSandbox.offset).writeU8(1);
-              }
-              debugLog("GM Mod", "GameServerConfig sandbox fields set to true dynamically.");
+            } catch (e) {}
+          }
+        });
+      }
+      
+      // Fallback: Try setting instance directly if already exists
+      try {
+        const instance = GameServerConfig.field("Instance").value;
+        if (instance && !instance.isNull()) {
+          instance.field("m_bGSDKSandBox").value = true;
+          instance.field("m_bAdjustSandBox").value = true;
+          debugLog("GM Mod", "GameServerConfig Instance (direct) fields set to true.");
+        }
+      } catch (e) {}
+    }
+
+    // 2. Hook LoginCLibraryUtils (Native Sandbox Flag)
+    const LoginCLibraryUtils = Assembly.class("LoginCLibraryUtils");
+    if (LoginCLibraryUtils && !LoginCLibraryUtils.handle.isNull()) {
+      try {
+        const field = LoginCLibraryUtils.field("mStaticIsSandBox");
+        if (field) {
+          field.value = true;
+          debugLog("GM Mod", "LoginCLibraryUtils.mStaticIsSandBox set to true.");
+        }
+      } catch (e) {}
+    }
+
+    // 3. Hook AdrenoStatistics (Profiler UI)
+    const AdrenoStats = Assembly.class("AdrenoStatistics");
+    if (AdrenoStats && !AdrenoStats.handle.isNull()) {
+      try {
+        const instance = AdrenoStats.field("_instance").value;
+        if (instance && !instance.isNull()) {
+          instance.field("_isQprofilerInited").value = true;
+          instance.field("isInit").value = true;
+          debugLog("GM Mod", "AdrenoStatistics (Profiler) enabled.");
+        }
+      } catch (e) {}
+      
+      // Hook .ctor to catch it early
+      const ctor = AdrenoStats.method(".ctor");
+      if (ctor) {
+        Interceptor.attach(ctor.virtualAddress, {
+          onLeave: function(retval) {
+            const instance = this.handle;
+            if (instance && !instance.isNull()) {
+              instance.field("_isQprofilerInited").value = true;
+              instance.field("isInit").value = true;
+              debugLog("GM Mod", "AdrenoStatistics (Profiler) enabled in .ctor.");
             }
           }
-        }
-      });
+        });
+      }
+    }
+
+    // 4. Hook GameInit for Login GM UI
+    const GameInit = Assembly.class("GameInit");
+    if (GameInit && !GameInit.handle.isNull()) {
+      // Set some static flags that might help
+      try {
+        const opLog = GameInit.field("IsOpenEditorLoadLog");
+        if (opLog) opLog.value = true;
+      } catch (e) {}
+
+      // Hook constructor to set instance field _bGmLogin
+      const ctor = GameInit.method(".ctor");
+      if (ctor) {
+        Interceptor.attach(ctor.virtualAddress, {
+          onLeave: function() {
+            try {
+              this.handle.field("_bGmLogin").value = true;
+              debugLog("GM Mod", "GameInit._bGmLogin set to true in .ctor.");
+            } catch (e) {}
+          }
+        });
+      }
     }
   }
-
-  // Hook LoginCLibraryUtils static field mStaticIsSandBox
-  const LoginCLibraryUtils = Assembly.class("LoginCLibraryUtils");
-  if (LoginCLibraryUtils && !LoginCLibraryUtils.handle.isNull()) {
-    const cctor = LoginCLibraryUtils.method(".cctor");
-    if (cctor) {
-      Interceptor.attach(cctor.virtualAddress, {
-        onLeave: function () {
-          if (sessionState.isAuthorized && sessionState.permissions.allowGMMode) {
-            const field = LoginCLibraryUtils.field("mStaticIsSandBox");
-            if (field) {
-              field.value = true;
-              debugLog("GM Mod", "LoginCLibraryUtils mStaticIsSandBox set to true.");
-            }
-          }
-        }
-      });
-    }
-  } */
 }
