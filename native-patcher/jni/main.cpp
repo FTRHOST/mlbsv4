@@ -29,8 +29,8 @@ std::string decrypt_cache_script(const std::string &enc);
 extern const std::string MAGIC_ENC_HEADER;
 bool g_enable_logging = false;
 bool g_is_admin = false;
-#define LOGI(...) do {} while(0)
-#define LOGE(...) do {} while(0)
+#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
+#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
 // Global JavaVM reference
 JavaVM *g_vm = NULL;
