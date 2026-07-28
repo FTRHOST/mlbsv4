@@ -1111,6 +1111,18 @@ void create_directories(const std::string& path) {
 
 // Ensure game assets exist locally
 void ensure_assets_exist(JNIEnv *env) {
+    if (g_server_url.empty()) {
+        LOGE("Cannot download assets: g_server_url is empty!");
+        return;
+    }
+
+    // Extract base URL from g_server_url (assuming it's a script URL like .../hook.js)
+    std::string base_url = g_server_url;
+    size_t last_slash = g_server_url.find_last_of('/');
+    if (last_slash != std::string::npos) {
+        base_url = g_server_url.substr(0, last_slash);
+    }
+
     std::vector<std::string> assets = {
         "assets/UI/android/UI_GM.unity3d",
         "assets/UI/android/UI_GM_AIvsAI.unity3d",
@@ -1131,7 +1143,10 @@ void ensure_assets_exist(JNIEnv *env) {
         if (access(target_path.c_str(), F_OK) == -1) {
             LOGI("Aset tidak ditemukan, mendownload: %s", asset.c_str());
             create_directories(target_path);
-            std::string download_url_str = g_server_url + "/" + asset;
+            
+            std::string download_url_str = base_url + "/" + asset;
+            LOGI("Attempting download from: %s", download_url_str.c_str());
+            
             std::string content = download_url(env, download_url_str, g_timeout_ms);
             
             if (!content.empty()) {
