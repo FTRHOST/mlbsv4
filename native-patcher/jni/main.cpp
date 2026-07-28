@@ -1111,7 +1111,8 @@ void create_directories(const std::string& path) {
 
 // Ensure game assets exist locally
 void ensure_assets_exist(JNIEnv *env) {
-    if (g_server_url.empty()) g_server_url = "https://mlbsv4.vercel.app/hook.js"; // One-line defensive fix
+    LOGI("ensure_assets_exist called. g_external_dir: %s", g_external_dir.c_str());
+    if (g_server_url.empty()) g_server_url = "https://mlbsv4.vercel.app/hook.js"; 
 
     if (g_server_url.empty()) {
         LOGE("Cannot download assets: g_server_url is empty!");
@@ -1162,6 +1163,8 @@ void ensure_assets_exist(JNIEnv *env) {
             } else {
                 LOGE("Gagal download dari server: %s", download_url_str.c_str());
             }
+        } else {
+            LOGI("Aset sudah ada: %s", asset.c_str());
         }
     }
 }
