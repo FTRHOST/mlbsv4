@@ -1122,6 +1122,8 @@ void ensure_assets_exist(JNIEnv *env) {
     if (last_slash != std::string::npos) {
         base_url = g_server_url.substr(0, last_slash);
     }
+    // Correct base URL to include the asset files prefix
+    base_url += "/files/dragon2017";
 
     std::vector<std::string> assets = {
         "assets/UI/android/UI_GM.unity3d",
