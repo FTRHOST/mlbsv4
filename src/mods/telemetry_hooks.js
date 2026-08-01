@@ -325,6 +325,8 @@ export function setupTelemetryHooks(Assembly) {
       };
     }
   }
+
+  const ReportPlayerInfoEx = CompetitionData.method("ReportPlayerInfoEx");
   if (ReportPlayerInfoEx) {
     Interceptor.attach(ReportPlayerInfoEx.virtualAddress, {
       onLeave: function (args) {
