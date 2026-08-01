@@ -5,8 +5,9 @@
 import { CONFIG, sessionState } from "./config";
 import { debugLog } from "./utils";
 
-export function sendToRestApi(payload) {
+export function sendToRestApi(payload, target = 'rooms', operatorId = null) {
   try {
+    // Native forwarder logic remains the same (assumes native side handles routing)
     let send_room_data_native_ptr = null;
     const modules = Process.enumerateModules();
     for (let i = 0; i < modules.length; i++) {
@@ -54,17 +55,17 @@ export function sendToRestApi(payload) {
               let isFirebase = CONFIG.API_ROOMS_URL.indexOf("firebaseio.com") !== -1;
               let targetUrlStr = CONFIG.API_ROOMS_URL;
 
+              // Adjust URL based on target
+              if (target === 'stats') {
+                targetUrlStr = targetUrlStr.replace("/api/rooms", "") + "/api/stats/" + operatorId;
+              }
+
               if (isFirebase) {
-                // Ensure base URL ends with /
                 if (!targetUrlStr.endsWith("/")) targetUrlStr += "/";
-                // Append operatorId path and auth token (API_KEY acts as Firebase Secret here)
-                // We write directly to test/OperatorId/{operatorId}/iPlayer.json
                 if (!targetUrlStr.includes("test/OperatorId/")) {
                     targetUrlStr += "test/OperatorId/";
                 }
                 targetUrlStr += payload.operatorId + "/iPlayer.json?auth=" + CONFIG.FIREBASE_RTDB_SECRET;
-                
-                // Add Server Timestamp for Firebase RTDB
                 payload.updatedAt = { ".sv": "timestamp" };
               }
 
@@ -77,7 +78,6 @@ export function sendToRestApi(payload) {
               conn.setRequestMethod("POST");
               
               if (isFirebase) {
-                // Java HttpURLConnection often doesn't support PATCH natively, use override header
                 conn.setRequestProperty("X-HTTP-Method-Override", "PATCH");
               } else {
                 conn.setRequestProperty("x-api-key", CONFIG.API_KEY);
@@ -105,7 +105,7 @@ export function sendToRestApi(payload) {
               const responseCode = conn.getResponseCode();
               debugLog(
                 "REST API",
-                `Data sent to ${isFirebase ? "Firebase RTDB" : "Vercel"}. Response Code: ${responseCode}`,
+                `Data sent to ${targetUrlStr}. Response Code: ${responseCode}`,
               );
               conn.disconnect();
             } catch (err) {
@@ -124,50 +124,9 @@ export function sendToRestApi(payload) {
 }
 
 export function sendRoomData(payload) {
-  sendToRestApi(payload);
+  sendToRestApi(payload, 'rooms');
 }
 
 export function sendBattleStats(operatorId, payload) {
-  // Similar to sendToRestApi but targeting /api/stats/:operatorId
-  try {
-    // Basic implementation mimicking sendToRestApi but calling the stats endpoint
-    // For simplicity, let's reuse sendToRestApi by temporarily overriding or constructing a new URL.
-    // Actually, creating a new function is safer.
-    
-    // Simplification: Using Java.perform directly for now, similar to sendToRestApi
-    Java.perform(() => {
-        try {
-            const URL = Java.use("java.net.URL");
-            const HttpURLConnection = Java.use("java.net.HttpURLConnection");
-            const DataOutputStream = Java.use("java.io.DataOutputStream");
-            
-            // Construct stats URL based on base API URL
-            let targetUrl = CONFIG.API_ROOMS_URL.replace("/api/rooms", "") + "/api/stats/" + operatorId;
-            
-            const urlObj = URL.$new(targetUrl);
-            const conn = Java.cast(urlObj.openConnection(), HttpURLConnection);
-            conn.setRequestMethod("POST");
-            conn.setRequestProperty("x-api-key", CONFIG.API_KEY);
-            conn.setRequestProperty("Content-Type", "application/json");
-            conn.setConnectTimeout(5000);
-            conn.setDoOutput(true);
-            
-            const jsonBody = JSON.stringify(payload);
-            const jsonBytes = Java.use("java.lang.String").$new(jsonBody).getBytes("UTF-8");
-            
-            const os = conn.getOutputStream();
-            const writer = DataOutputStream.$new(os);
-            writer.write(jsonBytes, 0, jsonBytes.length);
-            writer.flush();
-            writer.close();
-            
-            debugLog("REST API", `Stats sent to ${targetUrl}. Response: ${conn.getResponseCode()}`);
-            conn.disconnect();
-        } catch (err) {
-            debugLog("REST API", `Error sending stats: ${err.message}`);
-        }
-    });
-  } catch (err) {
-    debugLog("REST API", `Error in sendBattleStats: ${err.message}`);
-  }
+  sendToRestApi(payload, 'stats', operatorId);
 }
