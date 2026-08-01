@@ -19,8 +19,11 @@ let lastKnownPlayers = [];
 let lastDraftTime = 0;
 let lastTimestamp = new Date().toISOString();
 
+let lastWinCamp = 0;
+
 let battleData = {
   battleState: "",
+  winCamp: 0,
   waktuPertandingan: 0,
   blueTeamKill: 0,
   redTeamKill: 0,
@@ -31,7 +34,7 @@ let battleData = {
   blueTeamKillTurtle: 0,
   redTeamKillTurtle: 0,
   blueTeamDestroyTuret: 0,
-  redTeamDestroyTuret: 0
+  redTeamDestroyTuret: 0,
 };
 
 function clearAllPhases() {
@@ -65,11 +68,11 @@ function sendRoomDataWithCache(payload) {
   } else {
     payload.timestamp = lastTimestamp;
   }
-  
+
   if (payload.Battle === undefined) {
     payload.Battle = battleData;
   }
-  
+
   sendRoomData(payload);
 }
 
@@ -112,12 +115,17 @@ function getMergedPlayers(activeUid, updateFn, forceScan = false) {
     if (activeUid && updateFn) {
       let cached = playersCache.get(activeUid);
       if (!cached) {
-        cached = { pickPhase: false, banPhase: false, SelHeroID: 0, banHero: 0 };
+        cached = {
+          pickPhase: false,
+          banPhase: false,
+          SelHeroID: 0,
+          banHero: 0,
+        };
         playersCache.set(activeUid, cached);
       }
       updateFn(activeUid, cached);
-      
-      const pIndex = lastKnownPlayers.findIndex(p => p.id === activeUid);
+
+      const pIndex = lastKnownPlayers.findIndex((p) => p.id === activeUid);
       if (pIndex !== -1) {
         lastKnownPlayers[pIndex].pickPhase = cached.pickPhase;
         lastKnownPlayers[pIndex].banPhase = cached.banPhase;
@@ -257,6 +265,32 @@ export function setupTelemetryHooks(Assembly) {
               "Hook",
               `Error reading get_m_iNext2025Feature: ${err.message}`,
             );
+          }
+        },
+      });
+    }
+  }
+
+  const LogicBattleEndCtrl = Assembly.tryClass("LogicBattleEndCtrl");
+  if (LogicBattleEndCtrl && !LogicBattleEndCtrl.handle.isNull()) {
+    const StartEndBattle = LogicBattleEndCtrl.tryMethod("StartEndBattle");
+    if (StartEndBattle) {
+      Interceptor.attach(StartEndBattle.virtualAddress, {
+        onEnter: function (args) {
+          try {
+            const failCamp = args[2];
+            const val = failCamp.field("value__").value;
+            if (val === 1) {
+              lastWinCamp = 2;
+            } else if (val === 2) {
+              lastWinCamp = 1;
+            }
+            debugLog(
+              "lastWinCamp",
+              `Team yang menang dengan id : ${lastWinCamp}`,
+            );
+          } catch (err) {
+            debugLog("Hook", `Error reading StartEndBattle: ${err.message}`);
           }
         },
       });
@@ -516,7 +550,9 @@ export function setupTelemetryHooks(Assembly) {
 
           try {
             const uirankObject = new Il2Cpp.Object(args[0]);
-            iChangeHeroTimeSpan = uirankObject.field("iChangeHeroTimeSpan").value;
+            iChangeHeroTimeSpan = uirankObject.field(
+              "iChangeHeroTimeSpan",
+            ).value;
           } catch (e) {}
 
           sendRoomDataWithCache({
@@ -610,7 +646,8 @@ export function setupTelemetryHooks(Assembly) {
 
             try {
               const uirankObject = new Il2Cpp.Object(args[0]);
-              iSecondBanTimeSpan = uirankObject.field("iSecondBanTimeSpan").value;
+              iSecondBanTimeSpan =
+                uirankObject.field("iSecondBanTimeSpan").value;
             } catch (e) {}
 
             sendRoomDataWithCache({
@@ -701,12 +738,18 @@ export function setupTelemetryHooks(Assembly) {
     const ShowFightDataTiny = Assembly.class("ShowFightDataTiny");
     const PlayerData = Assembly.class("PlayerData");
     const TimerBase = Assembly.class("TimerBase");
-    
-    const GetElapsedTimeSinceBattleStart = TimerBase.tryMethod("GetElapsedTimeSinceBattleStart");
+
+    const GetElapsedTimeSinceBattleStart = TimerBase.tryMethod(
+      "GetElapsedTimeSinceBattleStart",
+    );
     const ReportKillEvent = CompetitionData.tryMethod("ReportKillEvent");
-    const ReportCampBossKillTimes = CompetitionData.tryMethod("ReportCampBossKillTimes");
-    const CountTowerKillTimes = CompetitionData.tryMethod("CountTowerKillTimes");
-    
+    const ReportCampBossKillTimes = CompetitionData.tryMethod(
+      "ReportCampBossKillTimes",
+    );
+    const CountTowerKillTimes = CompetitionData.tryMethod(
+      "CountTowerKillTimes",
+    );
+
     const BattleManagerClass = Assembly.class("LogicBattleManager");
     const SetBattleState = BattleManagerClass.method("set_m_eState");
 
@@ -723,7 +766,7 @@ export function setupTelemetryHooks(Assembly) {
         sendRoomDataWithCache({
           operatorId: opIdStr,
           players: lastKnownPlayers,
-          Battle: battleData
+          Battle: battleData,
         });
       } catch (e) {
         debugLog("Battle", `Error sending battle data: ${e.message}`);
@@ -770,7 +813,7 @@ export function setupTelemetryHooks(Assembly) {
               updateAndSendBattleData();
             } catch (e) {}
           }, 500);
-        }
+        },
       });
     }
 
@@ -783,7 +826,7 @@ export function setupTelemetryHooks(Assembly) {
             battleData.blueTeamGold = Objek.field("m_CampAGold").value;
             battleData.redTeamGold = Objek.field("m_CampBGold").value;
           } catch (e) {}
-        }
+        },
       });
     }
 
@@ -793,14 +836,18 @@ export function setupTelemetryHooks(Assembly) {
           if (!isHookActive || !Objek) return;
           setTimeout(() => {
             try {
-              battleData.blueTeamKillLord = Objek.field("m_CampAKillLingZhu").value;
-              battleData.redTeamKillLord = Objek.field("m_CampBKillLingZhu").value;
-              battleData.blueTeamKillTurtle = Objek.field("m_CampAKillShenGui").value;
-              battleData.redTeamKillTurtle = Objek.field("m_CampBKillShenGui").value;
+              battleData.blueTeamKillLord =
+                Objek.field("m_CampAKillLingZhu").value;
+              battleData.redTeamKillLord =
+                Objek.field("m_CampBKillLingZhu").value;
+              battleData.blueTeamKillTurtle =
+                Objek.field("m_CampAKillShenGui").value;
+              battleData.redTeamKillTurtle =
+                Objek.field("m_CampBKillShenGui").value;
               updateAndSendBattleData();
             } catch (e) {}
           }, 500);
-        }
+        },
       });
     }
 
@@ -810,12 +857,14 @@ export function setupTelemetryHooks(Assembly) {
           if (!isHookActive || !Objek) return;
           setTimeout(() => {
             try {
-              battleData.blueTeamDestroyTuret = Objek.field("m_CampAKillTower").value;
-              battleData.redTeamDestroyTuret = Objek.field("m_CampBKillTower").value;
+              battleData.blueTeamDestroyTuret =
+                Objek.field("m_CampAKillTower").value;
+              battleData.redTeamDestroyTuret =
+                Objek.field("m_CampBKillTower").value;
               updateAndSendBattleData();
             } catch (e) {}
           }, 500);
-        }
+        },
       });
     }
 
@@ -826,13 +875,13 @@ export function setupTelemetryHooks(Assembly) {
           try {
             const waktu = retval.toInt32();
             battleData.waktuPertandingan = waktu;
-            
+
             if (waktu - lastWaktuKirim >= 1000 || waktu < lastWaktuKirim) {
               lastWaktuKirim = waktu;
               updateAndSendBattleData();
             }
           } catch (e) {}
-        }
+        },
       });
     }
 
@@ -850,7 +899,7 @@ export function setupTelemetryHooks(Assembly) {
         } else {
           nonaktifkanFitur();
         }
-        
+
         updateAndSendBattleData();
       } catch (e) {
         debugLog("Battle", `Error in SetBattleState hook: ${e.message}`);
