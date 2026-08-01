@@ -324,8 +324,7 @@ export function setupTelemetryHooks(Assembly) {
         return this.method("StartEndBattle").invoke(targetPos, failCamp, endType);
       };
     }
-
-  const ReportPlayerInfoEx = CompetitionData.method("ReportPlayerInfoEx");
+  }
   if (ReportPlayerInfoEx) {
     Interceptor.attach(ReportPlayerInfoEx.virtualAddress, {
       onLeave: function (args) {
