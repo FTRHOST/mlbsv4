@@ -277,25 +277,30 @@ export function setupTelemetryHooks(Assembly) {
     if (StartEndBattle) {
       StartEndBattle.implementation = function (targetPos, failCamp, endType) {
         try {
-            // Save battle data before resetting
             const opIdStr = getOperatorId(SystemData);
+            
+            // 1. Hitung winCamp
+            const val = failCamp.field("value__").value;
+            const winCamp = (val === 1) ? 2 : ((val === 2) ? 1 : 0);
+            
+            // 2. Buat clone data untuk dikirim agar tidak terpengaruh oleh reset
+            const finalBattleData = { ...battleData, winCamp: winCamp };
+            
+            // 3. Kirim payload lengkap (Battle + Players)
             if (opIdStr) {
                 debugLog("Battle", "Saving final battle data before reset...");
-                sendBattleStats(opIdStr, battleData);
+                sendBattleStats(opIdStr, {
+                    Battle: finalBattleData,
+                    players: lastKnownPlayers,
+                    timestamp: new Date().toISOString()
+                });
             }
 
-            const val = failCamp.field("value__").value;
-            if (val === 1) {
-              lastWinCamp = 2;
-            } else if (val === 2) {
-              lastWinCamp = 1;
-            }
-            debugLog(
-              "lastWinCamp",
-              `Team yang menang dengan id : ${lastWinCamp}`,
-            );
+            // 4. Update lastWinCamp
+            lastWinCamp = winCamp;
+            debugLog("lastWinCamp", `Team yang menang dengan id : ${lastWinCamp}`);
             
-            // Reset battleData after saving
+            // 5. Reset battleData setelah data dipastikan tersalin
             battleData = {
               battleState: "",
               winCamp: 0,
@@ -311,11 +316,13 @@ export function setupTelemetryHooks(Assembly) {
               blueTeamDestroyTuret: 0,
               redTeamDestroyTuret: 0,
             };
-            return this.method("StartEndBattle").invoke(targetPos, failCamp, endType);
-      } catch (err) {
-        debugLog("Hook", `Error in StartEndBattle hook: ${err.message}`)
-    }}
-  };
+        } catch (err) {
+            debugLog("Hook", `Error in StartEndBattle hook: ${err.message}`);
+        }
+        
+        // Selalu jalankan fungsi asli
+        return this.method("StartEndBattle").invoke(targetPos, failCamp, endType);
+    };
   
   }
 
