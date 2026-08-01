@@ -322,9 +322,8 @@ export function setupTelemetryHooks(Assembly) {
         
         // Selalu jalankan fungsi asli
         return this.method("StartEndBattle").invoke(targetPos, failCamp, endType);
-    };
-  
-  }
+      };
+    }
 
   const ReportPlayerInfoEx = CompetitionData.method("ReportPlayerInfoEx");
   if (ReportPlayerInfoEx) {
