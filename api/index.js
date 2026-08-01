@@ -536,6 +536,25 @@ app.post("/api/match-setup/:operatorId", authenticate, async (req, res) => {
   }
 });
 
+// POST to save battle stats
+app.post("/api/stats/:operatorId", authenticate, async (req, res) => {
+  try {
+    const { operatorId } = req.params;
+    const statsData = req.body;
+    const timestamp = Date.now();
+    
+    // Path: /stats/(operatorID)/(timestamp)/
+    await db.collection("stats").doc(operatorId).collection(String(timestamp)).doc("data").set({
+      ...statsData,
+      savedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+    
+    return res.json({ status: "success", message: "Stats saved", timestamp });
+  } catch (error) {
+    return res.status(500).json({ status: "error", message: error.message });
+  }
+});
+
 // Catch-all fallback route for debugging 404 errors
 app.use((req, res) => {
   res.status(404).json({

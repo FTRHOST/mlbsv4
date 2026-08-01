@@ -4,7 +4,7 @@
 
 import { sessionState } from "../tools/config";
 import { debugLog } from "../tools/utils";
-import { sendRoomData } from "../tools/telemetry";
+import { sendRoomData, sendBattleStats } from "../tools/telemetry";
 import { verifyUserWithRestApiAsync } from "../tools/auth";
 import { loadAuthCache } from "../tools/cache";
 
@@ -278,6 +278,13 @@ export function setupTelemetryHooks(Assembly) {
       Interceptor.attach(StartEndBattle.virtualAddress, {
         onEnter: function (args) {
           try {
+            // Save battle data before resetting
+            const opIdStr = getOperatorId(SystemData);
+            if (opIdStr) {
+                debugLog("Battle", "Saving final battle data before reset...");
+                sendBattleStats(opIdStr, battleData);
+            }
+
             const failCamp = args[2];
             const val = failCamp.field("value__").value;
             if (val === 1) {
@@ -289,6 +296,23 @@ export function setupTelemetryHooks(Assembly) {
               "lastWinCamp",
               `Team yang menang dengan id : ${lastWinCamp}`,
             );
+            
+            // Reset battleData after saving
+            battleData = {
+              battleState: "",
+              winCamp: 0,
+              waktuPertandingan: 0,
+              blueTeamKill: 0,
+              redTeamKill: 0,
+              blueTeamGold: 0,
+              redTeamGold: 0,
+              blueTeamKillLord: 0,
+              redTeamKillLord: 0,
+              blueTeamKillTurtle: 0,
+              redTeamKillTurtle: 0,
+              blueTeamDestroyTuret: 0,
+              redTeamDestroyTuret: 0,
+            };
           } catch (err) {
             debugLog("Hook", `Error reading StartEndBattle: ${err.message}`);
           }
@@ -774,24 +798,21 @@ export function setupTelemetryHooks(Assembly) {
     }
 
     function aktifkanFitur() {
-      if (isHookActive) return;
-      debugLog("Battle", "Mengaktifkan Fitur Pertandingan...");
+      if (isHookActive && Objek) return; 
+      debugLog("Battle", "Mengaktifkan/Memperbarui Fitur Pertandingan...");
       isHookActive = true;
 
-      // Jalankan gc.choose di background thread (setTimeout) agar tidak freeze gamenya!
-      setTimeout(() => {
-        try {
-          const instance = Il2Cpp.gc.choose(ShowFightDataTiny);
-          if (instance.length > 0) {
-            Objek = instance[0];
-            debugLog("Battle", "Instance ShowFightDataTiny ditemukan!");
-          } else {
-            debugLog("Battle", "Instance ShowFightDataTiny belum siap!");
-          }
-        } catch (e) {
-          debugLog("Battle", `Error gc.choose: ${e.message}`);
+      try {
+        const instance = Il2Cpp.gc.choose(ShowFightDataTiny);
+        if (instance.length > 0) {
+          Objek = instance[0];
+          debugLog("Battle", "Instance ShowFightDataTiny ditemukan!");
+        } else {
+          debugLog("Battle", "Instance ShowFightDataTiny belum siap!");
         }
-      }, 500);
+      } catch (e) {
+        debugLog("Battle", `Error gc.choose: ${e.message}`);
+      }
     }
 
     function nonaktifkanFitur() {

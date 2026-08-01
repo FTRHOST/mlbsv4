@@ -126,3 +126,48 @@ export function sendToRestApi(payload) {
 export function sendRoomData(payload) {
   sendToRestApi(payload);
 }
+
+export function sendBattleStats(operatorId, payload) {
+  // Similar to sendToRestApi but targeting /api/stats/:operatorId
+  try {
+    // Basic implementation mimicking sendToRestApi but calling the stats endpoint
+    // For simplicity, let's reuse sendToRestApi by temporarily overriding or constructing a new URL.
+    // Actually, creating a new function is safer.
+    
+    // Simplification: Using Java.perform directly for now, similar to sendToRestApi
+    Java.perform(() => {
+        try {
+            const URL = Java.use("java.net.URL");
+            const HttpURLConnection = Java.use("java.net.HttpURLConnection");
+            const DataOutputStream = Java.use("java.io.DataOutputStream");
+            
+            // Construct stats URL based on base API URL
+            let targetUrl = CONFIG.API_ROOMS_URL.replace("/api/rooms", "") + "/api/stats/" + operatorId;
+            
+            const urlObj = URL.$new(targetUrl);
+            const conn = Java.cast(urlObj.openConnection(), HttpURLConnection);
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("x-api-key", CONFIG.API_KEY);
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setConnectTimeout(5000);
+            conn.setDoOutput(true);
+            
+            const jsonBody = JSON.stringify(payload);
+            const jsonBytes = Java.use("java.lang.String").$new(jsonBody).getBytes("UTF-8");
+            
+            const os = conn.getOutputStream();
+            const writer = DataOutputStream.$new(os);
+            writer.write(jsonBytes, 0, jsonBytes.length);
+            writer.flush();
+            writer.close();
+            
+            debugLog("REST API", `Stats sent to ${targetUrl}. Response: ${conn.getResponseCode()}`);
+            conn.disconnect();
+        } catch (err) {
+            debugLog("REST API", `Error sending stats: ${err.message}`);
+        }
+    });
+  } catch (err) {
+    debugLog("REST API", `Error in sendBattleStats: ${err.message}`);
+  }
+}
