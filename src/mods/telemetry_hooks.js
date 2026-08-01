@@ -275,9 +275,8 @@ export function setupTelemetryHooks(Assembly) {
   if (LogicBattleEndCtrl && !LogicBattleEndCtrl.handle.isNull()) {
     const StartEndBattle = LogicBattleEndCtrl.tryMethod("StartEndBattle");
     if (StartEndBattle) {
-      Interceptor.attach(StartEndBattle.virtualAddress, {
-        onEnter: function (args) {
-          try {
+      StartEndBattle.implementation = function (targetPos, failCamp, endType) {
+        try {
             // Save battle data before resetting
             const opIdStr = getOperatorId(SystemData);
             if (opIdStr) {
@@ -285,7 +284,6 @@ export function setupTelemetryHooks(Assembly) {
                 sendBattleStats(opIdStr, battleData);
             }
 
-            const failCamp = args[2];
             const val = failCamp.field("value__").value;
             if (val === 1) {
               lastWinCamp = 2;
@@ -313,12 +311,12 @@ export function setupTelemetryHooks(Assembly) {
               blueTeamDestroyTuret: 0,
               redTeamDestroyTuret: 0,
             };
-          } catch (err) {
-            debugLog("Hook", `Error reading StartEndBattle: ${err.message}`);
-          }
-        },
-      });
-    }
+            return this.method("StartEndBattle").invoke(targetPos, failCamp, endType);
+      } catch (err) {
+        debugLog("Hook", `Error in StartEndBattle hook: ${err.message}`)
+    }}
+  };
+  
   }
 
   const ReportPlayerInfoEx = CompetitionData.method("ReportPlayerInfoEx");
