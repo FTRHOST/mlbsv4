@@ -543,14 +543,20 @@ app.post("/api/stats/:operatorId", authenticate, async (req, res) => {
     const statsData = req.body;
     const timestamp = Date.now();
     
+    console.log(`[+] Received stats for operatorId: ${operatorId}`);
+    console.log(`[+] Stats data: ${JSON.stringify(statsData)}`);
+    
     // Path: /stats/(operatorID)/(timestamp)/
     await db.collection("stats").doc(operatorId).collection(String(timestamp)).doc("data").set({
       ...statsData,
       savedAt: admin.firestore.FieldValue.serverTimestamp()
     });
     
+    console.log(`[+] Stats successfully written to Firestore for ${operatorId}`);
+    
     return res.json({ status: "success", message: "Stats saved", timestamp });
   } catch (error) {
+    console.error(`[-] Error writing stats to Firestore: ${error.message}`);
     return res.status(500).json({ status: "error", message: error.message });
   }
 });

@@ -128,5 +128,6 @@ export function sendRoomData(payload) {
 }
 
 export function sendBattleStats(operatorId, payload) {
+  debugLog("REST API", `sendBattleStats called for operator: ${operatorId}`);
   sendToRestApi(payload, 'stats', operatorId);
 }
