@@ -110,10 +110,7 @@ export function getOperatorId(SystemData) {
   return "";
 }
 
-export function getMergedPlayers(activeUid, updateFn, forceScan = false) {
-  // Pastikan updateFn adalah sebuah fungsi, jika tidak diisi beri fungsi kosong agar tidak error
-  const safeUpdateFn = typeof updateFn === "function" ? updateFn : () => {};
-
+function getMergedPlayers(activeUid, updateFn, forceScan = false) {
   if (!forceScan && lastKnownPlayers && lastKnownPlayers.length > 0) {
     if (activeUid && updateFn) {
       let cached = playersCache.get(activeUid);
@@ -126,7 +123,8 @@ export function getMergedPlayers(activeUid, updateFn, forceScan = false) {
         };
         playersCache.set(activeUid, cached);
       }
-      safeUpdateFn(activeUid, cached);
+      updateFn(activeUid, cached);
+
       const pIndex = lastKnownPlayers.findIndex((p) => p.id === activeUid);
       if (pIndex !== -1) {
         lastKnownPlayers[pIndex].pickPhase = cached.pickPhase;
@@ -171,8 +169,9 @@ export function getMergedPlayers(activeUid, updateFn, forceScan = false) {
         };
       }
 
-      // Panggil fungsi callback dengan aman
-      safeUpdateFn(uid, cached);
+      if (updateFn) {
+        updateFn(uid, cached);
+      }
 
       const nameStr = Name ? Name.content || "" : "";
       let verifiedTeam = 0;
