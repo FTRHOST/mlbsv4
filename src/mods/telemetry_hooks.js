@@ -775,6 +775,8 @@ export function setupTelemetryHooks(Assembly) {
     const PlayerData = Assembly.class("PlayerData");
     const TimerBase = Assembly.class("TimerBase");
 
+    const EnterBattle = ShowFightDataTiny.class("EnterBattle");
+
     const GetElapsedTimeSinceBattleStart = TimerBase.tryMethod(
       "GetElapsedTimeSinceBattleStart",
     );
@@ -794,12 +796,22 @@ export function setupTelemetryHooks(Assembly) {
     // let Objek = null;
     let lastWaktuKirim = 0;
 
-    const instance = Il2Cpp.gc.choose(ShowFightDataTiny);
-    if (instance.length > 0) {
-      Objek = instance[0];
-      debugLog("Battle", "Instance ShowFightDataTiny ditemukan!");
-    } else {
-      debugLog("Battle", "Instance ShowFightDataTiny belum siap!");
+    // Menggunakan Interceptor.attach untuk fungsi yang dipanggil sangat sering agar tidak freeze
+    if (EnterBattle) {
+      Interceptor.attach(EnterBattle.virtualAddress, {
+        onLeave: function (retval) {
+          if (!isHookActive) return;
+          setTimeout(() => {
+            const instance = Il2Cpp.gc.choose(ShowFightDataTiny);
+            if (instance.length > 0) {
+              Objek = instance[0];
+              debugLog("Battle", "Instance ShowFightDataTiny ditemukan!");
+            } else {
+              debugLog("Battle", "Instance ShowFightDataTiny belum siap!");
+            }
+          }, 100);
+        },
+      });
     }
 
     function updateAndSendBattleData() {
