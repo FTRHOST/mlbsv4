@@ -790,7 +790,7 @@ export function setupTelemetryHooks(Assembly) {
     const SetBattleState = BattleManagerClass.method("set_m_eState");
 
     const eBState_Play = "eBState_Play";
-    let isHookActive = false;
+    let isHookActive = true;
     let Objek = null;
     let lastWaktuKirim = 0;
 
