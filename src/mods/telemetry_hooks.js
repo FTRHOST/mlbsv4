@@ -277,51 +277,58 @@ export function setupTelemetryHooks(Assembly) {
     if (StartEndBattle) {
       StartEndBattle.implementation = function (targetPos, failCamp, endType) {
         try {
-            const opIdStr = getOperatorId(SystemData);
-            
-            // 1. Hitung winCamp
-            const val = failCamp.field("value__").value;
-            const winCamp = (val === 1) ? 2 : ((val === 2) ? 1 : 0);
-            
-            // 2. Buat clone data untuk dikirim agar tidak terpengaruh oleh reset
-            const finalBattleData = { ...battleData, winCamp: winCamp };
-            
-            // 3. Kirim payload lengkap (Battle + Players)
-            if (opIdStr) {
-                debugLog("Battle", "Saving final battle data before reset...");
-                sendBattleStats(opIdStr, {
-                    Battle: finalBattleData,
-                    players: lastKnownPlayers,
-                    timestamp: new Date().toISOString()
-                });
-            }
+          const opIdStr = getOperatorId(SystemData);
 
-            // 4. Update lastWinCamp
-            lastWinCamp = winCamp;
-            debugLog("lastWinCamp", `Team yang menang dengan id : ${lastWinCamp}`);
-            
-            // 5. Reset battleData setelah data dipastikan tersalin
-            battleData = {
-              battleState: "",
-              winCamp: 0,
-              waktuPertandingan: 0,
-              blueTeamKill: 0,
-              redTeamKill: 0,
-              blueTeamGold: 0,
-              redTeamGold: 0,
-              blueTeamKillLord: 0,
-              redTeamKillLord: 0,
-              blueTeamKillTurtle: 0,
-              redTeamKillTurtle: 0,
-              blueTeamDestroyTuret: 0,
-              redTeamDestroyTuret: 0,
-            };
+          // 1. Hitung winCamp
+          const val = failCamp.field("value__").value;
+          const winCamp = val === 1 ? 2 : val === 2 ? 1 : 0;
+
+          // 2. Buat clone data untuk dikirim agar tidak terpengaruh oleh reset
+          const finalBattleData = { ...battleData, winCamp: winCamp };
+
+          // 3. Kirim payload lengkap (Battle + Players)
+          if (opIdStr) {
+            debugLog("Battle", "Saving final battle data before reset...");
+            sendBattleStats(opIdStr, {
+              Battle: finalBattleData,
+              players: lastKnownPlayers,
+              timestamp: new Date().toISOString(),
+            });
+          }
+
+          // 4. Update lastWinCamp
+          lastWinCamp = winCamp;
+          debugLog(
+            "lastWinCamp",
+            `Team yang menang dengan id : ${lastWinCamp}`,
+          );
+
+          // 5. Reset battleData setelah data dipastikan tersalin
+          battleData = {
+            battleState: "",
+            winCamp: 0,
+            waktuPertandingan: 0,
+            blueTeamKill: 0,
+            redTeamKill: 0,
+            blueTeamGold: 0,
+            redTeamGold: 0,
+            blueTeamKillLord: 0,
+            redTeamKillLord: 0,
+            blueTeamKillTurtle: 0,
+            redTeamKillTurtle: 0,
+            blueTeamDestroyTuret: 0,
+            redTeamDestroyTuret: 0,
+          };
         } catch (err) {
-            debugLog("Hook", `Error in StartEndBattle hook: ${err.message}`);
+          debugLog("Hook", `Error in StartEndBattle hook: ${err.message}`);
         }
-        
+
         // Selalu jalankan fungsi asli
-        return this.method("StartEndBattle").invoke(targetPos, failCamp, endType);
+        return this.method("StartEndBattle").invoke(
+          targetPos,
+          failCamp,
+          endType,
+        );
       };
     }
   }
@@ -803,7 +810,7 @@ export function setupTelemetryHooks(Assembly) {
     }
 
     function aktifkanFitur() {
-      if (isHookActive && Objek) return; 
+      if (isHookActive && Objek) return;
       debugLog("Battle", "Mengaktifkan/Memperbarui Fitur Pertandingan...");
       isHookActive = true;
 
@@ -920,11 +927,11 @@ export function setupTelemetryHooks(Assembly) {
         debugLog("Battle", `[State Changed] BattleState bernilai: ${stateStr}`);
         battleData.battleState = stateStr;
 
-        if (stateStr === eBState_Play) {
+        /*if (stateStr === eBState_Play) {
           aktifkanFitur();
         } else {
           nonaktifkanFitur();
-        }
+        }*/
 
         updateAndSendBattleData();
       } catch (e) {
@@ -934,4 +941,5 @@ export function setupTelemetryHooks(Assembly) {
   } catch (err) {
     debugLog("Battle", `Failed setting up Battle hooks: ${err.message}`);
   }
+  aktifkanFitur();
 }
