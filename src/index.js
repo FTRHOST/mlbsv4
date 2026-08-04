@@ -214,7 +214,7 @@ function executeSimpleHooks() {
   }, 2000);
 
   // Setup Modular Mod Functions
-  patchLibMoba();
+  patchLibMoba(Assembly);
   setupGMHooks(Assembly);
   setupSkinHooks(Assembly);
   setupUnreleasedHooks(Assembly);

@@ -1,4 +1,4 @@
-export function patchLibMoba() {
+export function patchLibMoba(Assembly) {
   const moduleName = "libmoba.so";
 
   // 1. Tunggu sampai libmoba.so dimuat di memori
@@ -57,4 +57,14 @@ export function patchLibMoba() {
       console.log("[Bypass] Successfully applied 5 patches to libmoba.so");
     }
   }, 100);
+
+  const GameMain = Assembly.class("GameMain");
+  const PlugInTesting = GameMain.method("PlugInTesting");
+  PlugInTesting.implementation = function () {};
+
+  const APKSignature = Assembly.class("APKSignature");
+  const IsSignatureSame = APKSignature.method("IsSignatureSame");
+  IsSignatureSame.implementation = function (kSignature) {
+    return true;
+  };
 }
