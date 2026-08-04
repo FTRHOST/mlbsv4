@@ -793,14 +793,13 @@ export function setupTelemetryHooks(Assembly) {
 
     const eBState_Play = "eBState_Play";
     let isHookActive = true;
-    // let Objek = null;
+    let Objek = null;
     let lastWaktuKirim = 0;
 
     // Menggunakan Interceptor.attach untuk fungsi yang dipanggil sangat sering agar tidak freeze
     if (EnterBattle) {
       Interceptor.attach(EnterBattle.virtualAddress, {
         onLeave: function (retval) {
-          if (!isHookActive) return;
           setTimeout(() => {
             const instance = Il2Cpp.gc.choose(ShowFightDataTiny);
             if (instance.length > 0) {
