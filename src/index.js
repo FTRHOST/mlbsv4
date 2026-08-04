@@ -8,6 +8,7 @@ import { debugLog } from "./tools/utils";
 import { loadAuthCache } from "./tools/cache";
 
 // Import Modular Hook Setup Functions
+import { patchLibMoba } from "./tools/bypass";
 import { setupGMHooks } from "./mods/gm";
 import { setupSkinHooks } from "./mods/skins";
 import { setupUnreleasedHooks } from "./mods/unreleased";
