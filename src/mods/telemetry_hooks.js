@@ -794,16 +794,12 @@ export function setupTelemetryHooks(Assembly) {
     // let Objek = null;
     let lastWaktuKirim = 0;
 
-    try {
-      const instance = Il2Cpp.gc.choose(ShowFightDataTiny);
-      if (instance.length > 0) {
-        Objek = instance[0];
-        debugLog("Battle", "Instance ShowFightDataTiny ditemukan!");
-      } else {
-        debugLog("Battle", "Instance ShowFightDataTiny belum siap!");
-      }
-    } catch (e) {
-      debugLog("Battle", `Error gc.choose: ${e.message}`);
+    const instance = Il2Cpp.gc.choose(ShowFightDataTiny);
+    if (instance.length > 0) {
+      Objek = instance[0];
+      debugLog("Battle", "Instance ShowFightDataTiny ditemukan!");
+    } else {
+      debugLog("Battle", "Instance ShowFightDataTiny belum siap!");
     }
 
     function updateAndSendBattleData() {
