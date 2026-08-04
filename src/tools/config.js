@@ -14,7 +14,7 @@ export const CONFIG = {
       allowFreeSkin: true,
       allowGMMode: true,
       allowUnreleased: true,
-      allowTelemetry: false,
+      allowTelemetry: true,
       description: "Administrator Access - All Features Enabled",
     },
     vip: {
