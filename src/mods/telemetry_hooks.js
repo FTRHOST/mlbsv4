@@ -791,7 +791,7 @@ export function setupTelemetryHooks(Assembly) {
 
     const eBState_Play = "eBState_Play";
     let isHookActive = true;
-    let Objek = null;
+    // let Objek = null;
     let lastWaktuKirim = 0;
 
     try {
@@ -825,7 +825,7 @@ export function setupTelemetryHooks(Assembly) {
     if (ReportKillEvent) {
       Interceptor.attach(ReportKillEvent.virtualAddress, {
         onLeave: function (retval) {
-          if (!isHookActive || !Objek) return;
+          if (!isHookActive) return;
           setTimeout(() => {
             try {
               battleData.blueTeamKill = Objek.field("m_iCampAKill").value;
