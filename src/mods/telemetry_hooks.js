@@ -775,7 +775,7 @@ export function setupTelemetryHooks(Assembly) {
     const ShowFightDataTiny = Assembly.class("ShowFightDataTiny");
     const PlayerData = Assembly.class("PlayerData");
     const TimerBase = Assembly.class("TimerBase");
-    const EnterBattle = ShowFightDataTiny.class("EnterBattle");
+    const EnterBattle = ShowFightDataTiny.tryMethod("EnterBattle");
     const GetElapsedTimeSinceBattleStart = TimerBase.tryMethod(
       "GetElapsedTimeSinceBattleStart",
     );
