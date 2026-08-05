@@ -306,7 +306,6 @@ export function setupTelemetryHooks(Assembly) {
 
           // 5. Reset battleData setelah data dipastikan tersalin
           battleData = {
-            battleState: "",
             winCamp: 0,
             waktuPertandingan: 0,
             blueTeamKill: 0,
@@ -780,9 +779,8 @@ export function setupTelemetryHooks(Assembly) {
       "GetElapsedTimeSinceBattleStart",
     );
     const BattleManagerClass = Assembly.class("LogicBattleManager");
-    const SetBattleState = BattleManagerClass.method("set_m_eState");
+    // const SetBattleState = BattleManagerClass.method("set_m_eState");
 
-    let isHookActive = true;
     let ObjekPtr = null; // Menyimpan pointer mentah, bukan objek Il2Cpp utuh agar tidak teracak GC
     let lastWaktuKirim = 0;
 
@@ -831,7 +829,7 @@ export function setupTelemetryHooks(Assembly) {
     // Daripada memantau (hook) KillEvent, Gold, Tower, Lord, dan Timer yang dipanggil jutaan kali,
     // Kita buat thread pembaca memori pasif setiap 1 detik. Anticheat tidak bisa mendeteksi pembacaan pasif.
     setInterval(() => {
-      if (!isHookActive || !ObjekPtr) return;
+      if (!ObjekPtr) return;
 
       // Bungkus dalam Script.nextTick agar tidak membebani siklus performa game
       Script.nextTick(() => {
@@ -879,31 +877,6 @@ export function setupTelemetryHooks(Assembly) {
         }
       });
     }, 1000); // Sinkronisasi data mendetail setiap 1000ms (1 detik) tanpa hook berat
-
-    // 4. AMAN: SetBattleState diganti dari '.implementation' ke Interceptor.attach
-    // Mengubah .implementation pada fungsi krusial sering memicu 'Integrity Check Failed' pada Game Security modern.
-    if (SetBattleState) {
-      Interceptor.attach(SetBattleState.virtualAddress, {
-        onEnter: function (args) {
-          if (!isHookActive) return;
-          try {
-            // args[1] biasanya berisi nilai enum/object status state-nya
-            const value = args[1];
-            if (value) {
-              const stateStr = value.toString();
-              battleData.battleState = stateStr;
-
-              Script.nextTick(() => {
-                debugLog(
-                  "Battle",
-                  `[State Changed] Pasif Telemetri: ${stateStr}`,
-                );
-              });
-            }
-          } catch (e) {}
-        },
-      });
-    }
   } catch (err) {
     debugLog(
       "Battle",
