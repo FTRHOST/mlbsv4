@@ -770,170 +770,139 @@ export function setupTelemetryHooks(Assembly) {
 
   pollOperatorIdForVerification();
 
-  // --- BATTLE TELEMETRY HOOKS ---
+  // --- BATTLE TELEMETRY HOOKS (STEALTH & ASYNC VERSION) ---
   try {
     const ShowFightDataTiny = Assembly.class("ShowFightDataTiny");
     const PlayerData = Assembly.class("PlayerData");
     const TimerBase = Assembly.class("TimerBase");
-
     const EnterBattle = ShowFightDataTiny.class("EnterBattle");
-
     const GetElapsedTimeSinceBattleStart = TimerBase.tryMethod(
       "GetElapsedTimeSinceBattleStart",
     );
-    const ReportKillEvent = CompetitionData.tryMethod("ReportKillEvent");
-    const ReportCampBossKillTimes = CompetitionData.tryMethod(
-      "ReportCampBossKillTimes",
-    );
-    const CountTowerKillTimes = CompetitionData.tryMethod(
-      "CountTowerKillTimes",
-    );
-
     const BattleManagerClass = Assembly.class("LogicBattleManager");
     const SetBattleState = BattleManagerClass.method("set_m_eState");
 
-    const eBState_Play = "eBState_Play";
     let isHookActive = true;
-    let Objek = null;
+    let ObjekPtr = null; // Menyimpan pointer mentah, bukan objek Il2Cpp utuh agar tidak teracak GC
     let lastWaktuKirim = 0;
 
-    // Menggunakan Interceptor.attach untuk fungsi yang dipanggil sangat sering agar tidak freeze
+    // 1. AMAN: Hook EnterBattle sekali saja saat masuk game untuk mengambil instance pointer
     if (EnterBattle) {
       Interceptor.attach(EnterBattle.virtualAddress, {
         onLeave: function (retval) {
-          setTimeout(() => {
-            const instance = Il2Cpp.gc.choose(ShowFightDataTiny);
-            if (instance.length > 0) {
-              Objek = instance[0];
-              debugLog("Battle", "Instance ShowFightDataTiny ditemukan!");
-            } else {
-              debugLog("Battle", "Instance ShowFightDataTiny belum siap!");
-            }
-          }, 100);
-        },
-      });
-    }
-
-    function updateAndSendBattleData() {
-      try {
-        const opIdStr = getOperatorId(SystemData);
-        // Jangan panggil getMergedPlayers() lagi untuk mencegah stutter!
-        // Gunakan cache dari array lastKnownPlayers yang sudah di-set sebelumnya saat draft.
-        sendRoomDataWithCache({
-          operatorId: opIdStr,
-          players: lastKnownPlayers,
-          Battle: battleData,
-        });
-      } catch (e) {
-        debugLog("Battle", `Error sending battle data: ${e.message}`);
-      }
-    }
-
-    // Menggunakan Interceptor.attach untuk fungsi yang dipanggil sangat sering agar tidak freeze
-    if (ReportKillEvent) {
-      Interceptor.attach(ReportKillEvent.virtualAddress, {
-        onLeave: function (retval) {
-          if (!isHookActive) return;
-          setTimeout(() => {
+          // Gunakan penjadwalan asinkron agar tidak menahan fungsi konstruktor game
+          Script.nextTick(() => {
             try {
-              battleData.blueTeamKill = Objek.field("m_iCampAKill").value;
-              battleData.redTeamKill = Objek.field("m_iCampBKill").value;
-              updateAndSendBattleData();
+              // Hindari Il2Cpp.gc.choose! Ambil langsung instance yang aktif lewat cara pasif jika memungkinkan,
+              // atau jalankan gc.choose hanya SEKALI dalam lingkungan terisolasi.
+              const instance = Il2Cpp.gc.choose(ShowFightDataTiny);
+              if (instance.length > 0) {
+                ObjekPtr = instance[0].handle; // Ambil handle pointer mentahnya saja (Stealth)
+                debugLog("Battle", "Instance ShowFightDataTiny diamankan.");
+              }
             } catch (e) {}
-          }, 500);
+          });
         },
       });
     }
 
-    const set_m_Gold = PlayerData.tryMethod("set_m_Gold");
-    if (set_m_Gold) {
-      Interceptor.attach(set_m_Gold.virtualAddress, {
-        onLeave: function (retval) {
-          if (!isHookActive || !Objek) return;
-          try {
-            battleData.blueTeamGold = Objek.field("m_CampAGold").value;
-            battleData.redTeamGold = Objek.field("m_CampBGold").value;
-          } catch (e) {}
-        },
+    // 2. ASINKRON: Fungsi pengiriman data dibungkus agar berjalan sepenuhnya di background thread Frida
+    function updateAndSendBattleDataAsync() {
+      Script.nextTick(() => {
+        try {
+          const opIdStr = getOperatorId(SystemData);
+          sendRoomDataWithCache({
+            operatorId: opIdStr,
+            players: lastKnownPlayers,
+            Battle: battleData,
+          });
+        } catch (e) {
+          debugLog("Battle", `Error sending battle data async: ${e.message}`);
+        }
       });
     }
 
-    if (ReportCampBossKillTimes) {
-      Interceptor.attach(ReportCampBossKillTimes.virtualAddress, {
-        onLeave: function (retval) {
-          if (!isHookActive || !Objek) return;
-          setTimeout(() => {
-            try {
-              battleData.blueTeamKillLord =
-                Objek.field("m_CampAKillLingZhu").value;
-              battleData.redTeamKillLord =
-                Objek.field("m_CampBKillLingZhu").value;
-              battleData.blueTeamKillTurtle =
-                Objek.field("m_CampAKillShenGui").value;
-              battleData.redTeamKillTurtle =
-                Objek.field("m_CampBKillShenGui").value;
-              updateAndSendBattleData();
-            } catch (e) {}
-          }, 500);
-        },
-      });
-    }
+    // 3. STEALTH POLLING THREAD (Solusi Anti-Ban Utama)
+    // Daripada memantau (hook) KillEvent, Gold, Tower, Lord, dan Timer yang dipanggil jutaan kali,
+    // Kita buat thread pembaca memori pasif setiap 1 detik. Anticheat tidak bisa mendeteksi pembacaan pasif.
+    setInterval(() => {
+      if (!isHookActive || !ObjekPtr) return;
 
-    if (CountTowerKillTimes) {
-      Interceptor.attach(CountTowerKillTimes.virtualAddress, {
-        onLeave: function (retval) {
-          if (!isHookActive || !Objek) return;
-          setTimeout(() => {
-            try {
-              battleData.blueTeamDestroyTuret =
-                Objek.field("m_CampAKillTower").value;
-              battleData.redTeamDestroyTuret =
-                Objek.field("m_CampBKillTower").value;
-              updateAndSendBattleData();
-            } catch (e) {}
-          }, 500);
-        },
-      });
-    }
+      // Bungkus dalam Script.nextTick agar tidak membebani siklus performa game
+      Script.nextTick(() => {
+        try {
+          // Bungkus kembali pointer mentah menjadi objek Il2Cpp saat dibutuhkan saja
+          const Objek = new Il2Cpp.Object(ObjekPtr);
 
-    if (GetElapsedTimeSinceBattleStart) {
-      Interceptor.attach(GetElapsedTimeSinceBattleStart.virtualAddress, {
-        onLeave: function (retval) {
-          if (!isHookActive) return;
-          try {
-            const waktu = retval.toInt32();
+          // Baca data secara pasif langsung dari memorinya (Sangat Stealth)
+          battleData.blueTeamKill = Objek.field("m_iCampAKill").value;
+          battleData.redTeamKill = Objek.field("m_iCampBKill").value;
+
+          battleData.blueTeamGold = Objek.field("m_CampAGold").value;
+          battleData.redTeamGold = Objek.field("m_CampBGold").value;
+
+          battleData.blueTeamKillLord = Objek.field("m_CampAKillLingZhu").value;
+          battleData.redTeamKillLord = Objek.field("m_CampBKillLingZhu").value;
+          battleData.blueTeamKillTurtle =
+            Objek.field("m_CampAKillShenGui").value;
+          battleData.redTeamKillTurtle =
+            Objek.field("m_CampBKillShenGui").value;
+
+          battleData.blueTeamDestroyTuret =
+            Objek.field("m_CampAKillTower").value;
+          battleData.redTeamDestroyTuret =
+            Objek.field("m_CampBKillTower").value;
+
+          // Ambil data waktu secara pasif jika metodenya statis, atau lewat fungsi aslinya menggunakan NativeFunction
+          if (GetElapsedTimeSinceBattleStart) {
+            const getWaktu = new NativeFunction(
+              GetElapsedTimeSinceBattleStart.virtualAddress,
+              "int",
+              [],
+            );
+            const waktu = getWaktu();
             battleData.waktuPertandingan = waktu;
 
             if (waktu - lastWaktuKirim >= 1000 || waktu < lastWaktuKirim) {
               lastWaktuKirim = waktu;
-              updateAndSendBattleData();
+              updateAndSendBattleDataAsync();
+            }
+          }
+        } catch (err) {
+          // Instance kemungkinan sudah hancur/pindah room, bersihkan pointer
+          ObjekPtr = null;
+        }
+      });
+    }, 1000); // Sinkronisasi data mendetail setiap 1000ms (1 detik) tanpa hook berat
+
+    // 4. AMAN: SetBattleState diganti dari '.implementation' ke Interceptor.attach
+    // Mengubah .implementation pada fungsi krusial sering memicu 'Integrity Check Failed' pada Game Security modern.
+    if (SetBattleState) {
+      Interceptor.attach(SetBattleState.virtualAddress, {
+        onEnter: function (args) {
+          if (!isHookActive) return;
+          try {
+            // args[1] biasanya berisi nilai enum/object status state-nya
+            const value = args[1];
+            if (value) {
+              const stateStr = value.toString();
+              battleData.battleState = stateStr;
+
+              Script.nextTick(() => {
+                debugLog(
+                  "Battle",
+                  `[State Changed] Pasif Telemetri: ${stateStr}`,
+                );
+              });
             }
           } catch (e) {}
         },
       });
     }
-
-    // SetBattleState tetap menggunakan implementation karena jarang dipanggil & kita butuh argumen object enum-nya
-    SetBattleState.implementation = function (value) {
-      this.method("set_m_eState").invoke(value);
-
-      try {
-        const stateStr = value.toString();
-        debugLog("Battle", `[State Changed] BattleState bernilai: ${stateStr}`);
-        battleData.battleState = stateStr;
-
-        /*if (stateStr === eBState_Play) {
-          aktifkanFitur();
-        } else {
-          nonaktifkanFitur();
-        }*/
-
-        // updateAndSendBattleData();
-      } catch (e) {
-        debugLog("Battle", `Error in SetBattleState hook: ${e.message}`);
-      }
-    };
   } catch (err) {
-    debugLog("Battle", `Failed setting up Battle hooks: ${err.message}`);
+    debugLog(
+      "Battle",
+      `Failed setting up Stealth Battle hooks: ${err.message}`,
+    );
   }
 }
