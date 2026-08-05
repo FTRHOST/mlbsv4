@@ -788,6 +788,11 @@ export function setupTelemetryHooks(Assembly) {
 
     // 1. AMAN: Hook EnterBattle sekali saja saat masuk game untuk mengambil instance pointer
     if (EnterBattle) {
+      if (
+        !(sessionState.isAuthorized && sessionState.permissions.allowTelemetry)
+      ) {
+        return;
+      }
       Interceptor.attach(EnterBattle.virtualAddress, {
         onLeave: function (retval) {
           // Gunakan penjadwalan asinkron agar tidak menahan fungsi konstruktor game
