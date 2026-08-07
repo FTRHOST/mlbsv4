@@ -289,7 +289,7 @@ export function setupTelemetryHooks(Assembly) {
 
           // 3. Kirim payload lengkap (Battle + Players)
           if (opIdStr) {
-            debugLog("Battle", "Saving final battle data before reset...");
+            console.log("[Battle] Saving final battle data before reset...");
             sendBattleStats(opIdStr, {
               Battle: finalBattleData,
               players: lastKnownPlayers,
@@ -299,12 +299,11 @@ export function setupTelemetryHooks(Assembly) {
 
           // 4. Update lastWinCamp
           lastWinCamp = winCamp;
-          debugLog(
-            "lastWinCamp",
-            `Team yang menang dengan id : ${lastWinCamp}`,
+          console.log(
+            `[WinLog] Team yang menang dengan id : ${lastWinCamp} (1:Blue, 2:Red)`,
           );
 
-          // 5. Reset battleData setelah data dipastikan tersalin
+          // 5. Reset battleData & Players setelah data dipastikan tersalin
           battleData = {
             winCamp: 0,
             waktuPertandingan: 0,
@@ -319,8 +318,10 @@ export function setupTelemetryHooks(Assembly) {
             blueTeamDestroyTuret: 0,
             redTeamDestroyTuret: 0,
           };
+          lastKnownPlayers = [];
+          playersCache.clear();
         } catch (err) {
-          debugLog("Hook", `Error in StartEndBattle hook: ${err.message}`);
+          console.log(`[Hook Error] StartEndBattle: ${err.message}`);
         }
 
         // Selalu jalankan fungsi asli
