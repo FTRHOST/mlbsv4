@@ -21,6 +21,23 @@ export function setupSkinHooks(Assembly) {
   );
 
   let m_SkinID = 0;
+  let m_HeroID = 0;
+
+  const sss = ChooseHeroMgr.method("SendSelectSkin");
+  Interceptor.attach(sss.virtualAddress, {
+    onEnter(args) {
+      if (args && args[1] && args[2]) {
+        const skinid = args[1].toInt32();
+        const heroid = args[2].toInt32();
+        if (skinid > 0) {
+          m_SkinID = skinid;
+          m_HeroID = heroid;
+          console.log(`[Lobby] Memilih Skin: ${skinid}`);
+        }
+        args[1] = ptr(0);
+      }
+    },
+  });
 
   const getUiID = () => {
     try {
