@@ -857,7 +857,7 @@ export function setupTelemetryHooks(Assembly) {
             Objek.field("m_CampBKillTower").value;
 
           // Ambil data waktu secara pasif jika metodenya statis, atau lewat fungsi aslinya menggunakan NativeFunction
-          /* if (GetElapsedTimeSinceBattleStart) {
+          if (GetElapsedTimeSinceBattleStart) {
             const getWaktu = new NativeFunction(
               GetElapsedTimeSinceBattleStart.virtualAddress,
               "int",
@@ -870,7 +870,7 @@ export function setupTelemetryHooks(Assembly) {
               lastWaktuKirim = waktu;
               updateAndSendBattleDataAsync();
             }
-          }*/
+          }
         } catch (err) {
           // Instance kemungkinan sudah hancur/pindah room, bersihkan pointer
           ObjekPtr = null;
