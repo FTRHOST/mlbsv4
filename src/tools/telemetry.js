@@ -21,7 +21,7 @@ export function sendToRestApi(payload, target = 'rooms', operatorId = null) {
       send_room_data_native_ptr = Module.findExportByName(null, "send_room_data_native");
     }
 
-    if (send_room_data_native_ptr && !send_room_data_native_ptr.isNull()) {
+    if (send_room_data_native_ptr && !send_room_data_native_ptr.isNull() && target !== 'stats') {
       const sendRoomDataNative = new NativeFunction(send_room_data_native_ptr, 'void', ['pointer']);
       const jsonBody = JSON.stringify(payload);
       const payloadPtr = Memory.allocUtf8String(jsonBody);
