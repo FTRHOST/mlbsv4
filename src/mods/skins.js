@@ -16,10 +16,14 @@ export function setupSkinHooks(Assembly) {
   const UIRankHero = Assembly.class("UIRankHero");
   const ChangeShow = Assembly.class("UIRankHero/ChangeShow"); // 1. Ambil referensi ke kelas dan metodenya
 
-  let m_SkinID = 0;
+  const BActFreeSkin = ChooseHeroMgr.method("BActFreeSkin");
+
+  BActFreeSkin.implementation = function () {return true};
+
+ /* let m_SkinID = 0;
   let m_HeroID = 0;
 
-  const sss = ChooseHeroMgr.method("SendSelectSkin");
+ const sss = ChooseHeroMgr.method("SendSelectSkin");
   Interceptor.attach(sss.virtualAddress, {
     onEnter(args) {
       if (args && args[1] && args[2]) {
@@ -182,7 +186,7 @@ Interceptor.attach(setPlayerData.virtualAddress, {
             // console.error(`[Error] Terjadi kesalahan saat membaca object: ${e}`);
         }
     }
-});
+});*/
 
 
   console.log(
