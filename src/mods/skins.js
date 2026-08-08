@@ -15,10 +15,6 @@ export function setupSkinHooks(Assembly) {
   const BattleReceiveMessage = Assembly.class("BattleReceiveMessage");
   const UIRankHero = Assembly.class("UIRankHero");
   const ChangeShow = Assembly.class("UIRankHero/ChangeShow"); // 1. Ambil referensi ke kelas dan metodenya
-  const setPlayerData = BattleReceiveMessage.method("SetPlayerData").overload(
-    "MTTDProto.BattlePlayerInfo",
-    "System.UInt32",
-  );
 
   let m_SkinID = 0;
   let m_HeroID = 0;
@@ -152,43 +148,42 @@ export function setupSkinHooks(Assembly) {
     return this.method("BatttleSelectSkin").invoke(uid, skinid);
   };
 
-  // 2. Lakukan interceptor menggunakan API bawaan il2cpp-bridge
-  setPlayerData.implementation = function (playerInfoHandle, uiSkinIdMaybe) {
-    // playerInfoHandle otomatis dibungkus menjadi Il2Cpp.Object jika tipenya adalah objek C#
-    if (playerInfoHandle.isNull()) {
-      return this.method("SetPlayerData").invoke(
-        playerInfoHandle,
-        uiSkinIdMaybe,
-      );
-    }
+const setPlayerData = BattleReceiveMessage.method("SetPlayerData").overload("MTTDProto.BattlePlayerInfo", "System.UInt32");
 
-    try {
-      // Ambil field menggunakan API il2cpp-bridge
-      const lUid = playerInfoHandle.field("lUid").value.toString();
-      const myUiId = getUiID(); // Pastikan fungsi getUiID() sudah ada di skrip Anda
-
-      if (lUid === myUiId && m_SkinID !== 0) {
-        // Pastikan variabel m_SkinID sudah terdefinisi
-        // Ubah nilai field secara langsung
-        playerInfoHandle.field("uiSkinId").value = m_SkinID;
+Interceptor.attach(setPlayerData.virtualAddress, {
+    onEnter(args) {
+        if (!args || !args[1]) return;
+        
+        const playerInfoHandle = args[1];
+        // Menggunakan compare ptr agar aman di arsitektur 32-bit maupun 64-bit
+        if (playerInfoHandle.isNull() || playerInfoHandle.compare(ptr(0x1000)) < 0) return;
 
         try {
-          playerInfoHandle.field("uiHeroSkinIDChoose").value = m_SkinID;
+            const info = new Il2Cpp.Object(playerInfoHandle);
+            const lUid = info.field("lUid").value.toString();
+            const myUiId = getUiID(); // Pastikan fungsi getUiID() mengembalikan string
+
+            // Pastikan m_SkinID ada dan valid
+            if (typeof m_SkinID !== 'undefined' && m_SkinID !== 0 && lUid === myUiId.toString()) {
+                
+                // Gunakan casting atau penulisan langsung sesuai kebutuhan il2cpp-bridge
+                info.field("uiSkinId").value = m_SkinID;
+                
+                try {
+                    info.field("uiHeroSkinIDChoose").value = m_SkinID;
+                } catch (e) {
+                    // Field uiHeroSkinIDChoose mungkin tidak ada di struktur class
+                }
+                
+                // Memperbaiki string literal menggunakan backtick
+                console.log(`[BattleInject] Berhasil menyuntik Skin ${m_SkinID} ke UID ${lUid}`);
+            }
         } catch (e) {
-          // Berjaga-jaga jika field uiHeroSkinIDChoose tidak ditemukan
+            // console.error(`[Error] Terjadi kesalahan saat membaca object: ${e}`);
         }
-
-        console.log(
-          `[BattleInject] Berhasil menyuntik Skin ${m_SkinID} ke UID ${lUid}`,
-        );
-      }
-    } catch (e) {
-      console.log("[BattleInject] Error saat membaca/menulis field: " + e);
     }
+});
 
-    // 3. Panggil fungsi asli agar game tetap berjalan normal
-    return this.method("SetPlayerData").invoke(playerInfoHandle, uiSkinIdMaybe);
-  };
 
   console.log(
     "[+] Skin & Statue System Hooked Successfully with 'Assembly' variable.",
