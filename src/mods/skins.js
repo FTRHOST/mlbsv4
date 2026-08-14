@@ -18,9 +18,11 @@ export function setupSkinHooks(Assembly) {
 
   const BActFreeSkin = ChooseHeroMgr.method("BActFreeSkin");
 
-  BActFreeSkin.implementation = function () {return true};
+  BActFreeSkin.implementation = function () {
+    return true;
+  };
 
- /* let m_SkinID = 0;
+  /* let m_SkinID = 0;
   let m_HeroID = 0;
 
  const sss = ChooseHeroMgr.method("SendSelectSkin");
@@ -187,7 +189,6 @@ Interceptor.attach(setPlayerData.virtualAddress, {
         }
     }
 });*/
-
 
   console.log(
     "[+] Skin & Statue System Hooked Successfully with 'Assembly' variable.",

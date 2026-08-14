@@ -14,7 +14,7 @@ export function setupBattleCommands(Assembly) {
 
   if (!BattleBridge || BattleBridge.handle.isNull()) return;
 
-  const ShowChatHistoryText = BattleBridge.method("ShowChatHistoryText");
+  /* const ShowChatHistoryText = BattleBridge.method("ShowChatHistoryText");
   if (ShowChatHistoryText) {
     ShowChatHistoryText.implementation = function (messageStr) {
       if (messageStr && !messageStr.handle.isNull()) {
@@ -74,7 +74,7 @@ export function setupBattleCommands(Assembly) {
       }
       return ShowChatHistoryText.invoke(this, messageStr);
     };
-  }
+  }*/
 
   TrainingGuide.method("OnCoolDown").implementation = function (
     iParam,

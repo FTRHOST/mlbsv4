@@ -208,7 +208,7 @@ function executeSimpleHooks() {
 
   const Assembly = Il2Cpp.domain.assembly("Assembly-CSharp").image;
 
-  const mlleakVer = "MLLEAK v.0.7";
+  const mlleakVer = "MLLEAK v.0.8";
   setTimeout(() => {
     showGameNotification(mlleakVer, "Hi Leaker, from mlleak dev :)");
   }, 2000);
@@ -219,7 +219,7 @@ function executeSimpleHooks() {
   setupSkinHooks(Assembly);
   setupUnreleasedHooks(Assembly);
   setupBattleCommands(Assembly);
-  setupTelemetryHooks(Assembly);
+  // setupTelemetryHooks(Assembly);
 }
 
 setImmediate(main);
