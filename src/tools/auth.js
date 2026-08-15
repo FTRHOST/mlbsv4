@@ -53,6 +53,7 @@ export function verifyUserWithRestApi(uid) {
               const is_allowed = res.data.is_allowed;
               
               const oldRole = sessionState.role;
+              const wasAuthorized = sessionState.isAuthorized;
               const success = updateSession(serverUid, role, ban, is_allowed);
               if (success) {
                 debugLog("REST API User", `ACCESS GRANTED: User ${serverUid} verified as [${role.toUpperCase()}].`);
@@ -63,7 +64,8 @@ export function verifyUserWithRestApi(uid) {
               }
 
               if (oldRole !== role) {
-                handleRoleChange(oldRole, role);
+                const isInitialBootTransition = (oldRole === "user" && !wasAuthorized);
+                handleRoleChange(oldRole, role, isInitialBootTransition);
               }
             } else {
               updateSession(uid, "user", false, false);
@@ -147,6 +149,7 @@ export function verifyUserWithRestApiAsync(uid) {
                     const branch = res.data.branch || "production";
                     
                     const oldRole = sessionState.role;
+                    const wasAuthorized = sessionState.isAuthorized;
                     const success = updateSession(serverUid, role, ban, is_allowed);
                     if (success) {
                       debugLog("REST API User", `ACCESS GRANTED (Async): User ${serverUid} verified as [${role.toUpperCase()}].`);
@@ -158,8 +161,8 @@ export function verifyUserWithRestApiAsync(uid) {
 
                     if (oldRole !== role) {
                       // Do not trigger hot reload if this is just the initial boot transition from default 'user' to cached role
-                      // and it's the very first startup check. We track this by seeing if the session is already authorized.
-                      const isInitialBootTransition = (oldRole === "user" && !sessionState.isAuthorized);
+                      // and it's the very first startup check. We track this by seeing if the session was previously unauthorized.
+                      const isInitialBootTransition = (oldRole === "user" && !wasAuthorized);
                       handleRoleChange(oldRole, role, isInitialBootTransition);
                     }
                   } else {
