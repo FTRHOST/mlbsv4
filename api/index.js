@@ -1,6 +1,12 @@
-const { createClient } = require('@supabase/supabase-js');
 const express = require("express");
 const cors = require("cors");
+const { createClient } = require("@supabase/supabase-js");
+
+// Make WebSocket available globally for Supabase realtime under Node 20
+if (!globalThis.WebSocket) {
+  globalThis.WebSocket = require("ws");
+}
+
 const path = require("path");
 const fs = require("fs");
 
@@ -135,7 +141,7 @@ app.get("/api/rooms/:operatorId", async (req, res) => {
       if (error.code === 'PGRST116') {
         return res.status(404).json({
           status: "error",
-          message: \`Room with Operator ID \${operatorId} not found\`
+          message: `Room with Operator ID ${operatorId} not found`
         });
       }
       throw error;
@@ -290,7 +296,7 @@ app.put("/api/rooms/:operatorId", authenticate, async (req, res) => {
     if (fetchError || !currentData) {
       return res.status(404).json({
         status: "error",
-        message: \`Room with Operator ID \${operatorId} not found\`
+        message: `Room with Operator ID ${operatorId} not found`
       });
     }
 
@@ -355,7 +361,7 @@ app.delete("/api/rooms/:operatorId", authenticate, async (req, res) => {
 
     return res.json({
       status: "success",
-      message: \`Room with Operator ID \${operatorId} deleted successfully\`
+      message: `Room with Operator ID ${operatorId} deleted successfully`
     });
   } catch (error) {
     return res.status(500).json({
@@ -385,7 +391,7 @@ app.get("/api/users/:uid", async (req, res) => {
     if (error || !doc) {
       return res.status(404).json({
         status: "error",
-        message: \`User with ID \${uid} not found\`
+        message: `User with ID ${uid} not found`
       });
     }
 
@@ -635,7 +641,7 @@ app.post("/api/stats/:operatorId", authenticate, async (req, res) => {
     const statsData = req.body;
     const timestamp = Date.now();
     
-    console.log(\`[+] Received stats for operatorId: \${operatorId}\`);
+    console.log(`[+] Received stats for operatorId: ${operatorId}`);
     
     const { error } = await supabase
       .from("stats")
@@ -648,11 +654,11 @@ app.post("/api/stats/:operatorId", authenticate, async (req, res) => {
       
     if (error) throw error;
     
-    console.log(\`[+] Stats successfully written to Supabase for \${operatorId}\`);
+    console.log(`[+] Stats successfully written to Supabase for ${operatorId}`);
     
     return res.json({ status: "success", message: "Stats saved", timestamp });
   } catch (error) {
-    console.error(\`[-] Error writing stats to Supabase: \${error.message}\`);
+    console.error(`[-] Error writing stats to Supabase: ${error.message}`);
     return res.status(500).json({ status: "error", message: error.message });
   }
 });
@@ -661,7 +667,7 @@ app.post("/api/stats/:operatorId", authenticate, async (req, res) => {
 app.use((req, res) => {
   res.status(404).json({
     status: "error",
-    message: \`Route not found on Express: \${req.method} \${req.url}\`,
+    message: `Route not found on Express: ${req.method} ${req.url}`,
     debug: {
       method: req.method,
       url: req.url,
