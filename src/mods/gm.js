@@ -30,7 +30,7 @@ export function setupGMHooks(Assembly) {
   };
 
   // Base Trigger
-  hookSandboxMethod("GameInit", "IsSandBoxIp");
+  // hookSandboxMethod("GameInit", "IsSandBoxIp");
   // hookSandboxMethod("LuaHelper", "IsEditor");
 
   // --- EXTENDED GM UI & PROFILER HOOKS ---
