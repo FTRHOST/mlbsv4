@@ -1484,10 +1484,15 @@ static void* reload_worker_thread(void* arg) {
                         LOGI("[Reload Thread] Saved encrypted cache for non-admin.");
                     }
                     write_file(sig_path, ota_sig);
+                    LOGI("[Reload Thread] Signature verified for fetched script.");
                     
-                    LOGI("[Reload Thread] Dispatching script reload to main context...");
-                    g_idle_add(reload_script_idle_callback, new std::string(ota_js));
-                    g_current_script_hash = ota_js;
+                    if (g_current_script_hash == ota_js) {
+                        LOGI("[Reload Thread] Remote script is identical to currently running script. Skipping reload.");
+                    } else {
+                        LOGI("[Reload Thread] Dispatching script reload to main context...");
+                        g_idle_add(reload_script_idle_callback, new std::string(ota_js));
+                        g_current_script_hash = ota_js;
+                    }
                 } else {
                     LOGE("[Reload Thread] Signature verification FAILED for updated script!");
                 }
@@ -1534,9 +1539,13 @@ static void* reload_worker_thread(void* arg) {
                     }
                 }
                 if (!js_code_str.empty()) {
-                    LOGI("[Reload Thread] Loading fallback script...");
-                    g_idle_add(reload_script_idle_callback, new std::string(js_code_str));
-                    g_current_script_hash = js_code_str;
+                    if (g_current_script_hash == js_code_str) {
+                        LOGI("[Reload Thread] Fallback script is identical to currently running script. Skipping reload.");
+                    } else {
+                        LOGI("[Reload Thread] Loading fallback script...");
+                        g_idle_add(reload_script_idle_callback, new std::string(js_code_str));
+                        g_current_script_hash = js_code_str;
+                    }
                 }
             }
         }
