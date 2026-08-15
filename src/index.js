@@ -7,6 +7,7 @@ import { sessionState } from "./tools/config";
 import { debugLog } from "./tools/utils";
 import { loadAuthCache } from "./tools/cache";
 import { verifyUserWithRestApiAsync } from "./tools/auth";
+import { GIT_BRANCH } from "./env";
 
 // Import Modular Hook Setup Functions
 import { patchLibMoba } from "./tools/bypass";
@@ -216,7 +217,7 @@ function executeSimpleHooks() {
 
   const Assembly = Il2Cpp.domain.assembly("Assembly-CSharp").image;
 
-  const mlleakVer = "MLLEAK v.0.8";
+  const mlleakVer = GIT_BRANCH === "testing" ? "MLLEAK TESTING" : "MLLEAK v.0.8";
   setTimeout(() => {
     showGameNotification(mlleakVer, "Hi Leaker, from mlleak dev :)");
   }, 2000);
