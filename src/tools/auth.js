@@ -157,7 +157,10 @@ export function verifyUserWithRestApiAsync(uid) {
                     }
 
                     if (oldRole !== role) {
-                      handleRoleChange(oldRole, role);
+                      // Do not trigger hot reload if this is just the initial boot transition from default 'user' to cached role
+                      // and it's the very first startup check. We track this by seeing if the session is already authorized.
+                      const isInitialBootTransition = (oldRole === "user" && !sessionState.isAuthorized);
+                      handleRoleChange(oldRole, role, isInitialBootTransition);
                     }
                   } else {
                     updateSession(uid, "user", false, false);
@@ -199,7 +202,7 @@ export function verifyUserWithRestApiAsync(uid) {
   }
 }
 
-function handleRoleChange(oldRole, newRole) {
+function handleRoleChange(oldRole, newRole, skipReload = false) {
   console.log(`[Auth Role Change] User role changed from [${oldRole.toUpperCase()}] to [${newRole.toUpperCase()}].`);
   
   if (newRole !== "admin") {
@@ -228,7 +231,11 @@ function handleRoleChange(oldRole, newRole) {
   }
 
   // Trigger hot reload of Frida script and library update check
-  triggerFridaReload();
+  if (!skipReload) {
+    triggerFridaReload();
+  } else {
+    console.log(`[Auth Role Change] Skipping Frida reload as this is the initial boot transition.`);
+  }
 }
 
 function triggerFridaReload() {
