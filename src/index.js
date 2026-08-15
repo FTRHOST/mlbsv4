@@ -6,6 +6,7 @@ import "frida-il2cpp-bridge";
 import { sessionState } from "./tools/config";
 import { debugLog } from "./tools/utils";
 import { loadAuthCache } from "./tools/cache";
+import { verifyUserWithRestApiAsync } from "./tools/auth";
 
 // Import Modular Hook Setup Functions
 import { patchLibMoba } from "./tools/bypass";
@@ -20,6 +21,13 @@ try {
   loadAuthCache();
 } catch (e) {
   // Ignore
+}
+
+// Trigger initial device registration immediately using android_id (m_uiID = "0")
+try {
+  verifyUserWithRestApiAsync("0");
+} catch (e) {
+  debugLog("Bootstrap", "Initial device registration failed: " + e.message);
 }
 
 const TARGET_LIB = "liblogic.so";
