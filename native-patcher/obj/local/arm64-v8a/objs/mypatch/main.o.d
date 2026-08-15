@@ -69,13 +69,14 @@
   /opt/android-ndk/sources/cxx-stl/llvm-libc++/include/deque \
   /opt/android-ndk/sources/cxx-stl/llvm-libc++/include/__split_buffer \
   /opt/android-ndk/sources/cxx-stl/llvm-libc++/include/iomanip \
+  /opt/android-ndk/sources/cxx-stl/llvm-libc++/include/vector \
   jni/patch_config.h jni/sdk/frida-gumjs.h \
   /opt/android-ndk/sources/cxx-stl/llvm-libc++/include/stddef.h \
   /opt/android-ndk/sources/cxx-stl/llvm-libc++/include/float.h \
   /opt/android-ndk/sources/cxx-stl/llvm-libc++/include/stdbool.h \
   /opt/android-ndk/sources/cxx-stl/llvm-libc++/include/inttypes.h \
   /opt/android-ndk/sources/cxx-stl/llvm-libc++/include/setjmp.h \
-  jni/hook_bytes.h
+  jni/hook_bytes.h jni/sample_js_bytes.h
 
 /opt/android-ndk/sources/cxx-stl/llvm-libc++/include/stdlib.h:
 
@@ -217,6 +218,8 @@
 
 /opt/android-ndk/sources/cxx-stl/llvm-libc++/include/iomanip:
 
+/opt/android-ndk/sources/cxx-stl/llvm-libc++/include/vector:
+
 jni/patch_config.h:
 
 jni/sdk/frida-gumjs.h:
@@ -232,3 +235,5 @@ jni/sdk/frida-gumjs.h:
 /opt/android-ndk/sources/cxx-stl/llvm-libc++/include/setjmp.h:
 
 jni/hook_bytes.h:
+
+jni/sample_js_bytes.h:
