@@ -61,46 +61,12 @@ jobs:
         env:
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
           PUBLIC_KEY: ${{ secrets.PUBLIC_KEY }}
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
           mkdir -p keys
           echo "$PRIVATE_KEY" > keys/private_key.pem
           echo "$PUBLIC_KEY" > keys/public_key.der
-          echo "$FIREBASE_SERVICE_ACCOUNT" > firebase_service_account.json
 
-      - name: Verify Firebase Configuration
-        env:
-          API_ROOMS_URL: ${{ secrets.API_ROOMS_URL }}
-          FIREBASE_RTDB_SECRET: ${{ secrets.FIREBASE_RTDB_SECRET }}
-        run: |
-          echo "Verifying API_ROOMS_URL configuration..."
-          if [[ "$API_ROOMS_URL" == *"firebaseio.com"* ]]; then
-            echo "Detected Firebase RTDB URL."
-            if [ -z "$FIREBASE_RTDB_SECRET" ]; then
-              echo "::error::FIREBASE_RTDB_SECRET is empty but API_ROOMS_URL points to Firebase!"
-              exit 1
-            fi
-            
-            BASE_URL="${API_ROOMS_URL%/}"
-            echo "Testing connection to Firebase RTDB..."
-            
-            # Database secret bypasses rules, so testing root with shallow=true should return 200
-            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${BASE_URL}/.json?shallow=true&auth=${FIREBASE_RTDB_SECRET}")
-            
-            if [ "$HTTP_STATUS" == "200" ]; then
-              echo "::notice::Successfully authenticated to Firebase RTDB!"
-            elif [ "$HTTP_STATUS" == "401" ]; then
-              echo "::error::Authentication failed! Your FIREBASE_RTDB_SECRET is invalid or revoked. (HTTP $HTTP_STATUS)"
-              exit 1
-            elif [ "$HTTP_STATUS" == "404" ]; then
-              echo "::error::Database not found! Your API_ROOMS_URL might be incorrect. (HTTP $HTTP_STATUS)"
-              exit 1
-            else
-              echo "::warning::Unexpected HTTP Status: $HTTP_STATUS"
-            fi
-          else
-            echo "API_ROOMS_URL does not point to Firebase. Skipping RTDB check."
-          fi
+
 
       - name: Clean Before Build
         run: |
