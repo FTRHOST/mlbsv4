@@ -1,46 +1,18 @@
-const admin = require("firebase-admin");
+const { createClient } = require('@supabase/supabase-js');
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const fs = require("fs");
 
-// Initialize Firebase Admin SDK
-if (admin.apps.length === 0) {
-  if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-    try {
-      const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-      const projectId = serviceAccount.project_id;
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-        databaseURL: process.env.FIREBASE_DATABASE_URL || `https://${projectId}-default-rtdb.firebaseio.com`
-      });
-      console.log("[+] Firebase Admin SDK initialized using Environment Variable.");
-    } catch (e) {
-      console.error("[-] Failed to initialize Firebase Admin via Environment Variable:", e.message);
-    }
-  } else {
-    // Look for serviceAccountKey.json in the project root
-    const keyPath = path.join(process.cwd(), "serviceAccountKey.json");
-    if (fs.existsSync(keyPath)) {
-      const serviceAccount = require(keyPath);
-      const projectId = serviceAccount.project_id;
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-        databaseURL: process.env.FIREBASE_DATABASE_URL || `https://${projectId}-default-rtdb.firebaseio.com`
-      });
-      console.log("[+] Firebase Admin SDK initialized using serviceAccountKey.json.");
-    } else {
-      // Fallback to default
-      admin.initializeApp({
-        databaseURL: process.env.FIREBASE_DATABASE_URL
-      });
-      console.log("[+] Firebase Admin SDK initialized using default credentials.");
-    }
-  }
+// Initialize Supabase Client
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Need service role to bypass RLS in the API
+
+if (!supabaseUrl || !supabaseKey) {
+  console.error("[-] Missing Supabase credentials in environment variables.");
 }
 
-const db = admin.firestore();
-const rtdb = admin.database();
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Initialize Express App
 const app = express();
@@ -67,9 +39,16 @@ const resolveTeamNames = async (operatorId, players) => {
       const isRed = ipos >= 6 && ipos <= 10;
       
       if (isBlue || isRed) {
-        const promise = db.collection("test").doc("OperatorId").collection(operatorId)
-          .doc("config").collection("team_mappings").doc(String(player.id)).get()
-          .then(mappingDoc => ({ isBlue, isRed, mappingDoc }))
+        const promise = supabase
+          .from("team_mappings")
+          .select("team_name")
+          .eq("operator_id", operatorId)
+          .eq("uid", String(player.id))
+          .single()
+          .then(({ data, error }) => {
+            if (error) return null;
+            return { isBlue, isRed, data };
+          })
           .catch(e => {
             console.error("Error fetching player team:", e);
             return null;
@@ -80,14 +59,13 @@ const resolveTeamNames = async (operatorId, players) => {
 
     const results = await Promise.all(fetchPromises);
     for (const res of results) {
-      if (res && res.mappingDoc.exists) {
-        const mappingData = res.mappingDoc.data();
-        if (mappingData.teamName) {
+      if (res && res.data) {
+        if (res.data.team_name) {
           if (res.isBlue && !blueTeamFound) {
-            blueTeamName = mappingData.teamName;
+            blueTeamName = res.data.team_name;
             blueTeamFound = true;
           } else if (res.isRed && !redTeamFound) {
-            redTeamName = mappingData.teamName;
+            redTeamName = res.data.team_name;
             redTeamFound = true;
           }
         }
@@ -115,24 +93,20 @@ const authenticate = (req, res, next) => {
 app.get("/api", (req, res) => {
   res.json({
     status: "success",
-    message: "MLBB Live Draft REST API is active"
+    message: "MLBB Live Draft REST API is active (Supabase)"
   });
 });
 
 // GET all rooms
 app.get("/api/rooms", async (req, res) => {
   try {
-    const snapshot = await rtdb.ref("test/OperatorId").once("value");
-    const data = snapshot.val();
-    const rooms = [];
+    const { data, error } = await supabase
+      .from("rooms")
+      .select("operator_id, players, blue_team_name, red_team_name, blue_score, red_score, base_of, match_phase, draft_time, draft_phase, caption, map_draw, battle, updated_at");
+      
+    if (error) throw error;
 
-    if (data) {
-      for (const operatorId in data) {
-        if (data[operatorId].iPlayer) {
-          rooms.push(data[operatorId].iPlayer);
-        }
-      }
-    }
+    const rooms = data || [];
 
     return res.json({
       status: "success",
@@ -151,18 +125,43 @@ app.get("/api/rooms", async (req, res) => {
 app.get("/api/rooms/:operatorId", async (req, res) => {
   try {
     const { operatorId } = req.params;
-    const snapshot = await rtdb.ref(`test/OperatorId/${operatorId}/iPlayer`).once("value");
-    
-    if (!snapshot.exists()) {
-      return res.status(404).json({
-        status: "error",
-        message: `Room with Operator ID ${operatorId} not found`
-      });
+    const { data, error } = await supabase
+      .from("rooms")
+      .select("*")
+      .eq("operator_id", operatorId)
+      .single();
+      
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return res.status(404).json({
+          status: "error",
+          message: \`Room with Operator ID \${operatorId} not found\`
+        });
+      }
+      throw error;
     }
+
+    // Convert snake_case to camelCase for backwards compatibility
+    const responseData = {
+      operatorId: data.operator_id,
+      players: data.players,
+      blueTeamName: data.blue_team_name,
+      redTeamName: data.red_team_name,
+      blueScore: data.blue_score,
+      redScore: data.red_score,
+      baseOf: data.base_of,
+      matchPhase: data.match_phase,
+      draftTime: data.draft_time,
+      draftPhase: data.draft_phase,
+      caption: data.caption,
+      mapDraw: data.map_draw,
+      Battle: data.battle,
+      updatedAt: data.updated_at ? new Date(data.updated_at).getTime() : Date.now()
+    };
 
     return res.json({
       status: "success",
-      data: snapshot.val()
+      data: responseData
     });
   } catch (error) {
     return res.status(500).json({
@@ -185,67 +184,88 @@ app.post("/api/rooms", authenticate, async (req, res) => {
       });
     }
 
-    // Fetch match setup config from Firestore
-    const setupRef = db.collection("test").doc("OperatorId").collection(operatorId).doc("match_setup");
-    const setupDoc = await setupRef.get();
-    let setupData = {};
-    if (setupDoc.exists) {
-      setupData = setupDoc.data();
-    }
+    // Fetch match setup config
+    const { data: setupDoc } = await supabase
+      .from("match_setup")
+      .select("*")
+      .eq("operator_id", operatorId)
+      .single();
+      
+    let setupData = setupDoc || {};
 
-    // Fetch existing room from RTDB to preserve scores if not provided in payload
-    const rtdbRef = rtdb.ref(`test/OperatorId/${operatorId}/iPlayer`);
-    const snapshot = await rtdbRef.once("value");
-    let currentData = {};
-    if (snapshot.exists()) {
-      currentData = snapshot.val();
-    }
+    // Fetch existing room
+    const { data: snapshot } = await supabase
+      .from("rooms")
+      .select("*")
+      .eq("operator_id", operatorId)
+      .single();
+      
+    let currentData = snapshot || {};
 
     let { blueTeamName, redTeamName } = await resolveTeamNames(operatorId, payload.players);
 
     // Override with match_setup if provided
-    if (setupData.blueTeamName) blueTeamName = setupData.blueTeamName;
-    if (setupData.redTeamName) redTeamName = setupData.redTeamName;
+    if (setupData.blue_team_name) blueTeamName = setupData.blue_team_name;
+    if (setupData.red_team_name) redTeamName = setupData.red_team_name;
 
     // Determine scores (payload > setupData > currentData > 0)
-    const finalBlueScore = payload.blueScore !== undefined ? Number(payload.blueScore) : (setupData.blueScore !== undefined ? setupData.blueScore : (currentData.blueScore || 0));
-    const finalRedScore = payload.redScore !== undefined ? Number(payload.redScore) : (setupData.redScore !== undefined ? setupData.redScore : (currentData.redScore || 0));
-    const finalBaseOf = payload.baseOf !== undefined ? Number(payload.baseOf) : (setupData.baseOf !== undefined ? setupData.baseOf : (currentData.baseOf || 0));
-    const finalMatchPhase = payload.matchPhase !== undefined ? payload.matchPhase : (setupData.matchPhase || "");
+    const finalBlueScore = payload.blueScore !== undefined ? Number(payload.blueScore) : (setupData.blue_score !== undefined ? setupData.blue_score : (currentData.blue_score || 0));
+    const finalRedScore = payload.redScore !== undefined ? Number(payload.redScore) : (setupData.red_score !== undefined ? setupData.red_score : (currentData.red_score || 0));
+    const finalBaseOf = payload.baseOf !== undefined ? Number(payload.baseOf) : (setupData.base_of !== undefined ? setupData.base_of : (currentData.base_of || 0));
+    const finalMatchPhase = payload.matchPhase !== undefined ? payload.matchPhase : (setupData.match_phase || "");
 
     // Sync back to match_setup if payload provided new scores (so dashboard stays updated if hook updates it)
     if (payload.blueScore !== undefined || payload.redScore !== undefined) {
-      await setupRef.set({
-        blueScore: finalBlueScore,
-        redScore: finalRedScore
-      }, { merge: true });
+      await supabase.from("match_setup").upsert({
+        operator_id: operatorId,
+        blue_score: finalBlueScore,
+        red_score: finalRedScore,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'operator_id' });
     }
 
     const matchData = {
-      operatorId: operatorId,
+      operator_id: operatorId,
       players: payload.players || [],
-      blueTeamName: blueTeamName,
-      redTeamName: redTeamName,
-      blueScore: finalBlueScore,
-      redScore: finalRedScore,
-      baseOf: finalBaseOf,
-      matchPhase: finalMatchPhase,
-      draftTime: payload.draftTime !== undefined ? Number(payload.draftTime) : 0,
-      draftPhase: payload.draftPhase !== undefined ? Number(payload.draftPhase) : 0,
+      blue_team_name: blueTeamName,
+      red_team_name: redTeamName,
+      blue_score: finalBlueScore,
+      red_score: finalRedScore,
+      base_of: finalBaseOf,
+      match_phase: finalMatchPhase,
+      draft_time: payload.draftTime !== undefined ? Number(payload.draftTime) : 0,
+      draft_phase: payload.draftPhase !== undefined ? Number(payload.draftPhase) : 0,
       caption: payload.caption || "",
-      mapDraw: payload.mapDraw !== undefined && payload.mapDraw !== null ? Number(payload.mapDraw) : 0,
-      agentTimestamp: payload.timestamp || new Date().toISOString(),
-      Battle: payload.Battle || null,
-      updatedAt: admin.database.ServerValue.TIMESTAMP
+      map_draw: payload.mapDraw !== undefined && payload.mapDraw !== null ? Number(payload.mapDraw) : 0,
+      battle: payload.Battle || null,
+      updated_at: new Date().toISOString()
     };
 
-    // 2. Write player data to RTDB
-    await rtdbRef.set(matchData);
+    // 2. Write player data
+    const { error: upsertError } = await supabase.from("rooms").upsert(matchData, { onConflict: 'operator_id' });
+    if (upsertError) throw upsertError;
+
+    // Return in format expected by clients
+    const responseData = {
+      ...payload,
+      operatorId: matchData.operator_id,
+      blueTeamName: matchData.blue_team_name,
+      redTeamName: matchData.red_team_name,
+      blueScore: matchData.blue_score,
+      redScore: matchData.red_score,
+      baseOf: matchData.base_of,
+      matchPhase: matchData.match_phase,
+      draftTime: matchData.draft_time,
+      draftPhase: matchData.draft_phase,
+      mapDraw: matchData.map_draw,
+      Battle: matchData.battle,
+      updatedAt: new Date(matchData.updated_at).getTime()
+    };
 
     return res.status(200).json({
       status: "success",
       message: "Room data saved successfully",
-      data: matchData
+      data: responseData
     });
   } catch (error) {
     return res.status(500).json({
@@ -261,20 +281,22 @@ app.put("/api/rooms/:operatorId", authenticate, async (req, res) => {
     const { operatorId } = req.params;
     const updates = req.body;
 
-    const rtdbRef = rtdb.ref(`test/OperatorId/${operatorId}/iPlayer`);
-    const snapshot = await rtdbRef.once("value");
-    if (!snapshot.exists()) {
+    const { data: currentData, error: fetchError } = await supabase
+      .from("rooms")
+      .select("*")
+      .eq("operator_id", operatorId)
+      .single();
+      
+    if (fetchError || !currentData) {
       return res.status(404).json({
         status: "error",
-        message: `Room with Operator ID ${operatorId} not found`
+        message: \`Room with Operator ID \${operatorId} not found\`
       });
     }
 
-    const currentData = snapshot.val();
-
     // Merge updates
-    let blueTeamName = currentData.blueTeamName || "BLUE TEAM";
-    let redTeamName = currentData.redTeamName || "RED TEAM";
+    let blueTeamName = currentData.blue_team_name || "BLUE TEAM";
+    let redTeamName = currentData.red_team_name || "RED TEAM";
     
     if (updates.players) {
       const names = await resolveTeamNames(operatorId, updates.players);
@@ -283,25 +305,33 @@ app.put("/api/rooms/:operatorId", authenticate, async (req, res) => {
     }
 
     const updatedData = {
-      ...currentData,
-      ...updates,
-      blueTeamName: updates.blueTeamName !== undefined ? updates.blueTeamName : blueTeamName,
-      redTeamName: updates.redTeamName !== undefined ? updates.redTeamName : redTeamName,
-      operatorId: operatorId, // ensure operatorId cannot be overwritten
-      updatedAt: admin.database.ServerValue.TIMESTAMP
+      blue_team_name: updates.blueTeamName !== undefined ? updates.blueTeamName : blueTeamName,
+      red_team_name: updates.redTeamName !== undefined ? updates.redTeamName : redTeamName,
+      updated_at: new Date().toISOString()
     };
 
-    if (updates.blueScore !== undefined) updatedData.blueScore = Number(updates.blueScore);
-    if (updates.redScore !== undefined) updatedData.redScore = Number(updates.redScore);
-    if (updates.baseOf !== undefined) updatedData.baseOf = Number(updates.baseOf);
-    if (updates.Battle !== undefined) updatedData.Battle = updates.Battle;
+    if (updates.players !== undefined) updatedData.players = updates.players;
+    if (updates.blueScore !== undefined) updatedData.blue_score = Number(updates.blueScore);
+    if (updates.redScore !== undefined) updatedData.red_score = Number(updates.redScore);
+    if (updates.baseOf !== undefined) updatedData.base_of = Number(updates.baseOf);
+    if (updates.Battle !== undefined) updatedData.battle = updates.Battle;
+    if (updates.matchPhase !== undefined) updatedData.match_phase = updates.matchPhase;
+    if (updates.caption !== undefined) updatedData.caption = updates.caption;
+    if (updates.draftTime !== undefined) updatedData.draft_time = Number(updates.draftTime);
+    if (updates.draftPhase !== undefined) updatedData.draft_phase = Number(updates.draftPhase);
+    if (updates.mapDraw !== undefined) updatedData.map_draw = Number(updates.mapDraw);
 
-    await rtdbRef.set(updatedData);
+    const { error: updateError } = await supabase
+      .from("rooms")
+      .update(updatedData)
+      .eq("operator_id", operatorId);
+
+    if (updateError) throw updateError;
 
     return res.json({
       status: "success",
       message: "Room data updated successfully",
-      data: updatedData
+      data: { ...currentData, ...updatedData }
     });
   } catch (error) {
     return res.status(500).json({
@@ -315,21 +345,17 @@ app.put("/api/rooms/:operatorId", authenticate, async (req, res) => {
 app.delete("/api/rooms/:operatorId", authenticate, async (req, res) => {
   try {
     const { operatorId } = req.params;
-    const rtdbRef = rtdb.ref(`test/OperatorId/${operatorId}`);
     
-    const snapshot = await rtdbRef.once("value");
-    if (!snapshot.exists()) {
-      return res.status(404).json({
-        status: "error",
-        message: `Room with Operator ID ${operatorId} not found`
-      });
-    }
+    const { error } = await supabase
+      .from("rooms")
+      .delete()
+      .eq("operator_id", operatorId);
 
-    await rtdbRef.remove();
+    if (error) throw error;
 
     return res.json({
       status: "success",
-      message: `Room with Operator ID ${operatorId} deleted successfully`
+      message: \`Room with Operator ID \${operatorId} deleted successfully\`
     });
   } catch (error) {
     return res.status(500).json({
@@ -350,26 +376,30 @@ app.get("/api/users/:uid", async (req, res) => {
       });
     }
 
-    const docRef = db.collection("users").doc(uid);
-    const doc = await docRef.get();
+    const { data: doc, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("uid", uid)
+      .single();
 
-    if (!doc.exists) {
+    if (error || !doc) {
       return res.status(404).json({
         status: "error",
-        message: `User with ID ${uid} not found`
+        message: \`User with ID \${uid} not found\`
       });
     }
-
-    // Fetch last_login from RTDB
-    const rtdbSnapshot = await rtdb.ref(`users/${uid}/last_login`).once("value");
-    const lastLogin = rtdbSnapshot.val();
 
     return res.json({
       status: "success",
       data: {
-        uid: doc.id,
-        ...doc.data(),
-        last_login: lastLogin || doc.data().last_login || null
+        uid: doc.uid,
+        m_uiID: doc.m_uiid,
+        created_at: doc.created_at,
+        expired: doc.expired,
+        is_allowed: doc.is_allowed,
+        role: doc.role,
+        ban: doc.ban,
+        last_login: doc.last_login
       }
     });
   } catch (error) {
@@ -380,7 +410,7 @@ app.get("/api/users/:uid", async (req, res) => {
   }
 });
 
-// POST to create or update user info (e.g. record last login, set default fields)
+// POST to create or update user info
 app.post("/api/users", authenticate, async (req, res) => {
   try {
     const { uid, m_uiID, last_login } = req.body;
@@ -391,46 +421,64 @@ app.post("/api/users", authenticate, async (req, res) => {
       });
     }
 
-    // Always write last_login to Realtime Database to avoid Firestore limits
     const currentLogin = last_login || new Date().toISOString();
-    await rtdb.ref(`users/${uid}/last_login`).set(currentLogin);
 
-    const docRef = db.collection("users").doc(uid);
-    const doc = await docRef.get();
+    const { data: doc } = await supabase
+      .from("users")
+      .select("*")
+      .eq("uid", uid)
+      .single();
 
     let userData = {};
-    let needsFirestoreUpdate = false;
 
-    if (doc.exists) {
-      userData = doc.data();
-      // Only update Firestore if m_uiID changed and is valid
-      if (m_uiID && m_uiID !== "0" && userData.m_uiID !== m_uiID) {
-        userData.m_uiID = m_uiID;
-        needsFirestoreUpdate = true;
+    if (doc) {
+      userData = {
+        last_login: currentLogin
+      };
+      if (m_uiID && m_uiID !== "0" && doc.m_uiid !== m_uiID) {
+        userData.m_uiid = m_uiID;
       }
+      
+      const { error: updateError } = await supabase
+        .from("users")
+        .update(userData)
+        .eq("uid", uid);
+        
+      if (updateError) throw updateError;
+      
+      userData = { ...doc, ...userData };
     } else {
       userData = {
+        uid: uid,
+        m_uiid: m_uiID || "",
         created_at: new Date().toISOString(),
         expired: "NEVER",
         is_allowed: true,
         role: "user",
         ban: false,
-        m_uiID: m_uiID || ""
+        last_login: currentLogin
       };
-      needsFirestoreUpdate = true;
+      
+      const { error: insertError } = await supabase
+        .from("users")
+        .insert(userData);
+        
+      if (insertError) throw insertError;
     }
-
-    if (needsFirestoreUpdate) {
-      await docRef.set(userData, { merge: true });
-    }
-
-    // Attach last_login dynamically for the response
-    userData.last_login = currentLogin;
 
     return res.json({
       status: "success",
       message: "User information updated successfully",
-      data: userData
+      data: {
+        uid: userData.uid,
+        m_uiID: userData.m_uiid || userData.m_uiID,
+        created_at: userData.created_at,
+        expired: userData.expired,
+        is_allowed: userData.is_allowed,
+        role: userData.role,
+        ban: userData.ban,
+        last_login: userData.last_login
+      }
     });
   } catch (error) {
     return res.status(500).json({
@@ -444,11 +492,20 @@ app.post("/api/users", authenticate, async (req, res) => {
 app.get("/api/team-mappings/:operatorId", async (req, res) => {
   try {
     const { operatorId } = req.params;
-    const snapshot = await db.collection("test").doc("OperatorId").collection(operatorId).doc("config").collection("team_mappings").get();
-    const mappings = [];
-    snapshot.forEach(doc => {
-      mappings.push({ uid: doc.id, ...doc.data() });
-    });
+    const { data, error } = await supabase
+      .from("team_mappings")
+      .select("*")
+      .eq("operator_id", operatorId);
+      
+    if (error) throw error;
+    
+    const mappings = (data || []).map(doc => ({
+      uid: doc.uid,
+      teamName: doc.team_name,
+      playerName: doc.player_name,
+      updatedAt: doc.updated_at
+    }));
+
     return res.json({
       status: "success",
       data: mappings
@@ -469,14 +526,22 @@ app.post("/api/team-mappings/:operatorId", authenticate, async (req, res) => {
     if (!uid) {
       return res.status(400).json({ status: "error", message: "uid is required" });
     }
-    const docRef = db.collection("test").doc("OperatorId").collection(operatorId).doc("config").collection("team_mappings").doc(String(uid));
+    
     const dataToSave = {
-      teamName: teamName || "",
-      playerName: playerName || "",
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      operator_id: operatorId,
+      uid: String(uid),
+      team_name: teamName || "",
+      player_name: playerName || "",
+      updated_at: new Date().toISOString()
     };
-    await docRef.set(dataToSave, { merge: true });
-    return res.json({ status: "success", message: "Mapping saved", data: { uid, ...dataToSave } });
+    
+    const { error } = await supabase
+      .from("team_mappings")
+      .upsert(dataToSave, { onConflict: 'operator_id,uid' });
+      
+    if (error) throw error;
+    
+    return res.json({ status: "success", message: "Mapping saved", data: { uid, teamName: dataToSave.team_name, playerName: dataToSave.player_name } });
   } catch (error) {
     return res.status(500).json({ status: "error", message: error.message });
   }
@@ -486,7 +551,14 @@ app.post("/api/team-mappings/:operatorId", authenticate, async (req, res) => {
 app.delete("/api/team-mappings/:operatorId/:uid", authenticate, async (req, res) => {
   try {
     const { operatorId, uid } = req.params;
-    await db.collection("test").doc("OperatorId").collection(operatorId).doc("config").collection("team_mappings").doc(String(uid)).delete();
+    const { error } = await supabase
+      .from("team_mappings")
+      .delete()
+      .eq("operator_id", operatorId)
+      .eq("uid", String(uid));
+      
+    if (error) throw error;
+    
     return res.json({ status: "success", message: "Mapping deleted" });
   } catch (error) {
     return res.status(500).json({ status: "error", message: error.message });
@@ -497,14 +569,24 @@ app.delete("/api/team-mappings/:operatorId/:uid", authenticate, async (req, res)
 app.get("/api/match-setup/:operatorId", async (req, res) => {
   try {
     const { operatorId } = req.params;
-    const docRef = db.collection("test").doc("OperatorId").collection(operatorId).doc("match_setup");
-    const doc = await docRef.get();
+    const { data, error } = await supabase
+      .from("match_setup")
+      .select("*")
+      .eq("operator_id", operatorId)
+      .single();
     
-    if (!doc.exists) {
+    if (error || !data) {
       return res.json({ status: "success", data: {} });
     }
     
-    return res.json({ status: "success", data: doc.data() });
+    return res.json({ status: "success", data: {
+      blueTeamName: data.blue_team_name,
+      redTeamName: data.red_team_name,
+      blueScore: data.blue_score,
+      redScore: data.red_score,
+      baseOf: data.base_of,
+      matchPhase: data.match_phase
+    } });
   } catch (error) {
     return res.status(500).json({ status: "error", message: error.message });
   }
@@ -516,21 +598,25 @@ app.post("/api/match-setup/:operatorId", authenticate, async (req, res) => {
     const { operatorId } = req.params;
     const updates = req.body;
     
-    const docRef = db.collection("test").doc("OperatorId").collection(operatorId).doc("match_setup");
-    
     const dataToSave = {
-      ...updates,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      operator_id: operatorId,
+      updated_at: new Date().toISOString()
     };
     
-    // Ensure numbers are cast correctly if present
-    if (dataToSave.blueScore !== undefined) dataToSave.blueScore = Number(dataToSave.blueScore);
-    if (dataToSave.redScore !== undefined) dataToSave.redScore = Number(dataToSave.redScore);
-    if (dataToSave.baseOf !== undefined) dataToSave.baseOf = Number(dataToSave.baseOf);
+    if (updates.blueTeamName !== undefined) dataToSave.blue_team_name = updates.blueTeamName;
+    if (updates.redTeamName !== undefined) dataToSave.red_team_name = updates.redTeamName;
+    if (updates.blueScore !== undefined) dataToSave.blue_score = Number(updates.blueScore);
+    if (updates.redScore !== undefined) dataToSave.red_score = Number(updates.redScore);
+    if (updates.baseOf !== undefined) dataToSave.base_of = Number(updates.baseOf);
+    if (updates.matchPhase !== undefined) dataToSave.match_phase = updates.matchPhase;
     
-    await docRef.set(dataToSave, { merge: true });
+    const { error } = await supabase
+      .from("match_setup")
+      .upsert(dataToSave, { onConflict: 'operator_id' });
+      
+    if (error) throw error;
     
-    return res.json({ status: "success", message: "Match setup saved", data: dataToSave });
+    return res.json({ status: "success", message: "Match setup saved", data: updates });
   } catch (error) {
     return res.status(500).json({ status: "error", message: error.message });
   }
@@ -543,20 +629,24 @@ app.post("/api/stats/:operatorId", authenticate, async (req, res) => {
     const statsData = req.body;
     const timestamp = Date.now();
     
-    console.log(`[+] Received stats for operatorId: ${operatorId}`);
-    console.log(`[+] Stats data: ${JSON.stringify(statsData)}`);
+    console.log(\`[+] Received stats for operatorId: \${operatorId}\`);
     
-    // Path: /stats/(operatorID)/(timestamp)/
-    await db.collection("stats").doc(operatorId).collection(String(timestamp)).doc("data").set({
-      ...statsData,
-      savedAt: admin.firestore.FieldValue.serverTimestamp()
-    });
+    const { error } = await supabase
+      .from("stats")
+      .insert({
+        operator_id: operatorId,
+        timestamp: timestamp,
+        data: statsData,
+        saved_at: new Date().toISOString()
+      });
+      
+    if (error) throw error;
     
-    console.log(`[+] Stats successfully written to Firestore for ${operatorId}`);
+    console.log(\`[+] Stats successfully written to Supabase for \${operatorId}\`);
     
     return res.json({ status: "success", message: "Stats saved", timestamp });
   } catch (error) {
-    console.error(`[-] Error writing stats to Firestore: ${error.message}`);
+    console.error(\`[-] Error writing stats to Supabase: \${error.message}\`);
     return res.status(500).json({ status: "error", message: error.message });
   }
 });
@@ -565,7 +655,7 @@ app.post("/api/stats/:operatorId", authenticate, async (req, res) => {
 app.use((req, res) => {
   res.status(404).json({
     status: "error",
-    message: `Route not found on Express: ${req.method} ${req.url}`,
+    message: \`Route not found on Express: \${req.method} \${req.url}\`,
     debug: {
       method: req.method,
       url: req.url,

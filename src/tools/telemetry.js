@@ -52,21 +52,11 @@ export function sendToRestApi(payload, target = 'rooms', operatorId = null) {
               const HttpURLConnection = Java.use("java.net.HttpURLConnection");
               const DataOutputStream = Java.use("java.io.DataOutputStream");
 
-              let isFirebase = CONFIG.API_ROOMS_URL.indexOf("firebaseio.com") !== -1;
               let targetUrlStr = CONFIG.API_ROOMS_URL;
 
               // Adjust URL based on target
               if (target === 'stats') {
                 targetUrlStr = targetUrlStr.replace("/api/rooms", "") + "/api/stats/" + operatorId;
-              }
-
-              if (isFirebase) {
-                if (!targetUrlStr.endsWith("/")) targetUrlStr += "/";
-                if (!targetUrlStr.includes("test/OperatorId/")) {
-                    targetUrlStr += "test/OperatorId/";
-                }
-                targetUrlStr += payload.operatorId + "/iPlayer.json?auth=" + CONFIG.FIREBASE_RTDB_SECRET;
-                payload.updatedAt = { ".sv": "timestamp" };
               }
 
               const urlObj = URL.$new(targetUrlStr);
@@ -77,11 +67,7 @@ export function sendToRestApi(payload, target = 'rooms', operatorId = null) {
               
               conn.setRequestMethod("POST");
               
-              if (isFirebase) {
-                conn.setRequestProperty("X-HTTP-Method-Override", "PATCH");
-              } else {
-                conn.setRequestProperty("x-api-key", CONFIG.API_KEY);
-              }
+              conn.setRequestProperty("x-api-key", CONFIG.API_KEY);
               
               conn.setRequestProperty("Content-Type", "application/json");
               conn.setRequestProperty(

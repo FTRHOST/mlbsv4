@@ -20,10 +20,13 @@
     "frida-compile": "^19.0.5"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.109.0",
     "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
     "express": "^4.19.2",
-    "firebase-admin": "^13.10.0",
     "frida": "^17.12.0",
-    "frida-il2cpp-bridge": "^0.13.1"
+    "frida-il2cpp-bridge": "^0.13.1",
+    "pg": "^8.23.0",
+    "ws": "^8.21.3"
   }
 }

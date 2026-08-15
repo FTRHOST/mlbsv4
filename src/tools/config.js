@@ -6,7 +6,6 @@ export const CONFIG = {
   TARGET_LIB: "liblogic.so",
   API_ROOMS_URL: process.env.API_ROOMS_URL || "",
   API_KEY: process.env.API_KEY || "",
-  FIREBASE_RTDB_SECRET: process.env.FIREBASE_RTDB_SECRET || "",
 
   // Define features accessible by each role
   ROLES: {
