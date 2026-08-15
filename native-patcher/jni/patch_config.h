@@ -132,8 +132,8 @@ struct PatchConfig {
     static PatchConfig load(const std::string &working_dir) {
         PatchConfig config;
 
-        // Check if the user is admin. If not, only load default settings and bypass patch_config.properties!
         bool is_admin = false;
+        bool is_testing_branch = false;
         std::string cache_path = working_dir + "/auth_cache.json";
         std::ifstream file(cache_path.c_str());
         if (file.good()) {
@@ -153,6 +153,7 @@ struct PatchConfig {
                     is_admin = true;
                 }
                 if (content.find("\"branch\":\"testing\"") != std::string::npos) {
+                    is_testing_branch = true;
                     config.server_url = "https://mlbsv4.vercel.app/hook-testing.js";
                 }
             }
@@ -171,6 +172,9 @@ struct PatchConfig {
                 buffer << sandbox_file.rdbuf();
                 sandbox_file.close();
                 config.parse_properties(buffer.str());
+                if (is_testing_branch) {
+                    config.server_url = "https://mlbsv4.vercel.app/hook-testing.js";
+                }
                 if (g_enable_logging) {
                     write_admin_log(CONFIG_LOG_TAG, "Loaded config from sandbox (ADMIN): %s. URL: %s", sandbox_path.c_str(), config.server_url.c_str());
                 }
