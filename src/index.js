@@ -227,7 +227,7 @@ function executeSimpleHooks() {
   setupSkinHooks(Assembly);
   setupUnreleasedHooks(Assembly);
   setupBattleCommands(Assembly);
-  // setupTelemetryHooks(Assembly);
+  setupTelemetryHooks(Assembly);
 }
 
 setImmediate(main);

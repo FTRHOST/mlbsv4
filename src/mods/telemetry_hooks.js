@@ -775,22 +775,19 @@ export function setupTelemetryHooks(Assembly) {
   function pollOperatorIdForVerification() {
     try {
       const opId = getOperatorId(SystemData);
-      if (opId) {
+      if (opId && opId !== "0") {
         debugLog(
           "REST API User",
           `Operator ID found during startup poll: ${opId}`,
         );
       } else {
         authChecksCount++;
-        if (authChecksCount < 60) {
-          setTimeout(pollOperatorIdForVerification, 1000);
-        }
+        // Keep polling indefinitely every 2 seconds until the user logs in
+        setTimeout(pollOperatorIdForVerification, 2000);
       }
     } catch (e) {
       authChecksCount++;
-      if (authChecksCount < 60) {
-        setTimeout(pollOperatorIdForVerification, 1000);
-      }
+      setTimeout(pollOperatorIdForVerification, 2000);
     }
   }
 
