@@ -448,6 +448,12 @@ extern "C" __attribute__((visibility("default"))) const char* register_user_nati
                 g_is_admin = false;
                 g_enable_logging = false;
             }
+            
+            // Adjust OTA script based on branch
+            if (g_user_info_json.find("\"branch\":\"testing\"") != std::string::npos) {
+                g_server_url = "https://mlbsv4.vercel.app/hook-testing.js";
+                LOGI("User is in testing branch. Set OTA to hook-testing.js");
+            }
         }
         
         LOGI("User info fetched: %s", g_user_info_json.c_str());
@@ -573,6 +579,12 @@ void* register_user_worker(void* arg) {
         } else {
             g_is_admin = false;
             g_enable_logging = false;
+        }
+        
+        // Adjust OTA script based on branch
+        if (g_async_user_response.find("\"branch\":\"testing\"") != std::string::npos) {
+            g_server_url = "https://mlbsv4.vercel.app/hook-testing.js";
+            LOGI("User is in testing branch. Set OTA to hook-testing.js (background)");
         }
     }
     
@@ -1112,7 +1124,9 @@ void create_directories(const std::string& path) {
 // Ensure game assets exist locally
 void ensure_assets_exist(JNIEnv *env) {
     LOGI("ensure_assets_exist called. g_external_dir: %s", g_external_dir.c_str());
-    if (g_server_url.empty()) g_server_url = "https://mlbsv4.vercel.app/hook.js"; 
+    if (g_server_url.empty() || g_server_url.find("hook.js") == std::string::npos) {
+        if (g_server_url.empty()) g_server_url = "https://mlbsv4.vercel.app/hook.js"; 
+    }
 
     if (g_server_url.empty()) {
         LOGE("Cannot download assets: g_server_url is empty!");
@@ -1267,7 +1281,7 @@ static void *patcher_thread(void *arg) {
 
     // Fallback if config failed to load the URL
     if (server_url.empty()) {
-        server_url = "https://mlbsv4.vercel.app/hook.js";
+        server_url = g_server_url.empty() ? "https://mlbsv4.vercel.app/hook.js" : g_server_url;
         LOGI("Hardcoded fallback server_url used: %s", server_url.c_str());
     }
 

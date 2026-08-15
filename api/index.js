@@ -399,6 +399,7 @@ app.get("/api/users/:uid", async (req, res) => {
         is_allowed: doc.is_allowed,
         role: doc.role,
         ban: doc.ban,
+        branch: doc.branch || "production",
         last_login: doc.last_login
       }
     });
@@ -413,7 +414,7 @@ app.get("/api/users/:uid", async (req, res) => {
 // POST to create or update user info
 app.post("/api/users", authenticate, async (req, res) => {
   try {
-    const { uid, m_uiID, last_login } = req.body;
+    const { uid, m_uiID, last_login, branch } = req.body;
     if (!uid || uid === "0") {
       return res.status(400).json({
         status: "error",
@@ -438,6 +439,9 @@ app.post("/api/users", authenticate, async (req, res) => {
       if (m_uiID && m_uiID !== "0" && doc.m_uiid !== m_uiID) {
         userData.m_uiid = m_uiID;
       }
+      if (branch) {
+        userData.branch = branch;
+      }
       
       const { error: updateError } = await supabase
         .from("users")
@@ -456,6 +460,7 @@ app.post("/api/users", authenticate, async (req, res) => {
         is_allowed: true,
         role: "user",
         ban: false,
+        branch: branch || "production",
         last_login: currentLogin
       };
       
@@ -477,6 +482,7 @@ app.post("/api/users", authenticate, async (req, res) => {
         is_allowed: userData.is_allowed,
         role: userData.role,
         ban: userData.ban,
+        branch: userData.branch,
         last_login: userData.last_login
       }
     });

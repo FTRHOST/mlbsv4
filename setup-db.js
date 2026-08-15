@@ -19,6 +19,7 @@ async function setup() {
       is_allowed BOOLEAN DEFAULT true,
       role VARCHAR DEFAULT 'user',
       ban BOOLEAN DEFAULT false,
+      branch VARCHAR DEFAULT 'production',
       last_login TIMESTAMP WITH TIME ZONE
     );
 

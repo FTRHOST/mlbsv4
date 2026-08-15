@@ -58,11 +58,23 @@ for (let i = 0; i < jsCode.length; i++) {
   encryptedBuffer[MAGIC_ENC_HEADER.length + i] = jsCode[i] ^ CACHE_XOR_KEY;
 }
 
-fs.writeFileSync(hookOtaPath, encryptedBuffer);
-fs.writeFileSync(hookSigPath, signature);
+// Determine current git branch
+let gitBranch = 'production';
+try {
+  gitBranch = execSync('git rev-parse --abbrev-ref HEAD').toString().trim();
+} catch (e) {
+  console.log("Could not get git branch, assuming production");
+}
+
+let hookFilename = gitBranch === 'testing' ? 'hook-testing.js' : 'hook.js';
+const hookOtaPathDynamic = path.join(publicDir, hookFilename);
+const hookSigPathDynamic = path.join(publicDir, hookFilename + '.sig');
+
+fs.writeFileSync(hookOtaPathDynamic, encryptedBuffer);
+fs.writeFileSync(hookSigPathDynamic, signature);
 console.log(`[+] OTA Update Files Created:`);
-console.log(`    Script: public/hook.js (Encrypted)`);
-console.log(`    Signature: public/hook.js.sig`);
+console.log(`    Script: public/${hookFilename} (Encrypted)`);
+console.log(`    Signature: public/${hookFilename}.sig`);
 
 // Step 3: Copy to native patcher scripts for embedded fallback & encrypt it
 console.log("[*] Step 3: Copying compiled script to native patcher as fallback...");
