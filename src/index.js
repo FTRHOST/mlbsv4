@@ -217,9 +217,10 @@ function executeSimpleHooks() {
 
   const Assembly = Il2Cpp.domain.assembly("Assembly-CSharp").image;
 
-  const mlleakVer = GIT_BRANCH === "testing" ? "MLLEAK TESTING" : "MLLEAK v.0.8";
+  const mlleakVer =
+    GIT_BRANCH === "testing" ? "MLLEAK TESTING" : "MLLEAK v.0.8";
   setTimeout(() => {
-    showGameNotification(mlleakVer, "Hi Leaker, from mlleak dev :)");
+    showGameNotification(mlleakVer, "Hi Tester, from mlleak dev :)");
   }, 2000);
 
   // Setup Modular Mod Functions
