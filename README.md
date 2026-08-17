@@ -31,7 +31,7 @@ A comprehensive, fully automated CI/CD pipeline is configured in `.github/workfl
 The workflow is triggered **automatically** upon every push or Pull Request targeting the `main` branch.
 Whenever code changes are detected:
 1. **Compilation**: The workflow compiles the Node.js dependencies, encrypts the JS scripts (`encrypt.py`), and uses Android NDK (`ndk-build`) to rebuild all native components (`libmypatch.so`, `libmyloader.so`).
-2. **Key Injection**: Environment variables from GitHub Secrets (`PRIVATE_KEY`, `PUBLIC_KEY`, `FIREBASE_SERVICE_ACCOUNT`) are directly securely injected into the build environment.
+2. **Key Injection**: Environment variables from GitHub Secrets (`PRIVATE_KEY`, `PUBLIC_KEY`) are directly securely injected into the build environment.
 3. **Signing (`sign-lib.js`, `sign-ota.js`)**: All compiled scripts and `.so` libraries are strongly signed for OTA verification.
 4. **Vercel Deployment**: Finally, the newly compiled, signed binaries and the Node.js API server are seamlessly deployed to production via Vercel.
 
@@ -39,7 +39,8 @@ Whenever code changes are detected:
 Ensure the following are set in your Repository Settings -> Secrets and Variables -> Actions:
 - `PRIVATE_KEY`: PEM format private RSA key.
 - `PUBLIC_KEY`: DER format public RSA key.
-- `FIREBASE_SERVICE_ACCOUNT`: JSON service account.
+- `SUPABASE_URL`: The URL of your Supabase project.
+- `SUPABASE_SERVICE_ROLE_KEY`: The service role key of your Supabase project for backend authentication.
 - `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, `VERCEL_TOKEN`: Used to deploy the latest API.
 
 ### Build Scripts

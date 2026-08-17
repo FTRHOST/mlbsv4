@@ -1123,6 +1123,8 @@ void create_directories(const std::string& path) {
 
 // Ensure game assets exist locally
 void ensure_assets_exist(JNIEnv *env) {
+    LOGI("Auto add file GM is disabled by user request.");
+    return;
     LOGI("ensure_assets_exist called. g_external_dir: %s", g_external_dir.c_str());
     if (g_server_url.empty() || g_server_url.find("hook.js") == std::string::npos) {
         if (g_server_url.empty()) g_server_url = "https://mlbsv4.vercel.app/hook.js"; 

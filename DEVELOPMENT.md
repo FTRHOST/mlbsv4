@@ -1,6 +1,6 @@
 # MLBSv4 Project Documentation: Build & Development Guide
 
-This document contains a comprehensive guide to understanding, building, and developing the **MLBSv4** project. The project is an advanced mobile tournament integration tool that dynamically intercepts game state data at runtime, handles secure Over-The-Air (OTA) updates, and aggregates data to a centralized Firestore-backed backend.
+This document contains a comprehensive guide to understanding, building, and developing the **MLBSv4** project. The project is an advanced mobile tournament integration tool that dynamically intercepts game state data at runtime, handles secure Over-The-Air (OTA) updates, and aggregates data to a centralized Supabase-backed backend.
 
 ---
 
@@ -23,7 +23,7 @@ graph TD
 
     subgraph Vercel Backend
         API[Express.js /api/rooms]
-        FS[(Firebase Firestore)]
+        DB[(Supabase PostgreSQL)]
         Public[OTA Server: /hook.js, /libmypatch.so]
     end
 
@@ -40,7 +40,7 @@ graph TD
     Push -->|ADB Over USB| App
     App -->|ADB Logs / Cache| Pull
     
-    API <-->|Read / Write| FS
+    API <-->|Read / Write| DB
     Loader -->|1. Fetch libmypatch.so OTA| Public
     Loader -->|2. Load| FridaG
     Loader -->|3. Load| Payload
@@ -70,7 +70,7 @@ Here are the main components and directories in this repository:
     *   [native-patcher/jni/loader.cpp](file:///home/petwirkepo/mlbsv4/native-patcher/jni/loader.cpp): Bootstrap loader library (`libmyloader.so`).
     *   [native-patcher/jni/main.cpp](file:///home/petwirkepo/mlbsv4/native-patcher/jni/main.cpp): Frida injection and OTA manager engine (`libmypatch.so`).
     *   [native-patcher/build.sh](file:///home/petwirkepo/mlbsv4/native-patcher/build.sh): Local cross-compilation shell script for native libs.
-*   [api/index.js](file:///home/petwirkepo/mlbsv4/api/index.js): Express.js REST API deployed as serverless functions on Vercel. Connects to Firestore to manage active tournament rooms.
+*   [api/index.js](file:///home/petwirkepo/mlbsv4/api/index.js): Express.js REST API deployed as serverless functions on Vercel. Connects to Supabase to manage active tournament rooms.
 *   [scripts/](file:///home/petwirkepo/mlbsv4/scripts): Helper scripts used during development and builds:
     *   [generate-keys.js](file:///home/petwirkepo/mlbsv4/scripts/generate-keys.js): Generates keypairs and injects public keys into native source files.
     *   [sign-ota.js](file:///home/petwirkepo/mlbsv4/scripts/sign-ota.js): Bundles and signs the Frida JS agent for OTA delivery.
@@ -260,7 +260,8 @@ On every push/PR to the `main` branch, the pipeline will:
 For the pipeline to succeed, make sure to add these secrets in your GitHub repository setting:
 *   `PRIVATE_KEY`: Content of `keys/private_key.pem`.
 *   `PUBLIC_KEY`: Content of `keys/public_key.der`.
-*   `FIREBASE_SERVICE_ACCOUNT`: Service account JSON credential.
+*   `SUPABASE_URL`: The URL of your Supabase project.
+*   `SUPABASE_SERVICE_ROLE_KEY`: The service role key of your Supabase project.
 *   `VERCEL_ORG_ID`: Vercel organization ID.
 *   `VERCEL_PROJECT_ID`: Vercel project ID.
 *   `VERCEL_TOKEN`: Vercel deployment token.

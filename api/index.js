@@ -334,10 +334,28 @@ app.put("/api/rooms/:operatorId", authenticate, async (req, res) => {
 
     if (updateError) throw updateError;
 
+    const finalData = { ...currentData, ...updatedData };
+    const responseData = {
+      operatorId: finalData.operator_id,
+      players: finalData.players,
+      blueTeamName: finalData.blue_team_name,
+      redTeamName: finalData.red_team_name,
+      blueScore: finalData.blue_score,
+      redScore: finalData.red_score,
+      baseOf: finalData.base_of,
+      matchPhase: finalData.match_phase,
+      draftTime: finalData.draft_time,
+      draftPhase: finalData.draft_phase,
+      caption: finalData.caption,
+      mapDraw: finalData.map_draw,
+      Battle: finalData.battle,
+      updatedAt: finalData.updated_at ? new Date(finalData.updated_at).getTime() : Date.now()
+    };
+
     return res.json({
       status: "success",
       message: "Room data updated successfully",
-      data: { ...currentData, ...updatedData }
+      data: responseData
     });
   } catch (error) {
     return res.status(500).json({
