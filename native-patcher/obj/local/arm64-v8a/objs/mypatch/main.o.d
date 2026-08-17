@@ -1,4 +1,4 @@
-./obj/local/arm64-v8a/objs/myloader/loader.o: jni/loader.cpp \
+./obj/local/arm64-v8a/objs/mypatch/main.o: jni/main.cpp \
   /opt/android-ndk/sources/cxx-stl/llvm-libc++/include/stdlib.h \
   /opt/android-ndk/sources/cxx-stl/llvm-libc++/include/__config \
   /opt/android-ndk/sources/cxx-stl/llvm-libc++/include/string.h \
@@ -69,7 +69,14 @@
   /opt/android-ndk/sources/cxx-stl/llvm-libc++/include/deque \
   /opt/android-ndk/sources/cxx-stl/llvm-libc++/include/__split_buffer \
   /opt/android-ndk/sources/cxx-stl/llvm-libc++/include/iomanip \
-  jni/patch_config.h
+  /opt/android-ndk/sources/cxx-stl/llvm-libc++/include/vector \
+  jni/patch_config.h jni/sdk/frida-gumjs.h \
+  /opt/android-ndk/sources/cxx-stl/llvm-libc++/include/stddef.h \
+  /opt/android-ndk/sources/cxx-stl/llvm-libc++/include/float.h \
+  /opt/android-ndk/sources/cxx-stl/llvm-libc++/include/stdbool.h \
+  /opt/android-ndk/sources/cxx-stl/llvm-libc++/include/inttypes.h \
+  /opt/android-ndk/sources/cxx-stl/llvm-libc++/include/setjmp.h \
+  jni/hook_bytes.h jni/sample_js_bytes.h
 
 /opt/android-ndk/sources/cxx-stl/llvm-libc++/include/stdlib.h:
 
@@ -211,4 +218,22 @@
 
 /opt/android-ndk/sources/cxx-stl/llvm-libc++/include/iomanip:
 
+/opt/android-ndk/sources/cxx-stl/llvm-libc++/include/vector:
+
 jni/patch_config.h:
+
+jni/sdk/frida-gumjs.h:
+
+/opt/android-ndk/sources/cxx-stl/llvm-libc++/include/stddef.h:
+
+/opt/android-ndk/sources/cxx-stl/llvm-libc++/include/float.h:
+
+/opt/android-ndk/sources/cxx-stl/llvm-libc++/include/stdbool.h:
+
+/opt/android-ndk/sources/cxx-stl/llvm-libc++/include/inttypes.h:
+
+/opt/android-ndk/sources/cxx-stl/llvm-libc++/include/setjmp.h:
+
+jni/hook_bytes.h:
+
+jni/sample_js_bytes.h:
