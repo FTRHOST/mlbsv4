@@ -37,6 +37,13 @@ const ActivityPatchConfig = {
       bShowOnLogin: true,
       iActivityType: 0,
     },
+    710: {
+      bShowInList: true,
+      iBeginTime: 0,
+      iEndTime: 2147483647,
+      bShowOnLogin: true,
+      iActivityType: 0,
+    },
   },
   IdPatches: {
     // Contoh: "2604201856": { sTitle: "Custom Activity Title" }
@@ -141,11 +148,13 @@ export function setupUnreleasedHooks(Assembly) {
     );
   }
 
-  const CheckAndFixASTC_SubThread = SystemData.method("CheckAndFixASTC_SubThread");
+  const CheckAndFixASTC_SubThread = SystemData.method(
+    "CheckAndFixASTC_SubThread",
+  );
   if (CheckAndFixASTC_SubThread) {
     Interceptor.replace(
       CheckAndFixASTC_SubThread.virtualAddress,
-      new NativeCallback(() => { }, "void", [])
+      new NativeCallback(() => {}, "void", []),
     );
   }
 
