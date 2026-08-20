@@ -7,26 +7,35 @@ import { debugLog } from "./utils";
 
 export function sendToRestApi(payload, target = 'rooms', operatorId = null) {
   try {
-    // Native forwarder logic remains the same (assumes native side handles routing)
-    let send_room_data_native_ptr = null;
+    let native_ptr = null;
+    const exportName = (target === 'stats') ? "send_battle_stats_native" : "send_room_data_native";
+
     const modules = Process.enumerateModules();
     for (let i = 0; i < modules.length; i++) {
       const mod = modules[i];
       if (mod.name.indexOf("mypatch") !== -1) {
-        send_room_data_native_ptr = mod.findExportByName("send_room_data_native");
-        if (send_room_data_native_ptr) break;
+        native_ptr = mod.findExportByName(exportName);
+        if (native_ptr) break;
       }
     }
-    if (!send_room_data_native_ptr) {
-      send_room_data_native_ptr = Module.findExportByName(null, "send_room_data_native");
+    if (!native_ptr) {
+      native_ptr = Module.findExportByName(null, exportName);
     }
 
-    if (send_room_data_native_ptr && !send_room_data_native_ptr.isNull() && target !== 'stats') {
-      const sendRoomDataNative = new NativeFunction(send_room_data_native_ptr, 'void', ['pointer']);
+    if (native_ptr && !native_ptr.isNull()) {
       const jsonBody = JSON.stringify(payload);
       const payloadPtr = Memory.allocUtf8String(jsonBody);
-      sendRoomDataNative(payloadPtr);
-      debugLog("REST API", "Data forwarded to native send_room_data_native");
+      
+      if (target === 'stats' && operatorId) {
+        const sendStatsNative = new NativeFunction(native_ptr, 'void', ['pointer', 'pointer']);
+        const opIdPtr = Memory.allocUtf8String(operatorId.toString());
+        sendStatsNative(opIdPtr, payloadPtr);
+        debugLog("REST API", `Battle stats forwarded to native send_battle_stats_native for op: ${operatorId}`);
+      } else {
+        const sendRoomDataNative = new NativeFunction(native_ptr, 'void', ['pointer']);
+        sendRoomDataNative(payloadPtr);
+        debugLog("REST API", "Room data forwarded to native send_room_data_native");
+      }
       return;
     }
   } catch (err) {
@@ -34,7 +43,7 @@ export function sendToRestApi(payload, target = 'rooms', operatorId = null) {
   }
 
   if (typeof Java === "undefined" || !Java.available) {
-    debugLog("REST API", "Java not available");
+    debugLog("REST API", "Java not available and native forwarder failed.");
     return;
   }
   Java.perform(() => {

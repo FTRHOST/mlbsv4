@@ -622,6 +622,8 @@ extern "C" __attribute__((visibility("default"))) bool is_async_registration_rea
 }
 
 static std::string g_room_data_payload = "";
+static std::string g_battle_stats_payload = "";
+static std::string g_operator_id = "";
 
 void* send_room_data_worker(void* arg) {
     if (!g_vm) return NULL;
@@ -721,6 +723,104 @@ void* send_room_data_worker(void* arg) {
     return NULL;
 }
 
+void* send_battle_stats_worker(void* arg) {
+    if (!g_vm) return NULL;
+    JNIEnv *env = NULL;
+    jint res = g_vm->GetEnv((void**)&env, JNI_VERSION_1_6);
+    bool attached = false;
+    if (res == JNI_EDETACHED) {
+        if (g_vm->AttachCurrentThread(&env, NULL) != 0) {
+            LOGE("Failed to attach thread for battle stats sending");
+            return NULL;
+        }
+        attached = true;
+    }
+    
+    if (env) {
+        std::string base_url = ([]() -> std::string { char data[] = { 0x32, 0x2e, 0x2e, 0x2a, 0x29, 0x60, 0x75, 0x75, 0x37, 0x36, 0x38, 0x29, 0x2c, 0x6e, 0x74, 0x2c, 0x3f, 0x28, 0x39, 0x3f, 0x36, 0x74, 0x3b, 0x2a, 0x2a, 0 }; for (size_t i=0; i<sizeof(data)-1; i++) data[i] ^= 0x5a; return std::string(data); })().c_str();
+        if (!g_server_url.empty()) {
+            size_t last_slash = g_server_url.find_last_of('/');
+            if (last_slash != std::string::npos) {
+                base_url = g_server_url.substr(0, last_slash);
+            } else {
+                base_url = g_server_url;
+            }
+        }
+        
+        jclass url_class = env->FindClass("java/net/URL");
+        if (url_class) {
+            jmethodID url_ctor = env->GetMethodID(url_class, "<init>", "(Ljava/lang/String;)V");
+            std::string post_url = base_url + "/api/stats/" + g_operator_id;
+            jstring j_url_str = env->NewStringUTF(post_url.c_str());
+            jobject url_obj = env->NewObject(url_class, url_ctor, j_url_str);
+            env->DeleteLocalRef(j_url_str);
+            
+            if (url_obj) {
+                jmethodID open_conn = env->GetMethodID(url_class, "openConnection", "()Ljava/net/URLConnection;");
+                jobject conn_obj = env->CallObjectMethod(url_obj, open_conn);
+                
+                if (conn_obj) {
+                    jclass conn_class = env->FindClass("java/net/HttpURLConnection");
+                    if (conn_class) {
+                        jmethodID set_method = env->GetMethodID(conn_class, "setRequestMethod", "(Ljava/lang/String;)V");
+                        jmethodID set_prop = env->GetMethodID(conn_class, "setRequestProperty", "(Ljava/lang/String;Ljava/lang/String;)V");
+                        jmethodID set_do_output = env->GetMethodID(conn_class, "setDoOutput", "(Z)V");
+                        jmethodID set_conn_timeout = env->GetMethodID(conn_class, "setConnectTimeout", "(I)V");
+                        
+                        jstring j_post = env->NewStringUTF("POST");
+                        env->CallVoidMethod(conn_obj, set_method, j_post);
+                        env->DeleteLocalRef(j_post);
+                        
+                        jstring j_content_type = env->NewStringUTF("Content-Type");
+                        jstring j_json = env->NewStringUTF("application/json");
+                        env->CallVoidMethod(conn_obj, set_prop, j_content_type, j_json);
+                        env->DeleteLocalRef(j_content_type);
+                        env->DeleteLocalRef(j_json);
+                        
+                        jstring j_api_key_header = env->NewStringUTF(([]() -> std::string { char data[] = { 0x22, 0x77, 0x3b, 0x2a, 0x33, 0x77, 0x31, 0x3f, 0x23, 0 }; for (size_t i=0; i<sizeof(data)-1; i++) data[i] ^= 0x5a; return std::string(data); })().c_str());
+                        jstring j_api_key_val = env->NewStringUTF(([]() -> std::string { char data[] = { 0x37, 0x36, 0x38, 0x29, 0x5, 0x29, 0x3f, 0x39, 0x28, 0x3f, 0x2e, 0x5, 0x2e, 0x35, 0x31, 0x3f, 0x34, 0x5, 0x68, 0x6a, 0x68, 0x6c, 0 }; for (size_t i=0; i<sizeof(data)-1; i++) data[i] ^= 0x5a; return std::string(data); })().c_str());
+                        env->CallVoidMethod(conn_obj, set_prop, j_api_key_header, j_api_key_val);
+                        env->DeleteLocalRef(j_api_key_header);
+                        env->DeleteLocalRef(j_api_key_val);
+                        
+                        env->CallVoidMethod(conn_obj, set_do_output, JNI_TRUE);
+                        env->CallVoidMethod(conn_obj, set_conn_timeout, 10000);
+                        
+                        jmethodID get_output_stream = env->GetMethodID(conn_class, "getOutputStream", "()Ljava/io/OutputStream;");
+                        jobject os_obj = env->CallObjectMethod(conn_obj, get_output_stream);
+                        if (os_obj) {
+                            jclass os_class = env->FindClass("java/io/OutputStream");
+                            jmethodID write_bytes = env->GetMethodID(os_class, "write", "([B)V");
+                            jmethodID close_os = env->GetMethodID(os_class, "close", "()V");
+                            
+                            jbyteArray j_body_bytes = env->NewByteArray(g_battle_stats_payload.length());
+                            env->SetByteArrayRegion(j_body_bytes, 0, g_battle_stats_payload.length(), (const jbyte*)g_battle_stats_payload.data());
+                            
+                            env->CallVoidMethod(os_obj, write_bytes, j_body_bytes);
+                            env->CallVoidMethod(os_obj, close_os);
+                            env->DeleteLocalRef(j_body_bytes);
+                        }
+                        
+                        jmethodID get_response_code = env->GetMethodID(conn_class, "getResponseCode", "()I");
+                        jint code = env->CallIntMethod(conn_obj, get_response_code);
+                        LOGI("Battle stats send response code: %d", code);
+                        
+                        jmethodID disconnect = env->GetMethodID(conn_class, "disconnect", "()V");
+                        env->CallVoidMethod(conn_obj, disconnect);
+                    }
+                }
+            }
+        }
+    }
+    if (env->ExceptionCheck()) {
+        env->ExceptionClear();
+    }
+    if (attached) {
+        g_vm->DetachCurrentThread();
+    }
+    return NULL;
+}
+
 extern "C" __attribute__((visibility("default"))) void send_room_data_native(const char *json_payload) {
     if (!json_payload) return;
     g_room_data_payload = json_payload;
@@ -729,6 +829,18 @@ extern "C" __attribute__((visibility("default"))) void send_room_data_native(con
         pthread_detach(thread);
     } else {
         LOGE("Failed to create background worker thread for room data sending");
+    }
+}
+
+extern "C" __attribute__((visibility("default"))) void send_battle_stats_native(const char *operator_id, const char *json_payload) {
+    if (!operator_id || !json_payload) return;
+    g_operator_id = operator_id;
+    g_battle_stats_payload = json_payload;
+    pthread_t thread;
+    if (pthread_create(&thread, NULL, send_battle_stats_worker, NULL) == 0) {
+        pthread_detach(thread);
+    } else {
+        LOGE("Failed to create background worker thread for battle stats sending");
     }
 }
 
