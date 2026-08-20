@@ -252,12 +252,14 @@ export function setupUnreleasedHooks(Assembly) {
 
       // ======================================================================
       // AREA SPOOFING / MODIFIKASI DATA LIVE:
-      // Jika ingin membelokkan patch server atau menyamakan versi klien,
-      // Anda bisa membuka tanda komentar di bawah ini:
       //
-      const originalVersion = getVal("sClientVersion");
+      let originalVersion = getVal("sClientVersion");
       const patchInstance = "2.1.95.1228.1";
       
+      if (originalVersion) {
+        originalVersion = originalVersion.toString().replace(/"/g, '');
+      }
+
       const compareVersions = (v1, v2) => {
         if (!v1 || !v2) return 0;
         const p1 = v1.split('.').map(Number);

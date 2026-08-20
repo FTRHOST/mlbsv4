@@ -104,8 +104,8 @@ function waitForLogicLib() {
       const monitor = Interceptor.attach(dlopen, {
         onEnter: function (args) {
           try {
-            if (args[0] && !args[0].isNull()) {
-              this.path = args[0].readCString();
+            if (args[0]) {
+              this.path = Memory.readCString(args[0]);
             }
           } catch (e) {
             this.path = null;
