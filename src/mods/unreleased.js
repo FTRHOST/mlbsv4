@@ -255,33 +255,38 @@ export function setupUnreleasedHooks(Assembly) {
       //
       let originalVersion = getVal("sClientVersion");
       const patchInstance = "2.1.95.1228.1";
+      const iZoneIdVal = parseInt(getVal("iZoneId"), 10);
       
-      if (originalVersion) {
-        originalVersion = originalVersion.toString().replace(/"/g, '');
-      }
-
-      const compareVersions = (v1, v2) => {
-        if (!v1 || !v2) return 0;
-        const p1 = v1.split('.').map(Number);
-        const p2 = v2.split('.').map(Number);
-        for (let i = 0; i < Math.max(p1.length, p2.length); i++) {
-          const n1 = p1[i] || 0;
-          const n2 = p2[i] || 0;
-          if (n1 > n2) return 1;
-          if (n1 < n2) return -1;
+      if (!isNaN(iZoneIdVal) && iZoneIdVal >= 57000 && iZoneIdVal <= 57500) {
+        if (originalVersion) {
+          originalVersion = originalVersion.toString().replace(/"/g, '');
         }
-        return 0;
-      };
 
-      if (originalVersion && originalVersion !== "Error/Empty") {
-        if (compareVersions(patchInstance, originalVersion) > 0) {
-          packetInstance.field("sClientVersion").value = Il2Cpp.string(patchInstance);
-          console.log(`[+] sClientVersion di-patch ke: ${patchInstance} (Lebih baru dari ${originalVersion})`);
+        const compareVersions = (v1, v2) => {
+          if (!v1 || !v2) return 0;
+          const p1 = v1.split('.').map(Number);
+          const p2 = v2.split('.').map(Number);
+          for (let i = 0; i < Math.max(p1.length, p2.length); i++) {
+            const n1 = p1[i] || 0;
+            const n2 = p2[i] || 0;
+            if (n1 > n2) return 1;
+            if (n1 < n2) return -1;
+          }
+          return 0;
+        };
+
+        if (originalVersion && originalVersion !== "Error/Empty") {
+          if (compareVersions(patchInstance, originalVersion) > 0) {
+            packetInstance.field("sClientVersion").value = Il2Cpp.string(patchInstance);
+            console.log(`[+] sClientVersion di-patch ke: ${patchInstance} (Lebih baru dari ${originalVersion}, Zone: ${iZoneIdVal})`);
+          } else {
+            console.log(`[+] sClientVersion dipertahankan: ${originalVersion} (Sama/Lebih baru dari ${patchInstance}, Zone: ${iZoneIdVal})`);
+          }
         } else {
-          console.log(`[+] sClientVersion dipertahankan: ${originalVersion} (Sama/Lebih baru dari ${patchInstance})`);
+          packetInstance.field("sClientVersion").value = Il2Cpp.string(patchInstance);
         }
       } else {
-        packetInstance.field("sClientVersion").value = Il2Cpp.string(patchInstance);
+        console.log(`[-] sClientVersion patch di-skip karena iZoneId (${iZoneIdVal}) di luar range 57000-57500`);
       }
       // packetInstance.field("sResPatchVersionNew").value = Il2Cpp.string("http://ip_server_kamu/res_patch/");
       // console.log("[+] Data Server Config berhasil di-spoofing secara live!");
