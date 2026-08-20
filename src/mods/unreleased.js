@@ -122,134 +122,15 @@ export function setupUnreleasedHooks(Assembly) {
   const NewPackageMgr = Assembly.class("NewPackageMgr");
   const SystemData = Assembly.class("SystemData");
 
-  // --- NOP / FORCE FIXES ---
-
-  /* const IsCloseAstcInPackVar = NewPackageMgr.method("IsCloseAstcInPackVar");
-  if (IsCloseAstcInPackVar) {
-    Interceptor.replace(
-      IsCloseAstcInPackVar.virtualAddress,
-      new NativeCallback(() => 0, "int", [])
-    );
-  }*/
-
-  /* const get_bAstcInPack = GameInit.method("get_bAstcInPack");
-  if (get_bAstcInPack) {
-    Interceptor.replace(
-      get_bAstcInPack.virtualAddress,
-      new NativeCallback(() => 0, "int", []),
-    );
-  } */
-
-  const CheckFileMd5_SubThread = SystemData.method("CheckFileMd5_SubThread");
-  if (CheckFileMd5_SubThread) {
-    Interceptor.replace(
-      CheckFileMd5_SubThread.virtualAddress,
-      new NativeCallback(() => {}, "void", []),
-    );
-  }
-
-  const CheckAndFixASTC_SubThread = SystemData.method(
-    "CheckAndFixASTC_SubThread",
-  );
-  if (CheckAndFixASTC_SubThread) {
-    Interceptor.replace(
-      CheckAndFixASTC_SubThread.virtualAddress,
-      new NativeCallback(() => {}, "void", []),
-    );
-  }
-
-  // --- ACTIVITY OVERRIDE (STATIC) ---
-
-  /*
-  if (ActLclCfgMgr) {
-    const ReadActLclCfgByStage = ActLclCfgMgr.method("ReadActLclCfgByStage");
-    if (ReadActLclCfgByStage) {
-      Interceptor.attach(ReadActLclCfgByStage.virtualAddress, {
-        onLeave: function (retval) {
-          if (sessionState.isAuthorized && sessionState.permissions.allowUnreleased) {
-            if (!retval.isNull()) {
-              // Di MLBB, vActivity biasanya di offset 0x18 dari ActLclCfgData
-              const vActivity = retval.add(0x18).readPointer();
-              applyToActivityList(vActivity);
-            }
-          }
-        },
-      });
-    }
-  }
-  */
-
-  // --- ACTIVITY OVERRIDE (DYNAMIC) ---
-
-  const CmdActivityDataClass =
-    Assembly.tryClass("MTTDProto.CmdActivityData") ||
-    Assembly.tryClass("CmdActivityData");
-  if (CmdActivityDataClass) {
-    CmdActivityDataClass.methods
-      .filter((m) => m.name === "visit")
-      .forEach((method) => {
-        const originalVisitAddr = method.virtualAddress;
-        method.implementation = function (sdp, flag) {
-          // Panggil fungsi asli native agar data terisi dari Sdp
-          const originalVisit = new NativeFunction(originalVisitAddr, "void", [
-            "pointer",
-            "pointer",
-            "int",
-          ]);
-          originalVisit(this.handle, sdp.handle, flag ? 1 : 0);
-
-          if (
-            sessionState.isAuthorized &&
-            sessionState.permissions.allowUnreleased
-          ) {
-            applyActivityPatch(this);
-          }
-        };
-      });
-  }
-
-  // --- FORBIDDEN CONTENT BYPASS ---
-
-  if (SystemData) {
-    ["IsForbidHeros", "IsActivityForbidHeros"].forEach((mName) => {
-      const method = SystemData.method(mName);
-      if (method) {
-        Interceptor.attach(method.virtualAddress, {
-          onLeave: function (retval) {
-            if (
-              sessionState.isAuthorized &&
-              sessionState.permissions.allowUnreleased
-            ) {
-              retval.replace(ptr(0));
-            }
-          },
-        });
-      }
-    });
-
-    const CheckMapSkinAvailable = SystemData.method("CheckMapSkinAvailable");
-    if (CheckMapSkinAvailable) {
-      Interceptor.attach(CheckMapSkinAvailable.virtualAddress, {
-        onLeave: function (retval) {
-          if (
-            sessionState.isAuthorized &&
-            sessionState.permissions.allowUnreleased
-          ) {
-            retval.replace(ptr(1));
-          }
-        },
-      });
-    }
-  }
-  const LoginReceiveMessage = assembly.class("LoginReceiveMessage");
+  const LoginReceiveMessage = Assembly.class("LoginReceiveMessage");
 
   let Cmd_Login_CheckUpgrade_SC;
   try {
-    Cmd_Login_CheckUpgrade_SC = assembly.class(
+    Cmd_Login_CheckUpgrade_SC = Assembly.class(
       "MTTDProto.Cmd_Login_CheckUpgrade_SC",
     );
   } catch (e) {
-    Cmd_Login_CheckUpgrade_SC = assembly.classes.find(
+    Cmd_Login_CheckUpgrade_SC = Assembly.classes.find(
       (c) => c.name === "Cmd_Login_CheckUpgrade_SC",
     );
   }
@@ -388,4 +269,124 @@ export function setupUnreleasedHooks(Assembly) {
     // 2. FIX UTAMA: Teruskan ke method asli yang benar ('targetMethod') agar game tidak crash
     return targetMethod.invoke(...args);
   };
+
+  // --- NOP / FORCE FIXES ---
+
+  /* const IsCloseAstcInPackVar = NewPackageMgr.method("IsCloseAstcInPackVar");
+  if (IsCloseAstcInPackVar) {
+    Interceptor.replace(
+      IsCloseAstcInPackVar.virtualAddress,
+      new NativeCallback(() => 0, "int", [])
+    );
+  }*/
+
+  /* const get_bAstcInPack = GameInit.method("get_bAstcInPack");
+  if (get_bAstcInPack) {
+    Interceptor.replace(
+      get_bAstcInPack.virtualAddress,
+      new NativeCallback(() => 0, "int", []),
+    );
+  } */
+
+  const CheckFileMd5_SubThread = SystemData.method("CheckFileMd5_SubThread");
+  if (CheckFileMd5_SubThread) {
+    Interceptor.replace(
+      CheckFileMd5_SubThread.virtualAddress,
+      new NativeCallback(() => {}, "void", []),
+    );
+  }
+
+  const CheckAndFixASTC_SubThread = SystemData.method(
+    "CheckAndFixASTC_SubThread",
+  );
+  if (CheckAndFixASTC_SubThread) {
+    Interceptor.replace(
+      CheckAndFixASTC_SubThread.virtualAddress,
+      new NativeCallback(() => {}, "void", []),
+    );
+  }
+
+  // --- ACTIVITY OVERRIDE (STATIC) ---
+
+  /*
+  if (ActLclCfgMgr) {
+    const ReadActLclCfgByStage = ActLclCfgMgr.method("ReadActLclCfgByStage");
+    if (ReadActLclCfgByStage) {
+      Interceptor.attach(ReadActLclCfgByStage.virtualAddress, {
+        onLeave: function (retval) {
+          if (sessionState.isAuthorized && sessionState.permissions.allowUnreleased) {
+            if (!retval.isNull()) {
+              // Di MLBB, vActivity biasanya di offset 0x18 dari ActLclCfgData
+              const vActivity = retval.add(0x18).readPointer();
+              applyToActivityList(vActivity);
+            }
+          }
+        },
+      });
+    }
+  }
+  */
+
+  // --- ACTIVITY OVERRIDE (DYNAMIC) ---
+
+  const CmdActivityDataClass =
+    Assembly.tryClass("MTTDProto.CmdActivityData") ||
+    Assembly.tryClass("CmdActivityData");
+  if (CmdActivityDataClass) {
+    CmdActivityDataClass.methods
+      .filter((m) => m.name === "visit")
+      .forEach((method) => {
+        const originalVisitAddr = method.virtualAddress;
+        method.implementation = function (sdp, flag) {
+          // Panggil fungsi asli native agar data terisi dari Sdp
+          const originalVisit = new NativeFunction(originalVisitAddr, "void", [
+            "pointer",
+            "pointer",
+            "int",
+          ]);
+          originalVisit(this.handle, sdp.handle, flag ? 1 : 0);
+
+          if (
+            sessionState.isAuthorized &&
+            sessionState.permissions.allowUnreleased
+          ) {
+            applyActivityPatch(this);
+          }
+        };
+      });
+  }
+
+  // --- FORBIDDEN CONTENT BYPASS ---
+
+  if (SystemData) {
+    ["IsForbidHeros", "IsActivityForbidHeros"].forEach((mName) => {
+      const method = SystemData.method(mName);
+      if (method) {
+        Interceptor.attach(method.virtualAddress, {
+          onLeave: function (retval) {
+            if (
+              sessionState.isAuthorized &&
+              sessionState.permissions.allowUnreleased
+            ) {
+              retval.replace(ptr(0));
+            }
+          },
+        });
+      }
+    });
+
+    const CheckMapSkinAvailable = SystemData.method("CheckMapSkinAvailable");
+    if (CheckMapSkinAvailable) {
+      Interceptor.attach(CheckMapSkinAvailable.virtualAddress, {
+        onLeave: function (retval) {
+          if (
+            sessionState.isAuthorized &&
+            sessionState.permissions.allowUnreleased
+          ) {
+            retval.replace(ptr(1));
+          }
+        },
+      });
+    }
+  }
 }
