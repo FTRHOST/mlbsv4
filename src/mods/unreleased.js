@@ -240,146 +240,152 @@ export function setupUnreleasedHooks(Assembly) {
         },
       });
     }
+  }
+  const LoginReceiveMessage = assembly.class("LoginReceiveMessage");
 
-    const LoginReceiveMessage = assembly.class("LoginReceiveMessage");
-    let Cmd_Login_CheckUpgrade_SC;
-    try {
-      Cmd_Login_CheckUpgrade_SC = assembly.class(
-        "MTTDProto.Cmd_Login_CheckUpgrade_SC",
+  let Cmd_Login_CheckUpgrade_SC;
+  try {
+    Cmd_Login_CheckUpgrade_SC = assembly.class(
+      "MTTDProto.Cmd_Login_CheckUpgrade_SC",
+    );
+  } catch (e) {
+    Cmd_Login_CheckUpgrade_SC = assembly.classes.find(
+      (c) => c.name === "Cmd_Login_CheckUpgrade_SC",
+    );
+  }
+
+  // 1. Target method baru Anda yang sudah terbukti berhasil
+  const targetMethod = LoginReceiveMessage.method("DecodeServerUpdateConfig");
+
+  console.log(
+    `[+] Menggunakan .implementation untuk: ${LoginReceiveMessage.fullName}::${targetMethod.name}`,
+  );
+
+  targetMethod.implementation = function (...args) {
+    console.log(`\n[!] ${targetMethod.name} TERPOTONG SECARA LIVE!`);
+
+    let packetInstance = null;
+
+    // Ekstraksi Objek dari parameter register murni
+    for (let i = 0; i < args.length; i++) {
+      const ptrArg = args[i];
+      if (ptrArg && !ptrArg.isNull() && ptrArg.toUInt32() > 0x1000) {
+        try {
+          let testObj = new Il2Cpp.Object(ptrArg);
+          if (
+            testObj &&
+            testObj.class &&
+            testObj.class.name.includes("Cmd_Login_CheckUpgrade_SC")
+          ) {
+            packetInstance = testObj;
+            console.log(
+              `[+] Berhasil menemukan objek paket di args[${i}] dengan alamat: ${ptrArg}`,
+            );
+            break;
+          }
+        } catch (e) {}
+      }
+    }
+
+    // Fallback scan heap memori via GC Choose
+    if (!packetInstance && Cmd_Login_CheckUpgrade_SC) {
+      const instances = Il2Cpp.gc.choose(Cmd_Login_CheckUpgrade_SC);
+      if (instances.length > 0) {
+        packetInstance = instances[0];
+        console.log(
+          `[+] Objek ditemukan via GC-Choose Fallback pada alamat: ${packetInstance.handle}`,
+        );
+      }
+    }
+
+    // Menampilkan nilai field data
+    if (packetInstance) {
+      console.log(
+        `=================== [ LIVE RECEPTOR: ${packetInstance.handle} ] ===================`,
       );
-    } catch (e) {
-      Cmd_Login_CheckUpgrade_SC = assembly.classes.find(
-        (c) => c.name === "Cmd_Login_CheckUpgrade_SC",
+
+      const getVal = (fieldName) => {
+        try {
+          const field = packetInstance.field(fieldName);
+          if (field.value && field.value.toString().includes("Il2Cpp.Object")) {
+            return field.value.toString();
+          }
+          return field.value;
+        } catch (e) {
+          return "Error/Empty";
+        }
+      };
+
+      console.log(
+        `[0x10] iZoneId                           : ${getVal("iZoneId")}`,
+      );
+      console.log(
+        `[0x18] sConnServer                       : "${getVal("sConnServer")}"`,
+      );
+      console.log(
+        `[0x20] sClientVersion                    : "${getVal("sClientVersion")}"`,
+      );
+      console.log(
+        `[0x28] sResPatchVersion                  : "${getVal("sResPatchVersion")}"`,
+      );
+      console.log(
+        `[0x30] sResAllVersion                    : "${getVal("sResAllVersion")}"`,
+      );
+      console.log(
+        `[0x38] sCdnVersion                       : "${getVal("sCdnVersion")}"`,
+      );
+      console.log(
+        `[0x40] sApkUpdateAddr                    : "${getVal("sApkUpdateAddr")}"`,
+      );
+      console.log(
+        `[0x48] sForceVersion                     : "${getVal("sForceVersion")}"`,
+      );
+      console.log(
+        `[0x50] sFaceCdnHost                      : "${getVal("sFaceCdnHost")}"`,
+      );
+      console.log(
+        `[0x68] sResPatchVersionNew               : "${getVal("sResPatchVersionNew")}"`,
+      );
+      console.log(
+        `[0x70] sResAllVersionNew                 : "${getVal("sResAllVersionNew")}"`,
+      );
+      console.log(
+        `[0x78] sNewConnServerList                : "${getVal("sNewConnServerList")}"`,
+      );
+      console.log(
+        `[0x80] iRetryNum                         : ${getVal("iRetryNum")}`,
+      );
+      console.log(
+        `[0x88] sSignature                        : "${getVal("sSignature")}"`,
+      );
+      console.log(
+        `[0x98] sForceUpdateUrl                   : "${getVal("sForceUpdateUrl")}"`,
+      );
+      console.log(
+        `[0xe0] bFixCheckUpgrade (Boolean)         : ${getVal("bFixCheckUpgrade")}`,
+      );
+
+      console.log(
+        `========================================================================\n`,
+      );
+
+      // ======================================================================
+      // AREA SPOOFING / MODIFIKASI DATA LIVE:
+      // Jika ingin membelokkan patch server atau menyamakan versi klien,
+      // Anda bisa membuka tanda komentar di bawah ini:
+      //
+      packetInstance.field("sClientVersion").value =
+        Il2Cpp.string("2.1.95.1228.1");
+      // packetInstance.field("sResPatchVersionNew").value = Il2Cpp.string("http://ip_server_kamu/res_patch/");
+      // console.log("[+] Data Server Config berhasil di-spoofing secara live!");
+      // ======================================================================
+    } else {
+      console.log(
+        `[-] Gagal mengekstrak objek data paket dari memori register.`,
       );
     }
 
-    // 1. Target method baru Anda yang sudah terbukti berhasil
-    const targetMethod = LoginReceiveMessage.method("DecodeServerUpdateConfig");
-    console.log(
-      `[+] Menggunakan .implementation untuk: ${LoginReceiveMessage.fullName}::${targetMethod.name}`,
-    );
-
-    targetMethod.implementation = function (...args) {
-      console.log(`\n[!] ${targetMethod.name} TERPOTONG SECARA LIVE!`);
-
-      let packetInstance = null;
-
-      // Ekstraksi Objek dari parameter register murni
-      for (let i = 0; i < args.length; i++) {
-        const ptrArg = args[i];
-        if (ptrArg && !ptrArg.isNull() && ptrArg.toUInt32() > 0x1000) {
-          try {
-            let testObj = new Il2Cpp.Object(ptrArg);
-            if (
-              testObj &&
-              testObj.class &&
-              testObj.class.name.includes("Cmd_Login_CheckUpgrade_SC")
-            ) {
-              packetInstance = testObj;
-              console.log(
-                `[+] Berhasil menemukan objek paket di args[${i}] dengan alamat: ${ptrArg}`,
-              );
-              break;
-            }
-          } catch (e) {}
-        }
-      }
-
-      // Fallback scan heap memori via GC Choose
-      if (!packetInstance && Cmd_Login_CheckUpgrade_SC) {
-        const instances = Il2Cpp.gc.choose(Cmd_Login_CheckUpgrade_SC);
-        if (instances.length > 0) {
-          packetInstance = instances[0];
-          console.log(
-            `[+] Objek ditemukan via GC-Choose Fallback pada alamat: ${packetInstance.handle}`,
-          );
-        }
-      }
-
-      // Menampilkan nilai field data
-      if (packetInstance) {
-        console.log(
-          `=================== [ LIVE RECEPTOR: ${packetInstance.handle} ] ===================`,
-        );
-
-        const getVal = (fieldName) => {
-          try {
-            const field = packetInstance.field(fieldName);
-            if (
-              field.value &&
-              field.value.toString().includes("Il2Cpp.Object")
-            ) {
-              return field.value.toString();
-            }
-            return field.value;
-          } catch (e) {
-            return "Error/Empty";
-          }
-        };
-
-        console.log(`[0x10] iZoneId               : ${getVal("iZoneId")}`);
-        console.log(
-          `[0x18] sConnServer           : "${getVal("sConnServer")}"`,
-        );
-        console.log(
-          `[0x20] sClientVersion        : "${getVal("sClientVersion")}"`,
-        );
-        console.log(
-          `[0x28] sResPatchVersion      : "${getVal("sResPatchVersion")}"`,
-        );
-        console.log(
-          `[0x30] sResAllVersion        : "${getVal("sResAllVersion")}"`,
-        );
-        console.log(
-          `[0x38] sCdnVersion           : "${getVal("sCdnVersion")}"`,
-        );
-        console.log(
-          `[0x40] sApkUpdateAddr        : "${getVal("sApkUpdateAddr")}"`,
-        );
-        console.log(
-          `[0x48] sForceVersion         : "${getVal("sForceVersion")}"`,
-        );
-        console.log(
-          `[0x50] sFaceCdnHost          : "${getVal("sFaceCdnHost")}"`,
-        );
-        console.log(
-          `[0x68] sResPatchVersionNew   : "${getVal("sResPatchVersionNew")}"`,
-        );
-        console.log(
-          `[0x70] sResAllVersionNew     : "${getVal("sResAllVersionNew")}"`,
-        );
-        console.log(
-          `[0x78] sNewConnServerList    : "${getVal("sNewConnServerList")}"`,
-        );
-        console.log(`[0x80] iRetryNum             : ${getVal("iRetryNum")}`);
-        console.log(`[0x88] sSignature            : "${getVal("sSignature")}"`);
-        console.log(
-          `[0x98] sForceUpdateUrl       : "${getVal("sForceUpdateUrl")}"`,
-        );
-        console.log(
-          `[0xe0] bFixCheckUpgrade (Boolean) : ${getVal("bFixCheckUpgrade")}`,
-        );
-        console.log(
-          `========================================================================\n`,
-        );
-
-        // ======================================================================
-        // AREA SPOOFING / MODIFIKASI DATA LIVE:
-        // Jika ingin membelokkan patch server atau menyamakan versi klien,
-        // Anda bisa membuka tanda komentar di bawah ini:
-        packetInstance.field("sClientVersion").value =
-          Il2Cpp.string("2.1.95.1228.1");
-        // packetInstance.field("sResPatchVersionNew").value = Il2Cpp.string("http://ip_server_kamu/res_patch/");
-        // console.log("[+] Data Server Config berhasil di-spoofing secara live!");
-        // ======================================================================
-      } else {
-        console.log(
-          `[-] Gagal mengekstrak objek data paket dari memori register.`,
-        );
-      }
-
-      // 2. FIX UTAMA: Teruskan ke method asli yang benar ('targetMethod') agar game tidak crash
-      return targetMethod.invoke(...args);
-    };
-  }
+    // 2. FIX UTAMA: Teruskan ke method asli yang benar ('targetMethod') agar game tidak crash
+    return targetMethod.invoke(...args);
+  };
 }
