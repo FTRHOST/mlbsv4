@@ -242,7 +242,6 @@ export function setupUnreleasedHooks(Assembly) {
     }
 
     const LoginReceiveMessage = assembly.class("LoginReceiveMessage");
-
     let Cmd_Login_CheckUpgrade_SC;
     try {
       Cmd_Login_CheckUpgrade_SC = assembly.class(
@@ -256,7 +255,6 @@ export function setupUnreleasedHooks(Assembly) {
 
     // 1. Target method baru Anda yang sudah terbukti berhasil
     const targetMethod = LoginReceiveMessage.method("DecodeServerUpdateConfig");
-
     console.log(
       `[+] Menggunakan .implementation untuk: ${LoginReceiveMessage.fullName}::${targetMethod.name}`,
     );
@@ -319,55 +317,48 @@ export function setupUnreleasedHooks(Assembly) {
           }
         };
 
+        console.log(`[0x10] iZoneId               : ${getVal("iZoneId")}`);
         console.log(
-          `[0x10] iZoneId                           : ${getVal("iZoneId")}`,
+          `[0x18] sConnServer           : "${getVal("sConnServer")}"`,
         );
         console.log(
-          `[0x18] sConnServer                       : "${getVal("sConnServer")}"`,
+          `[0x20] sClientVersion        : "${getVal("sClientVersion")}"`,
         );
         console.log(
-          `[0x20] sClientVersion                    : "${getVal("sClientVersion")}"`,
+          `[0x28] sResPatchVersion      : "${getVal("sResPatchVersion")}"`,
         );
         console.log(
-          `[0x28] sResPatchVersion                  : "${getVal("sResPatchVersion")}"`,
+          `[0x30] sResAllVersion        : "${getVal("sResAllVersion")}"`,
         );
         console.log(
-          `[0x30] sResAllVersion                    : "${getVal("sResAllVersion")}"`,
+          `[0x38] sCdnVersion           : "${getVal("sCdnVersion")}"`,
         );
         console.log(
-          `[0x38] sCdnVersion                       : "${getVal("sCdnVersion")}"`,
+          `[0x40] sApkUpdateAddr        : "${getVal("sApkUpdateAddr")}"`,
         );
         console.log(
-          `[0x40] sApkUpdateAddr                    : "${getVal("sApkUpdateAddr")}"`,
+          `[0x48] sForceVersion         : "${getVal("sForceVersion")}"`,
         );
         console.log(
-          `[0x48] sForceVersion                     : "${getVal("sForceVersion")}"`,
+          `[0x50] sFaceCdnHost          : "${getVal("sFaceCdnHost")}"`,
         );
         console.log(
-          `[0x50] sFaceCdnHost                      : "${getVal("sFaceCdnHost")}"`,
+          `[0x68] sResPatchVersionNew   : "${getVal("sResPatchVersionNew")}"`,
         );
         console.log(
-          `[0x68] sResPatchVersionNew               : "${getVal("sResPatchVersionNew")}"`,
+          `[0x70] sResAllVersionNew     : "${getVal("sResAllVersionNew")}"`,
         );
         console.log(
-          `[0x70] sResAllVersionNew                 : "${getVal("sResAllVersionNew")}"`,
+          `[0x78] sNewConnServerList    : "${getVal("sNewConnServerList")}"`,
+        );
+        console.log(`[0x80] iRetryNum             : ${getVal("iRetryNum")}`);
+        console.log(`[0x88] sSignature            : "${getVal("sSignature")}"`);
+        console.log(
+          `[0x98] sForceUpdateUrl       : "${getVal("sForceUpdateUrl")}"`,
         );
         console.log(
-          `[0x78] sNewConnServerList                : "${getVal("sNewConnServerList")}"`,
+          `[0xe0] bFixCheckUpgrade (Boolean) : ${getVal("bFixCheckUpgrade")}`,
         );
-        console.log(
-          `[0x80] iRetryNum                         : ${getVal("iRetryNum")}`,
-        );
-        console.log(
-          `[0x88] sSignature                        : "${getVal("sSignature")}"`,
-        );
-        console.log(
-          `[0x98] sForceUpdateUrl                   : "${getVal("sForceUpdateUrl")}"`,
-        );
-        console.log(
-          `[0xe0] bFixCheckUpgrade (Boolean)         : ${getVal("bFixCheckUpgrade")}`,
-        );
-
         console.log(
           `========================================================================\n`,
         );
@@ -376,7 +367,6 @@ export function setupUnreleasedHooks(Assembly) {
         // AREA SPOOFING / MODIFIKASI DATA LIVE:
         // Jika ingin membelokkan patch server atau menyamakan versi klien,
         // Anda bisa membuka tanda komentar di bawah ini:
-        //
         packetInstance.field("sClientVersion").value =
           Il2Cpp.string("2.1.95.1228.1");
         // packetInstance.field("sResPatchVersionNew").value = Il2Cpp.string("http://ip_server_kamu/res_patch/");
