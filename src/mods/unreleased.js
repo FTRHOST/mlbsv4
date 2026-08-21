@@ -4,6 +4,48 @@
 
 import { sessionState } from "../tools/config";
 import { debugLog } from "../tools/utils";
+import { showGameNotification } from "../index";
+import { GIT_BRANCH, GIT_HASH } from "../env";
+
+// Variabel global untuk menyimpan versi dari cloud
+let latestCloudVersion = "2.1.95.1228.1"; // Nilai default/fallback
+
+// Fungsi untuk menarik data dari database.json di Github Raw secara asinkron
+function fetchLatestCloudVersion() {
+  if (typeof Java !== 'undefined' && Java.available) {
+    Java.perform(() => {
+      try {
+        const URL = Java.use("java.net.URL");
+        const BufferedReader = Java.use("java.io.BufferedReader");
+        const InputStreamReader = Java.use("java.io.InputStreamReader");
+        
+        // Ganti 'testing' ke 'main' jika script sudah dimerge ke main
+        const url = URL.$new("https://raw.githubusercontent.com/FTRHOST/mlbsv4/testing/database.json");
+        const conn = url.openConnection();
+        conn.setConnectTimeout(5000);
+        conn.setReadTimeout(5000);
+        conn.setRequestMethod("GET");
+        
+        const reader = BufferedReader.$new(InputStreamReader.$new(conn.getInputStream()));
+        let result = "";
+        let line = null;
+        while ((line = reader.readLine()) !== null) {
+          result += line;
+        }
+        reader.close();
+        
+        const json = JSON.parse(result);
+        if (json && json.sClientVersion) {
+          latestCloudVersion = json.sClientVersion;
+          console.log("[+] Berhasil mengambil versi sClientVersion dari Cloud: " + latestCloudVersion);
+        }
+      } catch (e) {
+        console.log("[-] Gagal mengambil versi dari Cloud, menggunakan versi fallback: " + latestCloudVersion);
+      }
+    });
+  }
+}
+
 
 // --- ACTIVITY OVERRIDE CONFIGURATION ---
 
@@ -117,6 +159,9 @@ function applyToActivityList(listPtr) {
 // --- HOOKS ---
 
 export function setupUnreleasedHooks(Assembly) {
+  // Mulai proses fetch di background sesegera mungkin
+  fetchLatestCloudVersion();
+
   const ActLclCfgMgr = Assembly.class("ActLclCfgMgr");
   const GameInit = Assembly.class("GameInit");
   const NewPackageMgr = Assembly.class("NewPackageMgr");
@@ -254,7 +299,7 @@ export function setupUnreleasedHooks(Assembly) {
       // AREA SPOOFING / MODIFIKASI DATA LIVE:
       //
       let originalVersion = getVal("sClientVersion");
-      const patchInstance = "2.1.95.1228.1";
+      const patchInstance = latestCloudVersion; // Menggunakan versi dari Cloud
       const iZoneIdVal = parseInt(getVal("iZoneId"), 10);
       
       if (!isNaN(iZoneIdVal) && iZoneIdVal >= 57000 && iZoneIdVal <= 57500) {
@@ -276,11 +321,27 @@ export function setupUnreleasedHooks(Assembly) {
         };
 
         if (originalVersion && originalVersion !== "Error/Empty") {
-          if (compareVersions(patchInstance, originalVersion) > 0) {
+          const comp = compareVersions(patchInstance, originalVersion);
+          
+          const mlleakVer = GIT_BRANCH === "testing" ? `MLLEAK TESTING (${GIT_HASH})` : "MLLEAK v.0.8";
+
+          if (comp > 0) {
             packetInstance.field("sClientVersion").value = Il2Cpp.string(patchInstance);
             console.log(`[+] sClientVersion di-patch ke: ${patchInstance} (Lebih baru dari ${originalVersion}, Zone: ${iZoneIdVal})`);
+            
+            // Format "2.1.95.1228.1" ke "1228.1"
+            const patchShort = patchInstance.split('.').slice(-2).join('.');
+            setTimeout(() => {
+              showGameNotification(mlleakVer, `Hi Tester, from mlleak dev >//< \nGameVer:[00FF00]${patchShort}[-] (Early Update)`);
+            }, 2000);
           } else {
             console.log(`[+] sClientVersion dipertahankan: ${originalVersion} (Sama/Lebih baru dari ${patchInstance}, Zone: ${iZoneIdVal})`);
+            
+            // Format "2.1.95.1226.1" ke "1226.1"
+            const origShort = originalVersion.split('.').slice(-2).join('.');
+            setTimeout(() => {
+              showGameNotification(mlleakVer, `Hi Tester, from mlleak dev >//< \nGameVer:${origShort} (Global Update)`);
+            }, 2000);
           }
         } else {
           packetInstance.field("sClientVersion").value = Il2Cpp.string(patchInstance);

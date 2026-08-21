@@ -229,9 +229,6 @@ function executeSimpleHooks() {
 
   const mlleakVer =
     GIT_BRANCH === "testing" ? `MLLEAK TESTING (${GIT_HASH})` : "MLLEAK v.0.8";
-  setTimeout(() => {
-    showGameNotification(mlleakVer, "Hi Tester, from mlleak dev >//<");
-  }, 2000);
 
   // Setup Modular Mod Functions
   patchLibMoba(Assembly);
