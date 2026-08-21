@@ -103,13 +103,23 @@ function waitForLogicLib() {
     if (dlopen) {
       const monitor = Interceptor.attach(dlopen, {
         onEnter: function (args) {
-          this.path = args[0].readUtf8String();
+          try {
+            if (args[0]) {
+              this.path = Memory.readCString(args[0]);
+            }
+          } catch (e) {
+            this.path = null;
+          }
         },
         onLeave: function (retval) {
-          if (this.path && this.path.indexOf(TARGET_LIB) !== -1) {
-            monitor.detach();
-            const targetMod = Process.getModuleByName(TARGET_LIB);
-            setupIl2CppHook(targetMod);
+          try {
+            if (this.path && typeof this.path === 'string' && this.path.indexOf(TARGET_LIB) !== -1) {
+              monitor.detach();
+              const targetMod = Process.getModuleByName(TARGET_LIB);
+              setupIl2CppHook(targetMod);
+            }
+          } catch (e) {
+            // ignore
           }
         },
       });
@@ -219,9 +229,6 @@ function executeSimpleHooks() {
 
   const mlleakVer =
     GIT_BRANCH === "testing" ? `MLLEAK TESTING (${GIT_HASH})` : "MLLEAK v.0.8";
-  setTimeout(() => {
-    showGameNotification(mlleakVer, "Hi Tester, from mlleak dev >//<");
-  }, 2000);
 
   // Setup Modular Mod Functions
   patchLibMoba(Assembly);
