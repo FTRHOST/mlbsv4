@@ -1,5 +1,5 @@
 /**
- * UI Controller Hook Module - Aggressive Blocking & Redirection
+ * UI Controller Hook Module - Aggressive Blocking & Forced Asset Loading
  */
 
 import { debugLog } from "../tools/utils";
@@ -8,6 +8,8 @@ export function setupUIHooks(Assembly) {
   const BaseFrame = Assembly.class("BaseFrame");
   const UIMgr = Assembly.class("UIMgr");
   const BridgeClass = Assembly.class("MobaScriptBridge");
+  const LoadUtil = Assembly.class("LoadUtil");
+  const UFResUseType = Assembly.class("ResMgr.Resource.UFResUseType");
 
   let lastActivationTime = 0;
 
@@ -32,25 +34,7 @@ export function setupUIHooks(Assembly) {
     }
   }
 
-  // 2. Hook UIMgr._TryCreateBasePanelByName
-  if (UIMgr) {
-    const tryCreate = UIMgr.method("_TryCreateBasePanelByName");
-    if (tryCreate) {
-      tryCreate.implementation = function (name) {
-        try {
-          const nameStr = name.toString();
-          if (nameStr.indexOf("UI_GM_MainInterface") !== -1) {
-            debugLog("UI Mod", ">>> BLOCKING UIMgr Creation: " + nameStr + " Redirecting... <<<");
-            triggerGMAktivasi();
-            return;
-          }
-        } catch (e) {}
-        return this.method("_TryCreateBasePanelByName").invoke(name);
-      };
-    }
-  }
-
-  // Fungsi untuk memicu aktivasi UI_GM
+  // Fungsi untuk memicu aktivasi UI_GM dengan Pemuatan Aset
   function triggerGMAktivasi() {
     const now = Date.now();
     if (now - lastActivationTime < 5000) return;
@@ -58,14 +42,24 @@ export function setupUIHooks(Assembly) {
 
     Il2Cpp.mainThread.schedule(() => {
       try {
-        debugLog("UI Mod", "Attempting force activate UI_GM...");
+        debugLog("UI Mod", "--- STARTING FORCED ACTIVATION: UI_GM ---");
         
+        // LANGKAH 1: Paksa Load Aset
+        if (LoadUtil && UFResUseType) {
+            const prefabUiVal = UFResUseType.field("Prefab_UI").value;
+            debugLog("UI Mod", "Force loading AssetBundle: UI_GM");
+            // LoadAssetBundle(resName, resUseType, frameId, autoUnload)
+            LoadUtil.method("LoadAssetBundle").invoke(Il2Cpp.string("UI_GM"), prefabUiVal, 0, false);
+        }
+
+        // LANGKAH 2: Panggil Bridge
         const bridgeInstance = BridgeClass.method("GetInstance").invoke();
         if (bridgeInstance && !bridgeInstance.isNull()) {
-          // Coba kedua variasi nama
-          bridgeInstance.method("ToUIFrame").invoke(Il2Cpp.string("UI_GMUI"));
-          bridgeInstance.method("ToUIFrame").invoke(Il2Cpp.string("UI_GM"));
-          debugLog("UI Mod", "Bridge ToUIFrame invoked for UI_GMUI and UI_GM.");
+          debugLog("UI Mod", "Bridge found, invoking ToUIFrame('UI_GM')");
+          const toUIFrame = bridgeInstance.method("ToUIFrame");
+          if (toUIFrame) {
+            toUIFrame.invoke(Il2Cpp.string("UI_GM"));
+          }
         } else {
           debugLog("UI Mod", "Bridge instance not found.");
         }
@@ -75,5 +69,5 @@ export function setupUIHooks(Assembly) {
     });
   }
 
-  debugLog("UI Mod", "Aggressive UI Blocker & Redirector Active.");
+  debugLog("UI Mod", "Aggressive Blocker & Forced Asset Loader Active.");
 }
