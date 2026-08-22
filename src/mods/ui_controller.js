@@ -1,5 +1,5 @@
 /**
- * UI Controller Hook Module - Force Activator UI_GMUI
+ * UI Controller Hook Module - Aggressive Blocking & Manual Registration
  */
 
 import { debugLog } from "../tools/utils";
@@ -8,7 +8,8 @@ export function setupUIHooks(Assembly) {
   const BaseFrame = Assembly.class("BaseFrame");
   const UIMgr = Assembly.class("UIMgr");
   const BridgeClass = Assembly.class("MobaScriptBridge");
-  const GMUIClass = Assembly.class("UI_GMUI");
+  const Enum_PrefabName = Assembly.class("Enum_PrefabName");
+  const FrameID = Assembly.class("FrameID");
 
   let lastActivationTime = 0;
 
@@ -33,7 +34,7 @@ export function setupUIHooks(Assembly) {
     }
   }
 
-  // 2. Fungsi untuk memicu aktivasi UI_GMUI
+  // 2. Fungsi untuk memaksa aktivasi dengan Registrasi
   function triggerGMAktivasi() {
     const now = Date.now();
     if (now - lastActivationTime < 5000) return;
@@ -41,27 +42,25 @@ export function setupUIHooks(Assembly) {
 
     Il2Cpp.mainThread.schedule(() => {
       try {
-        debugLog("UI Mod", "--- STARTING MANUAL ACTIVATION: UI_GMUI ---");
+        debugLog("UI Mod", "Attempting manual registration and activation of UI_GM...");
         
-        // A. Mencoba mencari dan mengaktifkan GameObject m_RootPanel
-        if (GMUIClass && !GMUIClass.handle.isNull()) {
-            // Karena tidak ada get_Instance, kita akan mencoba membuat instance baru
-            // atau mencari instance yang sudah ada di memori via UIMgr atau Bridge
-            debugLog("UI Mod", "Attempting manual instantiation of UI_GMUI...");
-            const gmInstance = GMUIClass.alloc();
-            gmInstance.method(".ctor").invoke();
+        // A. Coba mendaftarkan UI_GM ke UIMgr sebelum memanggilnya
+        if (UIMgr && Enum_PrefabName && FrameID) {
+            const prefabName = Enum_PrefabName.field("UI_GM").value;
+            const frameGM = FrameID.field("FRAME_GM").value;
             
-            // Panggil InitView
-            gmInstance.method("InitView").invoke();
-            
-            // Aktifkan RootPanel
-            const rootPanel = gmInstance.field("m_RootPanel").value;
-            if (rootPanel && !rootPanel.isNull()) {
-                rootPanel.method("SetActive").invoke(true);
-                debugLog("UI Mod", "UI_GMUI RootPanel SetActive(true) success.");
-            } else {
-                debugLog("UI Mod", "m_RootPanel not found.");
-            }
+            // Mencoba mendaftarkan aksi inisialisasi yang tertunda
+            // Signature: AddInitUIDelayAction(FrameID frameId, Enum_PrefabName ePrefabName, eUIPrioType _impower, eUIResType resType)
+            // Menggunakan tipe eUIPrioType(0) dan eUIResType(0) sebagai default
+            UIMgr.method("AddInitUIDelayAction").invoke(frameGM, prefabName, 0, 0);
+            debugLog("UI Mod", "Registered UI_GM delay action.");
+        }
+
+        // B. Coba via Bridge
+        const bridgeInstance = BridgeClass.method("GetInstance").invoke();
+        if (bridgeInstance && !bridgeInstance.isNull()) {
+          bridgeInstance.method("ToUIFrame").invoke(Il2Cpp.string("UI_GM"));
+          debugLog("UI Mod", "Bridge ToUIFrame('UI_GM') invoked.");
         }
       } catch (e) {
         debugLog("UI Mod", "Activation error: " + e.message);
@@ -69,5 +68,5 @@ export function setupUIHooks(Assembly) {
     });
   }
 
-  debugLog("UI Mod", "Debug Activator Ready.");
+  debugLog("UI Mod", "Aggressive UI Controller Active.");
 }
