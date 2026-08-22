@@ -10,6 +10,7 @@ export function setupUIHooks(Assembly) {
   const BridgeClass = Assembly.class("MobaScriptBridge");
   const Enum_PrefabName = Assembly.class("Enum_PrefabName");
   const FrameID = Assembly.class("FrameID");
+  const GUIRoot = Assembly.class("GUIRoot");
 
   let lastActivationTime = 0;
 
@@ -34,7 +35,35 @@ export function setupUIHooks(Assembly) {
     }
   }
 
-  // 2. Fungsi untuk memaksa aktivasi dengan Registrasi
+  // Helper untuk mendapatkan UIMgr instance
+  function getUIMgrInstance() {
+      try {
+          if (GUIRoot) {
+              const root = GUIRoot.method("get_Instance").invoke();
+              if (root && !root.isNull()) {
+                  // Coba cari field yang bertipe UIMgr di GUIRoot
+                  // Berdasarkan dump, tidak terlihat jelas field UIMgr. 
+                  // Kita mungkin perlu mencari objek di memori.
+                  debugLog("UI Mod", "GUIRoot instance found.");
+              }
+          }
+          // Fallback: Jika tidak bisa lewat GUIRoot, kita cari UIMgr di memori (jika ada singleton)
+          if (UIMgr) {
+             // Beberapa class memiliki static field berupa instance-nya sendiri
+             const fields = UIMgr.fields;
+             for (let i = 0; i < fields.length; i++) {
+                 if (fields[i].type.name === "UIMgr" && fields[i].isStatic) {
+                     return fields[i].value;
+                 }
+             }
+          }
+      } catch(e) {
+          debugLog("UI Mod", "getUIMgrInstance failed: " + e.message);
+      }
+      return null;
+  }
+
+  // 2. Fungsi untuk memicu aktivasi dengan Registrasi
   function triggerGMAktivasi() {
     const now = Date.now();
     if (now - lastActivationTime < 5000) return;
@@ -44,19 +73,16 @@ export function setupUIHooks(Assembly) {
       try {
         debugLog("UI Mod", "Attempting manual registration and activation of UI_GM...");
         
-        // A. Coba mendaftarkan UI_GM ke UIMgr sebelum memanggilnya
-        if (UIMgr && Enum_PrefabName && FrameID) {
+        const uiMgrInstance = getUIMgrInstance();
+        
+        if (uiMgrInstance && !uiMgrInstance.isNull() && Enum_PrefabName && FrameID) {
             const prefabName = Enum_PrefabName.field("UI_GM").value;
             const frameGM = FrameID.field("FRAME_GM").value;
             
-            // Mencoba mendaftarkan aksi inisialisasi yang tertunda
-            // Signature: AddInitUIDelayAction(FrameID frameId, Enum_PrefabName ePrefabName, eUIPrioType _impower, eUIResType resType)
-            // Menggunakan tipe eUIPrioType(0) dan eUIResType(0) sebagai default
-            UIMgr.method("AddInitUIDelayAction").invoke(frameGM, prefabName, 0, 0);
+            uiMgrInstance.method("AddInitUIDelayAction").invoke(frameGM, prefabName, 0, 0);
             debugLog("UI Mod", "Registered UI_GM delay action.");
         }
 
-        // B. Coba via Bridge
         const bridgeInstance = BridgeClass.method("GetInstance").invoke();
         if (bridgeInstance && !bridgeInstance.isNull()) {
           bridgeInstance.method("ToUIFrame").invoke(Il2Cpp.string("UI_GM"));
