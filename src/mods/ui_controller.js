@@ -7,13 +7,11 @@ import { debugLog } from "../tools/utils";
 export function setupUIHooks(Assembly) {
   const BaseFrame = Assembly.class("BaseFrame");
   const UIMgr = Assembly.class("UIMgr");
-  const ILog = Assembly.class("ILog");
   const BridgeClass = Assembly.class("MobaScriptBridge");
 
-  let isGMActivating = false;
   let lastActivationTime = 0;
 
-  // 1. Hook BaseFrame.Active (Level Instance)
+  // 1. Hook BaseFrame.Active
   if (BaseFrame) {
     const Active = BaseFrame.method("Active");
     if (Active) {
@@ -23,7 +21,7 @@ export function setupUIHooks(Assembly) {
           if (nameField) {
             const name = nameField.value.toString();
             if (name.indexOf("UI_GM_MainInterface") !== -1) {
-              debugLog("UI Mod", ">>> BLOCKING BaseFrame.Active for: " + name + " <<<");
+              debugLog("UI Mod", ">>> BLOCKING: " + name + " <<<");
               triggerGMAktivasi();
               return; 
             }
@@ -34,7 +32,7 @@ export function setupUIHooks(Assembly) {
     }
   }
 
-  // 2. Hook UIMgr._TryCreateBasePanelByName (Level Manager - Gerbang Utama)
+  // 2. Hook UIMgr._TryCreateBasePanelByName
   if (UIMgr) {
     const tryCreate = UIMgr.method("_TryCreateBasePanelByName");
     if (tryCreate) {
@@ -44,7 +42,7 @@ export function setupUIHooks(Assembly) {
           if (nameStr.indexOf("UI_GM_MainInterface") !== -1) {
             debugLog("UI Mod", ">>> BLOCKING UIMgr Creation: " + nameStr + " Redirecting... <<<");
             triggerGMAktivasi();
-            return; // Jangan buat panel aslinya
+            return;
           }
         } catch (e) {}
         return this.method("_TryCreateBasePanelByName").invoke(name);
@@ -55,16 +53,19 @@ export function setupUIHooks(Assembly) {
   // Fungsi untuk memicu aktivasi UI_GM
   function triggerGMAktivasi() {
     const now = Date.now();
-    if (now - lastActivationTime < 5000) return; // Debounce 5 detik
+    if (now - lastActivationTime < 5000) return;
     lastActivationTime = now;
 
     Il2Cpp.mainThread.schedule(() => {
       try {
-        debugLog("UI Mod", "Attempting to force UI_GM via Bridge...");
+        debugLog("UI Mod", "Attempting force activate UI_GM...");
+        
         const bridgeInstance = BridgeClass.method("GetInstance").invoke();
         if (bridgeInstance && !bridgeInstance.isNull()) {
+          // Coba kedua variasi nama
+          bridgeInstance.method("ToUIFrame").invoke(Il2Cpp.string("UI_GMUI"));
           bridgeInstance.method("ToUIFrame").invoke(Il2Cpp.string("UI_GM"));
-          debugLog("UI Mod", "ToUIFrame('UI_GM') invoked.");
+          debugLog("UI Mod", "Bridge ToUIFrame invoked for UI_GMUI and UI_GM.");
         } else {
           debugLog("UI Mod", "Bridge instance not found.");
         }
@@ -72,20 +73,6 @@ export function setupUIHooks(Assembly) {
         debugLog("UI Mod", "Trigger activation failed: " + e.message);
       }
     });
-  }
-
-  // 3. Monitor Log Sistem
-  if (ILog) {
-    const infoLogAct = ILog.method("InfoLogAct");
-    if (infoLogAct) {
-      infoLogAct.implementation = function (strContent, eReportName, bReport) {
-        const content = strContent.toString();
-        if (content.indexOf("UI_GM") !== -1) {
-          debugLog("UI Mod", "[System Log] " + content);
-        }
-        return this.method("InfoLogAct").invoke(strContent, eReportName, bReport);
-      };
-    }
   }
 
   debugLog("UI Mod", "Aggressive UI Blocker & Redirector Active.");
