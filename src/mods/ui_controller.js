@@ -1,5 +1,5 @@
 /**
- * UI Controller Hook Module - Advanced Blocking & Force Activation
+ * UI Controller Hook Module - Aggressive Blocking & Redirection
  */
 
 import { debugLog } from "../tools/utils";
@@ -9,10 +9,9 @@ export function setupUIHooks(Assembly) {
   const UIMgr = Assembly.class("UIMgr");
   const ILog = Assembly.class("ILog");
   const BridgeClass = Assembly.class("MobaScriptBridge");
-  const LoadUtil = Assembly.class("LoadUtil");
-  const UFResUseType = Assembly.class("ResMgr.Resource.UFResUseType");
 
   let isGMActivating = false;
+  let lastActivationTime = 0;
 
   // 1. Hook BaseFrame.Active (Level Instance)
   if (BaseFrame) {
@@ -23,78 +22,71 @@ export function setupUIHooks(Assembly) {
           const nameField = this.field("name");
           if (nameField) {
             const name = nameField.value.toString();
-            if (name === "UI_GM_MainInterface") {
-              debugLog("UI Mod", ">>> BLOCKING UI_GM_MainInterface, Redirecting to UI_GM... <<<");
-              forceActivateGM();
+            if (name.indexOf("UI_GM_MainInterface") !== -1) {
+              debugLog("UI Mod", ">>> BLOCKING BaseFrame.Active for: " + name + " <<<");
+              triggerGMAktivasi();
               return; 
             }
           }
-        } catch (e) {
-          debugLog("UI Mod", "Error in BaseFrame.Active hook: " + e.message);
-        }
+        } catch (e) {}
         return this.method("Active").invoke(arg);
       };
     }
   }
 
-  // Fungsi untuk memaksa aktivasi UI_GM di Main Thread
-  function forceActivateGM() {
-    if (isGMActivating) return;
-    isGMActivating = true;
+  // 2. Hook UIMgr._TryCreateBasePanelByName (Level Manager - Gerbang Utama)
+  if (UIMgr) {
+    const tryCreate = UIMgr.method("_TryCreateBasePanelByName");
+    if (tryCreate) {
+      tryCreate.implementation = function (name) {
+        try {
+          const nameStr = name.toString();
+          if (nameStr.indexOf("UI_GM_MainInterface") !== -1) {
+            debugLog("UI Mod", ">>> BLOCKING UIMgr Creation: " + nameStr + " Redirecting... <<<");
+            triggerGMAktivasi();
+            return; // Jangan buat panel aslinya
+          }
+        } catch (e) {}
+        return this.method("_TryCreateBasePanelByName").invoke(name);
+      };
+    }
+  }
+
+  // Fungsi untuk memicu aktivasi UI_GM
+  function triggerGMAktivasi() {
+    const now = Date.now();
+    if (now - lastActivationTime < 5000) return; // Debounce 5 detik
+    lastActivationTime = now;
 
     Il2Cpp.mainThread.schedule(() => {
       try {
-        debugLog("UI Mod", "Starting Force Activation sequence for UI_GM...");
-
-        // A. Pastikan AssetBundle terload
-        if (LoadUtil && UFResUseType) {
-          const prefabUiVal = UFResUseType.field("Prefab_UI").value;
-          debugLog("UI Mod", "Pre-loading AssetBundle: UI_GM");
-          // LoadAssetBundle(resName, resUseType, frameId, autoUnload)
-          LoadUtil.method("LoadAssetBundle").invoke(Il2Cpp.string("UI_GM"), prefabUiVal, 0, false);
+        debugLog("UI Mod", "Attempting to force UI_GM via Bridge...");
+        const bridgeInstance = BridgeClass.method("GetInstance").invoke();
+        if (bridgeInstance && !bridgeInstance.isNull()) {
+          bridgeInstance.method("ToUIFrame").invoke(Il2Cpp.string("UI_GM"));
+          debugLog("UI Mod", "ToUIFrame('UI_GM') invoked.");
+        } else {
+          debugLog("UI Mod", "Bridge instance not found.");
         }
-
-        // B. Gunakan Bridge untuk pindah Frame
-        if (BridgeClass) {
-          const bridge = BridgeClass.method("GetInstance").invoke();
-          if (bridge && !bridge.isNull()) {
-            debugLog("UI Mod", "Bridge found, invoking ToUIFrame('UI_GM')");
-            const toUIFrame = bridge.method("ToUIFrame");
-            if (toUIFrame) {
-              toUIFrame.invoke(Il2Cpp.string("UI_GM"));
-            }
-          }
-        }
-
-        // C. Fallback via UIMgr jika bridge gagal (menggunakan string prefab name)
-        if (UIMgr) {
-          debugLog("UI Mod", "UIMgr fallback: _TryCreateBasePanelByName('UI_GM')");
-          // Kita butuh instance UIMgr, biasanya didapat dari static field atau GUIRoot
-          // Untuk saat ini kita asumsikan ToUIFrame sudah cukup kuat.
-        }
-
       } catch (e) {
-        debugLog("UI Mod", "Force activation failed: " + e.message);
-      } finally {
-        // Reset flag setelah delay agar tidak spamming
-        setTimeout(() => { isGMActivating = false; }, 3000);
+        debugLog("UI Mod", "Trigger activation failed: " + e.message);
       }
     });
   }
 
-  // 2. Monitoring Log
+  // 3. Monitor Log Sistem
   if (ILog) {
     const infoLogAct = ILog.method("InfoLogAct");
     if (infoLogAct) {
       infoLogAct.implementation = function (strContent, eReportName, bReport) {
         const content = strContent.toString();
         if (content.indexOf("UI_GM") !== -1) {
-          debugLog("UI Mod", "UI System Log: " + content);
+          debugLog("UI Mod", "[System Log] " + content);
         }
         return this.method("InfoLogAct").invoke(strContent, eReportName, bReport);
       };
     }
   }
 
-  debugLog("UI Mod", "Force Activator & Blocker system ready.");
+  debugLog("UI Mod", "Aggressive UI Blocker & Redirector Active.");
 }
