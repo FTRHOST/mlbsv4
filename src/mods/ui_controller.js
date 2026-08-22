@@ -1,5 +1,5 @@
 /**
- * UI Controller Hook Module - Advanced Debugging & Activation
+ * UI Controller Hook Module - Advanced Debugging & Forced Instantiation
  */
 
 import { debugLog } from "../tools/utils";
@@ -8,23 +8,9 @@ export function setupUIHooks(Assembly) {
   const BaseFrame = Assembly.class("BaseFrame");
   const UIMgr = Assembly.class("UIMgr");
   const BridgeClass = Assembly.class("MobaScriptBridge");
-  const GMUIClass = Assembly.class("UI_GMUI");
+  const GMUIClass = Assembly.class("UI_GMUI"); // Akan kita cek eksistensinya
 
-  let uiMgrInstance = null;
-  let lastActivationTime = 0;
-
-  // Hook UIMgr.Update
-  if (UIMgr) {
-    const update = UIMgr.method("Update");
-    if (update) {
-      update.implementation = function () {
-        uiMgrInstance = this;
-        return this.method("Update").invoke();
-      };
-    }
-  }
-
-  // Hook BaseFrame.Active
+  // 1. Hook BaseFrame.Active
   if (BaseFrame) {
     const Active = BaseFrame.method("Active");
     if (Active) {
@@ -45,41 +31,36 @@ export function setupUIHooks(Assembly) {
     }
   }
 
-  // Hook UI_GMUI.InitView to see if it triggers
-  if (GMUIClass) {
-    const initView = GMUIClass.method("InitView");
-    if (initView) {
-      initView.implementation = function () {
-        debugLog("UI Mod", ">>> UI_GMUI.InitView triggered! <<<");
-        return this.method("InitView").invoke();
-      };
-    }
-  }
-
-  // Fungsi untuk memicu aktivasi UI_GM
+  // 2. Fungsi untuk memaksa aktivasi
   function triggerGMAktivasi() {
-    const now = Date.now();
-    if (now - lastActivationTime < 5000) return;
-    lastActivationTime = now;
-
     Il2Cpp.mainThread.schedule(() => {
       try {
-        debugLog("UI Mod", "Attempting force activate UI_GM variants...");
+        debugLog("UI Mod", "--- STARTING DEEP ACTIVATION ---");
         
+        // A. Cek apakah kelas UI_GMUI ada
+        if (GMUIClass && !GMUIClass.handle.isNull()) {
+            debugLog("UI Mod", "Found class UI_GMUI, attempting to get Instance...");
+            // Beberapa UI memiliki get_Instance() statis
+            const instance = GMUIClass.method("get_Instance").invoke();
+            if (instance && !instance.isNull()) {
+                debugLog("UI Mod", "Instance found, calling Active()...");
+                instance.method("Active").invoke(null);
+            }
+        } else {
+            debugLog("UI Mod", "Class UI_GMUI not found or not loaded!");
+        }
+
+        // B. Coba via Bridge
         const bridgeInstance = BridgeClass.method("GetInstance").invoke();
         if (bridgeInstance && !bridgeInstance.isNull()) {
-          // Coba semua variasi nama yang mungkin
-          const names = ["UI_GM", "UI_GMUI", "UI_GM_MainInterface"];
-          names.forEach(name => {
-              debugLog("UI Mod", "Bridge: ToUIFrame('" + name + "')");
-              bridgeInstance.method("ToUIFrame").invoke(Il2Cpp.string(name));
-          });
+          bridgeInstance.method("ToUIFrame").invoke(Il2Cpp.string("UI_GM"));
+          debugLog("UI Mod", "ToUIFrame('UI_GM') invoked.");
         }
       } catch (e) {
-        debugLog("UI Mod", "Trigger activation failed: " + e.message);
+        debugLog("UI Mod", "Activation error: " + e.message);
       }
     });
   }
 
-  debugLog("UI Mod", "Advanced UI Controller & Activator Active.");
+  debugLog("UI Mod", "Debug Activator Ready.");
 }
