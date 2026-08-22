@@ -16,7 +16,7 @@ import { setupSkinHooks } from "./mods/skins";
 import { setupUnreleasedHooks } from "./mods/unreleased";
 import { setupBattleCommands } from "./mods/battle_commands";
 import { setupTelemetryHooks } from "./mods/telemetry_hooks";
-import { setupUIHooks } from "./mods/ui_controller";
+// import { setupUIHooks } from "./mods/ui_controller"; // Dinonaktifkan karena tidak work
 
 // Load auth cache immediately at global startup to determine user role
 try {
@@ -238,7 +238,7 @@ function executeSimpleHooks() {
   setupUnreleasedHooks(Assembly);
   setupBattleCommands(Assembly);
   setupTelemetryHooks(Assembly);
-  setupUIHooks(Assembly);
+  // setupUIHooks(Assembly); // Dinonaktifkan karena tidak work
 }
 
 setImmediate(main);
