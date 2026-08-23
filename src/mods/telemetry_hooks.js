@@ -126,7 +126,7 @@ export function getOperatorId(SystemData) {
           } catch (err) {
             // Ignore
           }
-        }, 10000);
+        }, 60000);
       }
       return opIdStr;
     }
