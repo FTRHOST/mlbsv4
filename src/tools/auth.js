@@ -159,6 +159,7 @@ export function verifyUserWithRestApiAsync(uid) {
                       saveAuthCache(serverUid, role, ban, is_allowed, branch);
                     }
 
+                    sessionState.isFullyReady = true;
                     if (oldRole !== role) {
                       // Do not trigger hot reload if this is just the initial boot transition from default 'user' to cached role
                       // and it's the very first startup check. We track this by seeing if the session was previously unauthorized.
@@ -167,18 +168,22 @@ export function verifyUserWithRestApiAsync(uid) {
                     }
                   } else {
                     updateSession(uid, "user", false, false);
+                    sessionState.isFullyReady = true;
                     debugLog("REST API User", `ACCESS DENIED (Async): Invalid user schema.`);
                   }
                 } catch (err) {
                   updateSession(uid, "user", false, false);
+                  sessionState.isFullyReady = true;
                   debugLog("REST API User", `ACCESS DENIED (Async): Failed to parse user response: ${err.message}`);
                 }
               } else {
                 updateSession(uid, "user", false, false);
+                sessionState.isFullyReady = true;
                 debugLog("REST API User", `Empty user info response from Native (Async).`);
               }
             } else {
               updateSession(uid, "user", false, false);
+              sessionState.isFullyReady = true;
               debugLog("REST API User", `Null response from Native verification (Async).`);
             }
           } else {
@@ -187,10 +192,12 @@ export function verifyUserWithRestApiAsync(uid) {
               setTimeout(pollAsyncResponse, 500);
             } else {
               debugLog("REST API User", "Async verification timed out.");
+              sessionState.isFullyReady = true;
             }
           }
         } catch (e) {
           debugLog("REST API User", `Error polling async response: ${e.message}`);
+          sessionState.isFullyReady = true;
         }
       }
 

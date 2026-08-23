@@ -269,8 +269,8 @@ function setupGameStartDelay(Assembly) {
           let loops = 0;
 
           while (loops < maxLoops) {
-            if (sessionState.isAuthorized) {
-              console.log(`[Frida] Inisialisasi selesai dalam ${(loops * pollIntervalSec).toFixed(1)} detik. Mengizinkan StartGame berjalan...`);
+            if (sessionState.isFullyReady) {
+              console.log(`[Frida] Inisialisasi OTA & Auth selesai dalam ${(loops * pollIntervalSec).toFixed(1)} detik. Mengizinkan StartGame berjalan...`);
               break;
             }
             Thread.sleep(pollIntervalSec);
