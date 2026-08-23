@@ -59,26 +59,36 @@ export function loadAuthCache() {
       let cached = null;
       let loadedFromPlaintext = false;
 
-      if (content.startsWith("{")) {
-        // Plaintext JSON format (only permitted for admin role debugging)
-        const firstBrace = content.indexOf("{");
-        const lastBrace = content.lastIndexOf("}");
-        if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-          content = content.substring(firstBrace, lastBrace + 1);
+      const firstBrace = content.indexOf("{");
+      const lastBrace = content.lastIndexOf("}");
+
+      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace >= firstBrace) {
+        const jsonCandidate = content.substring(firstBrace, lastBrace + 1);
+        try {
+          cached = JSON.parse(jsonCandidate);
+          loadedFromPlaintext = true;
+        } catch (parseErr) {
+          // Not valid plaintext JSON, try decrypting
+          let decrypted = decryptString(content);
+          if (decrypted) {
+            decrypted = decrypted.trim();
+            const fb = decrypted.indexOf("{");
+            const lb = decrypted.lastIndexOf("}");
+            if (fb !== -1 && lb !== -1 && lb >= fb) {
+              cached = JSON.parse(decrypted.substring(fb, lb + 1));
+            }
+          }
         }
-        cached = JSON.parse(content);
-        loadedFromPlaintext = true;
       } else {
-        // Encrypted hex format (for non-admin roles)
+        // Entire payload might be encrypted hex string
         let decrypted = decryptString(content);
         if (decrypted) {
           decrypted = decrypted.trim();
-          const firstBrace = decrypted.indexOf("{");
-          const lastBrace = decrypted.lastIndexOf("}");
-          if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-            decrypted = decrypted.substring(firstBrace, lastBrace + 1);
+          const fb = decrypted.indexOf("{");
+          const lb = decrypted.lastIndexOf("}");
+          if (fb !== -1 && lb !== -1 && lb >= fb) {
+            cached = JSON.parse(decrypted.substring(fb, lb + 1));
           }
-          cached = JSON.parse(decrypted);
         }
       }
 
@@ -113,8 +123,9 @@ export function loadAuthCache() {
           return null;
         }
 
+        sessionState.branch = cached.branch || "production";
         updateSession(cached.uid, cached.role, cached.ban, cached.is_allowed);
-        debugLog("Auth Cache", `Loaded cached session for ${cached.uid} [${cached.role.toUpperCase()}].`);
+        debugLog("Auth Cache", `Loaded cached session for ${cached.uid} [${cached.role.toUpperCase()}] (Branch: ${sessionState.branch}).`);
         return cached;
       }
     }

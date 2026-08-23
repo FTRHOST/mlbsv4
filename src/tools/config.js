@@ -45,6 +45,8 @@ export let sessionState = {
   uid: "",
   role: "user", // default fallback
   isAuthorized: false,
+  isFullyReady: false,
+  branch: "production",
   permissions: {
     allowFreeSkin: false,
     allowGMMode: false,
