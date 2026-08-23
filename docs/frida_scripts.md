@@ -27,8 +27,9 @@ Direktori ini menampung logika *hooking* spesifik untuk masing-masing fitur *che
 - **`skins.js` (Free Skin)**:
   Membuka skin secara gratis dengan mencegat (intercept) metode `BActFreeSkin` pada class `ChooseHeroMgr` untuk selalu me-return nilai `1 (true)`.
 
-- **`unreleased.js` (Unreleased Content)**:
-  Bertugas untuk mem-bypass filter pembatasan data aktivitas dan hero yang dilarang.
+- **`unreleased.js` (Unreleased Content & Version Spoofing)**:
+  Bertugas untuk mem-bypass filter pembatasan data aktivitas, hero yang dilarang, dan melakukan live version spoofing.
+  - **Live `sClientVersion` Spoofing**: Menarik versi terbaru dari Cloud (`database.json` di GitHub Raw), membandingkannya dengan versi client saat `DecodeServerUpdateConfig` dipanggil pada zona advance/test server (iZoneId 57000-57500), dan melakukan patch langsung pada field `sClientVersion` paket `Cmd_Login_CheckUpgrade_SC` serta menampilkan notifikasi in-game.
   - Mematikan pengecekan MD5 dan ASTC (`CheckFileMd5_SubThread`, `CheckAndFixASTC_SubThread`).
   - Memanipulasi aktivitas data (seperti ID 626 & 209).
   - Mengabaikan pembatasan pemakaian hero dengan memaksa fungsi `IsForbidHeros` dan `IsActivityForbidHeros` mengembalikan nilai false.

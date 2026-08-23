@@ -94,5 +94,5 @@ try {
 }
 
 console.log("\n[+] Success! OTA script signed and prepared.");
-console.log("[!] Please deploy/redeploy your project to Vercel/Firebase to make the OTA update live.");
+console.log("[!] Please deploy/redeploy your project to Vercel/Supabase to make the OTA update live.");
 console.log("[!] Note: The device will search for OTA files at: <server-url> and <server-url>.sig");

@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MLBSv4 System Architecture & Process Flow</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f8fafc;
+    --fg: #172033;
+    --muted: #5b6475;
+    --line: #64748b;
+    --neutral: #e2e8f0;
+    --input: #bfdbfe;
+    --process: #c7d2fe;
+    --storage: #99f6e4;
+    --external: #fde68a;
+    --risk: #fecaca;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f172a;
+      --fg: #e5e7eb;
+      --muted: #a3adbd;
+      --line: #94a3b8;
+      --neutral: #334155;
+      --input: #1d4ed8;
+      --process: #4338ca;
+      --storage: #0f766e;
+      --external: #92400e;
+      --risk: #991b1b;
+    }
+  }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font:
+      14px/1.4 ui-sans-serif,
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      sans-serif;
+  }
+  main {
+    max-width: 960px;
+    margin: 32px auto;
+    padding: 0 20px;
+  }
+  svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  .title {
+    font-size: 20px;
+    font-weight: 700;
+    fill: var(--fg);
+  }
+  .subtitle {
+    font-size: 13px;
+    fill: var(--muted);
+  }
+  .label {
+    font-size: 14px;
+    font-weight: 600;
+    fill: var(--fg);
+  }
+  .small {
+    font-size: 12px;
+    fill: var(--muted);
+  }
+  .zone-label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    fill: var(--muted);
+    text-transform: uppercase;
+  }
+  .node {
+    stroke: var(--line);
+    stroke-width: 1.5;
+  }
+  .neutral { fill: var(--neutral); }
+  .input { fill: var(--input); }
+  .process { fill: var(--process); }
+  .storage { fill: var(--storage); }
+  .external { fill: var(--external); }
+  .risk { fill: var(--risk); }
+
+  .edge {
+    stroke: var(--line);
+    stroke-width: 1.8;
+    fill: none;
+  }
+  .edge-label {
+    font-size: 11px;
+    font-weight: 500;
+    fill: var(--muted);
+  }
+  .zone {
+    fill: none;
+    stroke: var(--line);
+    stroke-width: 1.2;
+    stroke-dasharray: 6 5;
+    opacity: 0.7;
+  }
+</style>
+</head>
+<body>
+<main>
+  <svg viewBox="0 0 920 620" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1 L 10 5 L 0 9 z" fill="var(--line)" />
+      </marker>
+    </defs>
+
+    <!-- Header -->
+    <text x="30" y="35" class="title">MLBSv4 - System Architecture &amp; Data Flow</text>
+    <text x="30" y="55" class="subtitle">Interaksi Frida Agent, Native Patcher, Cloud DB, dan Build/Deploy Pipeline</text>
+
+    <!-- ZONES -->
+    <!-- Zone 1: Target Device Runtime -->
+    <rect x="30" y="80" width="560" height="310" rx="8" class="zone" />
+    <text x="45" y="102" class="zone-label">Target Device Runtime (Android App)</text>
+
+    <!-- Zone 2: External Infrastructure -->
+    <rect x="610" y="80" width="280" height="310" rx="8" class="zone" />
+    <text x="625" y="102" class="zone-label">Cloud Infrastructure</text>
+
+    <!-- Zone 3: Build & Release -->
+    <rect x="30" y="415" width="860" height="175" rx="8" class="zone" />
+    <text x="45" y="437" class="zone-label">Local Build Suite &amp; Deployment Pipeline</text>
+
+    <!-- CONNECTORS / EDGES (drawn behind nodes) -->
+    <!-- Frida -> Game App -->
+    <path d="M 340 160 L 260 160" class="edge" marker-end="url(#arrow)" />
+    <text x="265" y="152" class="edge-label">Hooks sClientVersion &amp; Skins</text>
+
+    <!-- Native Patcher -> Game App -->
+    <path d="M 340 290 L 260 290" class="edge" marker-end="url(#arrow)" />
+    <text x="265" y="282" class="edge-label">Memory Patch / Bypass</text>
+
+    <!-- Frida -> GitHub DB -->
+    <path d="M 560 160 L 630 160" class="edge" marker-end="url(#arrow)" />
+    <text x="565" y="152" class="edge-label">Fetch latest sClientVersion</text>
+
+    <!-- Game App -> Supabase/Vercel -->
+    <path d="M 150 205 L 150 360 L 750 360 L 750 315" class="edge" marker-end="url(#arrow)" />
+    <text x="360" y="352" class="edge-label">API Requests &amp; Upgrade Check</text>
+
+    <!-- Build Suite -> Frida Agent -->
+    <path d="M 220 460 L 220 380 L 450 380 L 450 220" class="edge" marker-end="url(#arrow)" />
+    <text x="230" y="395" class="edge-label">Bundles dist/agent.js</text>
+
+    <!-- Build Suite -> OTA Prep -->
+    <path d="M 390 510 L 450 510" class="edge" marker-end="url(#arrow)" />
+    <text x="400" y="502" class="edge-label">Sign</text>
+
+    <!-- OTA Prep -> Supabase / Vercel -->
+    <path d="M 640 460 L 640 400 L 770 400 L 770 315" class="edge" marker-end="url(#arrow)" />
+    <text x="650" y="415" class="edge-label">Deploy OTA Updates</text>
+
+    <!-- NODES -->
+    <!-- Node: Game App -->
+    <rect x="50" y="120" width="210" height="85" rx="6" class="node input" />
+    <text x="70" y="153" class="label">Android Game App</text>
+    <text x="70" y="175" class="small">Il2Cpp Game Engine Process</text>
+
+    <!-- Node: Frida Agent -->
+    <rect x="340" y="120" width="220" height="95" rx="6" class="node process" />
+    <text x="360" y="148" class="label">Frida Agent (agent.js)</text>
+    <text x="360" y="168" class="small">Live sClientVersion Spoofing</text>
+    <text x="360" y="186" class="small">skins.js &amp; unreleased.js</text>
+
+    <!-- Node: Native Patcher -->
+    <rect x="340" y="250" width="220" height="80" rx="6" class="node risk" />
+    <text x="360" y="280" class="label">Native Patcher (libpatch.so)</text>
+    <text x="360" y="302" class="small">C++ NDK Lib &amp; Anti-cheat Bypass</text>
+
+    <!-- Node: GitHub Raw DB -->
+    <rect x="630" y="120" width="240" height="85" rx="6" class="node external" />
+    <text x="650" y="153" class="label">GitHub Raw Cloud DB</text>
+    <text x="650" y="175" class="small">database.json (Latest Version)</text>
+
+    <!-- Node: Supabase / Vercel -->
+    <rect x="630" y="235" width="240" height="80" rx="6" class="node storage" />
+    <text x="650" y="265" class="label">Supabase / Vercel API</text>
+    <text x="650" y="287" class="small">Backend Services &amp; OTA Hosting</text>
+
+    <!-- Node: Build Suite -->
+    <rect x="50" y="460" width="340" height="100" rx="6" class="node process" />
+    <text x="70" y="490" class="label">Build Suite (npm / NDK)</text>
+    <text x="70" y="512" class="small">scripts/prebuild.js (env.js)</text>
+    <text x="70" y="530" class="small">frida-compile &amp; build.sh (Android NDK)</text>
+
+    <!-- Node: OTA & Script Signing -->
+    <rect x="450" y="460" width="380" height="100" rx="6" class="node storage" />
+    <text x="470" y="490" class="label">OTA &amp; Cryptographic Signing</text>
+    <text x="470" y="512" class="small">scripts/sign-ota.js &amp; scripts/sign-lib.js</text>
+    <text x="470" y="530" class="small">RSA Key Generation &amp; Package Verification</text>
+
+  </svg>
+</main>
+</body>
+</html>
