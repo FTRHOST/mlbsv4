@@ -18,7 +18,7 @@ This skill consolidates the expertise of specialized agents to manage the MLBSv4
 - **Instructions**: 
   - Run Android NDK for `native-patcher`.
   - Bundle Frida scripts to `dist/agent.js` using `npm run build`.
-  - Prepare environment for Vercel or Firebase.
+  - Prepare environment for Vercel and Supabase.
 
 ### 3. Reverse Engineering Assistance
 - **Trigger**: When analyzing Il2Cpp dumps or creating new hooks.
