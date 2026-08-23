@@ -231,6 +231,9 @@ function executeSimpleHooks() {
   const mlleakVer =
     GIT_BRANCH === "testing" ? `MLLEAK TESTING (${GIT_HASH})` : "MLLEAK v.0.8";
 
+  // Setup StartGame delay hook first to wait for OTA/Auth readiness
+  setupGameStartDelay(Assembly);
+
   // Setup Modular Mod Functions
   patchLibMoba(Assembly);
   setupGMHooks(Assembly);
@@ -239,6 +242,53 @@ function executeSimpleHooks() {
   setupBattleCommands(Assembly);
   setupTelemetryHooks(Assembly);
   // setupUIHooks(Assembly); // Dinonaktifkan karena tidak work
+}
+
+function setupGameStartDelay(Assembly) {
+  try {
+    const GameStart = Assembly.class("GameStart");
+    if (!GameStart) {
+      debugLog("GameStart", "Class GameStart tidak ditemukan di Assembly-CSharp.");
+      return;
+    }
+    const startGameMethod = GameStart.method("StartGame");
+    if (!startGameMethod) {
+      debugLog("GameStart", "Method StartGame tidak ditemukan pada class GameStart.");
+      return;
+    }
+
+    const targetPointer = startGameMethod.virtualAddress;
+    if (targetPointer && !targetPointer.isNull()) {
+      Interceptor.attach(targetPointer, {
+        onEnter: function (args) {
+          console.log("[Frida] StartGame terpicu via Interceptor! Menunggu persiapan OTA & Auth...");
+
+          const maxTimeoutSec = 50;
+          const pollIntervalSec = 0.2;
+          const maxLoops = Math.floor(maxTimeoutSec / pollIntervalSec);
+          let loops = 0;
+
+          while (loops < maxLoops) {
+            if (sessionState.isAuthorized) {
+              console.log(`[Frida] Inisialisasi selesai dalam ${(loops * pollIntervalSec).toFixed(1)} detik. Mengizinkan StartGame berjalan...`);
+              break;
+            }
+            Thread.sleep(pollIntervalSec);
+            loops++;
+          }
+
+          if (loops >= maxLoops) {
+            console.log("[Frida] Timeout 50 detik tercapai (atau offline), melanjutkan StartGame...");
+          }
+        }
+      });
+      debugLog("GameStart", "Hook penundaan GameStart.StartGame berhasil dipasang.");
+    } else {
+      console.log("[Frida] Error: Alamat fungsi StartGame tidak ditemukan.");
+    }
+  } catch (err) {
+    debugLog("GameStart", `Error pada hook penundaan GameStart: ${err.message}`);
+  }
 }
 
 setImmediate(main);
