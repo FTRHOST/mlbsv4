@@ -81,31 +81,19 @@ __attribute__((used)) void __force_stl_linking_dummy() {
     
     std::basic_stringbuf<char> sb;
     sb.str(str);
+    std::string s_out = sb.str();
     
     std::basic_filebuf<char> fb;
     fb.open("/dev/null", std::ios_base::out);
     fb.close();
     
+    std::basic_ostringstream<char> oss;
+    oss << "test";
+    
     std::basic_ofstream<char> ofs;
     ofs.open("/dev/null");
     ofs << str;
     ofs.close();
-}
-
-// Implement the verbose abort function expected by modern Frida-GumJS static binaries
-#if defined(_LIBCPP_VERSION) && _LIBCPP_VERSION >= 180000
-#define ABORT_NOEXCEPT noexcept
-#else
-#define ABORT_NOEXCEPT
-#endif
-
-namespace std {
-    inline namespace __ndk1 {
-        __attribute__((visibility("default"))) __attribute__((noreturn))
-        void __libcpp_verbose_abort(const char* format, ...) ABORT_NOEXCEPT {
-            abort();
-        }
-    }
 }
 
 // Explicit strong template instantiations to force compiler to emit these symbols
@@ -272,6 +260,9 @@ static std::string g_user_info_json = "";
 static std::string g_async_user_response = "";
 static bool g_async_user_response_ready = false;
 static std::string g_async_m_ui_id = "";
+static pthread_mutex_t g_register_mutex = PTHREAD_MUTEX_INITIALIZER;
+static bool g_register_in_progress = false;
+static time_t g_last_register_time = 0;
 
 std::string get_android_id(JNIEnv *env) {
     if (!env) return "0000000000000000";
@@ -583,8 +574,17 @@ void* register_user_worker(void* arg) {
         
         // Adjust OTA script based on branch
         if (g_async_user_response.find("\"branch\":\"testing\"") != std::string::npos) {
-            g_server_url = "https://mlbsv4.vercel.app/hook-testing.js";
-            LOGI("User is in testing branch. Set OTA to hook-testing.js (background)");
+            std::string new_url = "https://mlbsv4.vercel.app/hook-testing.js";
+            if (g_server_url != new_url) {
+                g_server_url = new_url;
+                LOGI("User is in testing branch. Updated OTA to hook-testing.js (background)");
+            }
+        } else if (g_async_user_response.find("\"branch\":\"production\"") != std::string::npos || g_async_user_response.find("\"branch\":\"main\"") != std::string::npos) {
+            std::string new_url = "https://mlbsv4.vercel.app/hook.js";
+            if (g_server_url != new_url) {
+                g_server_url = new_url;
+                LOGI("User is in main/production branch. Updated OTA to hook.js (background)");
+            }
         }
     }
     
@@ -594,12 +594,28 @@ void* register_user_worker(void* arg) {
         env->ExceptionClear();
     }
 
+    pthread_mutex_lock(&g_register_mutex);
+    g_register_in_progress = false;
+    g_last_register_time = time(NULL);
+    pthread_mutex_unlock(&g_register_mutex);
+
     g_async_user_response_ready = true;
     g_vm->DetachCurrentThread();
     return NULL;
 }
 
 extern "C" __attribute__((visibility("default"))) void register_user_native_async(const char *m_ui_id) {
+    pthread_mutex_lock(&g_register_mutex);
+    time_t now = time(NULL);
+    if (g_register_in_progress || (now - g_last_register_time < 3)) {
+        pthread_mutex_unlock(&g_register_mutex);
+        LOGI("Background registration already in progress or rate-limited. Skipping duplicate trigger.");
+        g_async_user_response_ready = true;
+        return;
+    }
+    g_register_in_progress = true;
+    pthread_mutex_unlock(&g_register_mutex);
+
     g_async_user_response = "";
     g_async_user_response_ready = false;
     g_async_m_ui_id = m_ui_id ? m_ui_id : "";
@@ -609,6 +625,9 @@ extern "C" __attribute__((visibility("default"))) void register_user_native_asyn
         pthread_detach(thread);
     } else {
         LOGE("Failed to create background worker thread for registration");
+        pthread_mutex_lock(&g_register_mutex);
+        g_register_in_progress = false;
+        pthread_mutex_unlock(&g_register_mutex);
         g_async_user_response_ready = true;
     }
 }
@@ -1154,7 +1173,7 @@ static gboolean check_ota_update_timer(gpointer data) {
         sig_file.close();
 
         if (ota_js != g_current_script_hash || cache_missing) {
-            LOGI("[OTA Timer] Update or missing cache detected! Verifying signature...");
+            LOGI("[OTA Timer] Checking downloaded script content vs current hash...");
             if (verify_rsa_signature(env, ota_js, ota_sig, rsa_public_key, sizeof(rsa_public_key))) {
                 
                 // Save to cache
@@ -1169,13 +1188,13 @@ static gboolean check_ota_update_timer(gpointer data) {
                 }
                 write_file(sig_path, ota_sig);
                 
-                // Hot reload only if it is a new version
+                // Hot reload ONLY if the new script content actually differs from current running script
                 if (ota_js != g_current_script_hash) {
-                    LOGI("[OTA Timer] Performing HOT RELOAD!");
+                    LOGI("[OTA Timer] Script content changed! Performing HOT RELOAD!");
                     load_frida_script(ota_js);
                     g_current_script_hash = ota_js;
                 } else {
-                    LOGI("[OTA Timer] Local cache populated successfully.");
+                    LOGI("[OTA Timer] Local cache synced. Script content is identical to running script, skipping Hot Reload.");
                 }
             } else {
                 LOGE("[OTA Timer] Signature verification FAILED for updated/missing script!");
@@ -1392,6 +1411,18 @@ static void *patcher_thread(void *arg) {
     
     PatchConfig config = PatchConfig::load(working_dir);
     std::string server_url = config.server_url;
+
+    // Check auth_cache.json for branch setting before Frida runtime boot
+    std::string auth_cache_str = read_file(working_dir + "/auth_cache.json");
+    if (!auth_cache_str.empty()) {
+        if (auth_cache_str.find("\"branch\":\"testing\"") != std::string::npos) {
+            server_url = "https://mlbsv4.vercel.app/hook-testing.js";
+            LOGI("Pre-boot branch detection: User is in testing branch. Set initial server_url to hook-testing.js");
+        } else if (auth_cache_str.find("\"branch\":\"production\"") != std::string::npos || auth_cache_str.find("\"branch\":\"main\"") != std::string::npos) {
+            server_url = "https://mlbsv4.vercel.app/hook.js";
+            LOGI("Pre-boot branch detection: User is in main/production branch. Set initial server_url to hook.js");
+        }
+    }
 
     // Fallback if config failed to load the URL
     if (server_url.empty()) {
