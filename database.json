@@ -1,6 +1,6 @@
 {
-  "sClientVersion": "2.1.95.1228.3",
-  "lastUpdated": "2026-08-26T17:00:46.646Z",
+  "sClientVersion": "2.1.95.1228.4",
+  "lastUpdated": "2026-08-26T18:00:45.332Z",
   "updateHistory": [
     {
       "version": "2.1.95.1228.1",
@@ -9,6 +9,10 @@
     {
       "version": "2.1.95.1228.3",
       "detectedAt": "2026-08-26T17:00:46.646Z"
+    },
+    {
+      "version": "2.1.95.1228.4",
+      "detectedAt": "2026-08-26T18:00:45.332Z"
     }
   ]
 }
