@@ -103,6 +103,35 @@ app.get("/api", (req, res) => {
   });
 });
 
+// GET sClientVersion from Supabase app_config
+app.get("/api/version", async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("app_config")
+      .select("value")
+      .eq("key", "sClientVersion")
+      .single();
+
+    if (error || !data || !data.value) {
+      return res.json({
+        status: "success",
+        version: "2.2.14.1230.1"
+      });
+    }
+
+    return res.json({
+      status: "success",
+      version: data.value
+    });
+  } catch (error) {
+    return res.json({
+      status: "error",
+      version: "2.2.14.1230.1",
+      message: error.message
+    });
+  }
+});
+
 // GET all rooms
 app.get("/api/rooms", async (req, res) => {
   try {

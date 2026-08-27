@@ -2,13 +2,113 @@
  * Unreleased Content & Activity Filter Module
  */
 
-import { sessionState } from "../tools/config";
+import { CONFIG, sessionState } from "../tools/config";
 import { debugLog } from "../tools/utils";
 import { showGameNotification } from "../index";
 import { GIT_BRANCH, GIT_HASH, LATEST_CLOUD_VERSION } from "../env";
 
-// Versi terbaru di-inject langsung dari Supabase saat proses 'npm run build' via scripts/prebuild.js
-const latestCloudVersion = LATEST_CLOUD_VERSION || "2.2.14.1230.1";
+export const versionState = {
+  isReady: false,
+  version: LATEST_CLOUD_VERSION || "2.2.14.1230.1",
+};
+
+// Versi terbaru yang dapat di-update secara realtime dari Supabase
+let latestCloudVersion = versionState.version;
+
+/**
+ * Mengambil versi sClientVersion secara realtime dari Supabase / API backend di background thread
+ */
+export function fetchLiveCloudVersionAsync() {
+  debugLog("Supabase Version", "Fetching realtime version from Supabase...");
+  if (typeof Java === "undefined" || !Java.available) {
+    debugLog("Supabase Version", "Java not available. Using default version.");
+    versionState.isReady = true;
+    return;
+  }
+
+  Java.perform(() => {
+    try {
+      const Thread = Java.use("java.lang.Thread");
+      const dynamicClassName =
+        "com.mobilelegends.VersionRunnable_" + Math.floor(Math.random() * 1000000);
+      const VersionRunnable = Java.registerClass({
+        name: dynamicClassName,
+        implements: [Java.use("java.lang.Runnable")],
+        methods: {
+          run: function () {
+            try {
+              const URL = Java.use("java.net.URL");
+              const HttpURLConnection = Java.use("java.net.HttpURLConnection");
+              const BufferedReader = Java.use("java.io.BufferedReader");
+              const InputStreamReader = Java.use("java.io.InputStreamReader");
+
+              let versionApiUrl = CONFIG.API_ROOMS_URL
+                ? CONFIG.API_ROOMS_URL.replace("/api/rooms", "") + "/api/version"
+                : "";
+
+              if (!versionApiUrl) {
+                debugLog("Supabase Version", "API_ROOMS_URL not set. Using fallback version.");
+                versionState.isReady = true;
+                return;
+              }
+
+              const urlObj = URL.$new(versionApiUrl);
+              const conn = Java.cast(urlObj.openConnection(), HttpURLConnection);
+              conn.setRequestMethod("GET");
+              if (CONFIG.API_KEY) {
+                conn.setRequestProperty("x-api-key", CONFIG.API_KEY);
+              }
+              conn.setRequestProperty(
+                "User-Agent",
+                "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36",
+              );
+              conn.setConnectTimeout(5000);
+              conn.setReadTimeout(5000);
+
+              const responseCode = conn.getResponseCode();
+              if (responseCode === 200) {
+                const isr = InputStreamReader.$new(conn.getInputStream(), "UTF-8");
+                const reader = BufferedReader.$new(isr);
+                const StringBuilder = Java.use("java.lang.StringBuilder");
+                const sb = StringBuilder.$new();
+                let line;
+                while ((line = reader.readLine()) !== null) {
+                  sb.append(line);
+                }
+                reader.close();
+
+                const responseText = sb.toString();
+                const res = JSON.parse(responseText);
+                if (res && res.version) {
+                  latestCloudVersion = res.version;
+                  versionState.version = res.version;
+                  debugLog(
+                    "Supabase Version",
+                    `SUCCESS: Realtime version fetched from Supabase: ${res.version}`,
+                  );
+                }
+              } else {
+                debugLog("Supabase Version", `HTTP error fetching version: ${responseCode}`);
+              }
+              conn.disconnect();
+            } catch (err) {
+              debugLog("Supabase Version", `Error fetching version: ${err.message}`);
+            } finally {
+              versionState.isReady = true;
+            }
+          },
+        },
+      });
+
+      const runnable = VersionRunnable.$new();
+      const versionThread = Thread.$new(runnable);
+      versionThread.start();
+    } catch (err) {
+      debugLog("Supabase Version", `Thread creation error: ${err.message}`);
+      versionState.isReady = true;
+    }
+  });
+}
 
 // --- ACTIVITY OVERRIDE CONFIGURATION ---
 
