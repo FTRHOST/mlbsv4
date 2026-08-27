@@ -13,7 +13,7 @@ import { GIT_BRANCH, GIT_HASH, LATEST_CLOUD_VERSION } from "../env";
  * Jika file belum ada, akan otomatis digenerate dengan versi default.
  */
 export function getCloudVersionFromFile() {
-  const defaultVer = LATEST_CLOUD_VERSION || "2.2.14.1230.1";
+  const defaultVer = LATEST_CLOUD_VERSION || "2.2.12.1228.1";
   try {
     const dir = getFilesDir();
     const mlverPath = `${dir}/mlver.json`;
@@ -23,15 +23,25 @@ export function getCloudVersionFromFile() {
         const json = JSON.parse(content.trim());
         if (json && (json.sClientVersion || json.version)) {
           const ver = json.sClientVersion || json.version;
-          debugLog("Cloud Version", `Read cloud version from mlver.json: ${ver}`);
+          debugLog(
+            "Cloud Version",
+            `Read cloud version from mlver.json: ${ver}`,
+          );
           return ver;
         }
       }
     } catch (readErr) {
       // File belum ada atau format bermasalah -> Otomatis generate mlver.json
-      const initialData = JSON.stringify({ sClientVersion: defaultVer }, null, 2);
+      const initialData = JSON.stringify(
+        { sClientVersion: defaultVer },
+        null,
+        2,
+      );
       File.writeAllText(mlverPath, initialData);
-      debugLog("Cloud Version", `mlver.json belum ada. Otomatis membuat ${mlverPath} dengan versi: ${defaultVer}`);
+      debugLog(
+        "Cloud Version",
+        `mlver.json belum ada. Otomatis membuat ${mlverPath} dengan versi: ${defaultVer}`,
+      );
     }
   } catch (e) {
     debugLog("Cloud Version", `Error handling mlver.json: ${e.message}`);
@@ -52,14 +62,20 @@ export function getInstalledGameVersion(Assembly) {
         const parts = rawVer.split(".");
         if (parts.length >= 5) {
           const trimmedVer = parts.slice(0, 5).join(".");
-          debugLog("Game Version", `Installed game version (trimmed): ${trimmedVer} (raw: ${rawVer})`);
+          debugLog(
+            "Game Version",
+            `Installed game version (trimmed): ${trimmedVer} (raw: ${rawVer})`,
+          );
           return trimmedVer;
         }
         return rawVer;
       }
     }
   } catch (e) {
-    debugLog("Game Version", `Failed reading GameMain.m_sInnerVerRealForBattle: ${e.message}`);
+    debugLog(
+      "Game Version",
+      `Failed reading GameMain.m_sInnerVerRealForBattle: ${e.message}`,
+    );
   }
   return null;
 }
@@ -198,9 +214,16 @@ export function setupUnreleasedHooks(Assembly) {
       const installedVer = getInstalledGameVersion(Assembly);
       const cloudVer = getCloudVersionFromFile();
 
-      debugLog("Version Check Timer", `Installed: ${installedVer} | Cloud: ${cloudVer}`);
+      debugLog(
+        "Version Check Timer",
+        `Installed: ${installedVer} | Cloud: ${cloudVer}`,
+      );
 
-      if (installedVer && cloudVer && compareVersions(installedVer, cloudVer) < 0) {
+      if (
+        installedVer &&
+        cloudVer &&
+        compareVersions(installedVer, cloudVer) < 0
+      ) {
         const mlleakTitle =
           GIT_BRANCH === "testing"
             ? `MLLEAK TESTING (${GIT_HASH})`
@@ -218,7 +241,10 @@ export function setupUnreleasedHooks(Assembly) {
         );
       }
     } catch (err) {
-      debugLog("Version Check Timer", `Error saat mengecek versi: ${err.message}`);
+      debugLog(
+        "Version Check Timer",
+        `Error saat mengecek versi: ${err.message}`,
+      );
     }
   }, 8000);
 
