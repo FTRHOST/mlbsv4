@@ -12,8 +12,12 @@ let latestCloudVersion = "2.1.95.1228.1"; // Nilai default/fallback
 
 // Fungsi untuk menarik data dari database.json di Github Raw secara asinkron
 function fetchLatestCloudVersion() {
+  console.log("[~] fetchLatestCloudVersion() dipanggil...");
+  
   if (typeof Java !== "undefined" && Java.available) {
+    console.log("[~] Java tersedia, mengeksekusi Java.perform...");
     Java.perform(() => {
+      console.log("[~] Masuk ke dalam Java.perform!");
       try {
         const Thread = Java.use("java.lang.Thread");
         const Runnable = Java.use("java.lang.Runnable");
