@@ -236,7 +236,7 @@ function executeSimpleHooks() {
     GIT_BRANCH === "testing" ? `MLLEAK TESTING (${GIT_HASH})` : "MLLEAK v.0.8";
 
   // Setup StartGame delay hook first to wait for OTA/Auth readiness
-  // setupGameStartDelay(Assembly);
+  setupGameStartDelay(Assembly);
 
   // Setup Modular Mod Functions
   patchLibMoba(Assembly);
