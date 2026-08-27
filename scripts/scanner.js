@@ -31,7 +31,8 @@ async function fetchVersionXml(url) {
             data += chunk;
           });
           res.on("end", () => {
-            const match = data.match(/version="([^"]+)"/);
+            // Memastikan regex mengambil version dari tag <root> agar tidak salah ambil dari <?xml version="1.0"?>
+            const match = data.match(/<root\s+version="([^"]+)"/);
             if (match && match[1]) {
               resolve(match[1]); // Kembalikan string versi
             } else {
