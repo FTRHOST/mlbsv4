@@ -8,7 +8,7 @@ import { showGameNotification } from "../index";
 import { GIT_BRANCH, GIT_HASH } from "../env";
 
 // Variabel global untuk menyimpan versi dari cloud
-let latestCloudVersion = "2.1.95.1228.1"; // Nilai default/fallback
+let latestCloudVersion = "2.1.95.1230.1"; // Nilai default/fallback
 
 // Fungsi untuk menarik data dari database.json di Github Raw secara asinkron
 function fetchLatestCloudVersion() {
