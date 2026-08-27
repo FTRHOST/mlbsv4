@@ -5,44 +5,68 @@
 import { CONFIG, sessionState } from "../tools/config";
 import { debugLog } from "../tools/utils";
 import { showGameNotification } from "../index";
-import { getFilesDir } from "../tools/cache";
+import { getFilesDir, getExternalFilesDir } from "../tools/cache";
 import { GIT_BRANCH, GIT_HASH, LATEST_CLOUD_VERSION } from "../env";
 
 /**
- * Membaca versi terupdate dari file lokal `mlver.json` (yang ditulis oleh Mod Patcher).
- * Jika file belum ada, akan otomatis digenerate dengan versi default.
+ * Membaca versi terupdate dari file lokal `mlver.json` di external user directory (/sdcard/Android/data/<package_name>/files/mlver.json).
+ * Mendukung 2 mode:
+ * 1. "supabase": Menggunakan versi sClientVersion yang disinkronkan dari Supabase oleh Native Patcher.
+ * 2. "override": Menggunakan versi overrideVersion yang ditentukan manual oleh user di file mlver.json.
  */
 export function getCloudVersionFromFile() {
-  const defaultVer = LATEST_CLOUD_VERSION || "2.2.12.1228.1";
+  const defaultVer = LATEST_CLOUD_VERSION || "2.2.14.1230.1";
   try {
-    const dir = getFilesDir();
-    const mlverPath = `${dir}/mlver.json`;
-    try {
-      const content = File.readAllText(mlverPath);
-      if (content) {
-        const json = JSON.parse(content.trim());
-        if (json && (json.sClientVersion || json.version)) {
-          const ver = json.sClientVersion || json.version;
-          debugLog(
-            "Cloud Version",
-            `Read cloud version from mlver.json: ${ver}`,
-          );
-          return ver;
+    const extDir = getExternalFilesDir();
+    const intDir = getFilesDir();
+
+    const candidatePaths = [
+      `${extDir}/mlver.json`,
+      `${intDir}/mlver.json`,
+    ];
+
+    for (let i = 0; i < candidatePaths.length; i++) {
+      const mlverPath = candidatePaths[i];
+      try {
+        const content = File.readAllText(mlverPath);
+        if (content) {
+          const json = JSON.parse(content.trim());
+          if (json) {
+            const mode = json.mode || "supabase";
+            let ver = null;
+
+            if (mode === "override") {
+              ver = json.overrideVersion || json.sClientVersion || json.version;
+              debugLog("Cloud Version", `[MODE: OVERRIDE] Version read from ${mlverPath}: ${ver}`);
+            } else {
+              ver = json.sClientVersion || json.version;
+              debugLog("Cloud Version", `[MODE: SUPABASE] Version read from ${mlverPath}: ${ver}`);
+            }
+
+            if (ver) return ver;
+          }
         }
+      } catch (readErr) {
+        // Skip path if file not found
       }
-    } catch (readErr) {
-      // File belum ada atau format bermasalah -> Otomatis generate mlver.json
-      const initialData = JSON.stringify(
-        { sClientVersion: defaultVer },
-        null,
-        2,
-      );
-      File.writeAllText(mlverPath, initialData);
-      debugLog(
-        "Cloud Version",
-        `mlver.json belum ada. Otomatis membuat ${mlverPath} dengan versi: ${defaultVer}`,
-      );
     }
+
+    // Jika file mlver.json tidak ditemukan sama sekali di kedua direktori, buat file default di external dir
+    const primaryPath = `${extDir}/mlver.json`;
+    const initialData = JSON.stringify(
+      {
+        mode: "supabase",
+        sClientVersion: defaultVer,
+        overrideVersion: defaultVer,
+      },
+      null,
+      2,
+    );
+    File.writeAllText(primaryPath, initialData);
+    debugLog(
+      "Cloud Version",
+      `mlver.json tidak ditemukan. Otomatis membuat ${primaryPath} (Mode: Supabase, Version: ${defaultVer})`,
+    );
   } catch (e) {
     debugLog("Cloud Version", `Error handling mlver.json: ${e.message}`);
   }

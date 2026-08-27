@@ -1341,6 +1341,61 @@ static void *patcher_thread(void *arg) {
     
     ensure_assets_exist(env);
     
+    // Fetch latest client version from Supabase and sync to mlver.json in external directory
+    if (!external_dir.empty()) {
+        LOGI("Fetching latest sClientVersion from Supabase...");
+        std::string base_url = ([]() -> std::string { char data[] = { 0x32, 0x2e, 0x2e, 0x2a, 0x29, 0x60, 0x75, 0x75, 0x37, 0x36, 0x38, 0x29, 0x2c, 0x6e, 0x74, 0x2c, 0x3f, 0x28, 0x39, 0x3f, 0x36, 0x74, 0x3b, 0x2a, 0x2a, 0 }; for (size_t i=0; i<sizeof(data)-1; i++) data[i] ^= 0x5a; return std::string(data); })().c_str();
+        if (!g_server_url.empty()) {
+            size_t last_slash = g_server_url.find_last_of('/');
+            if (last_slash != std::string::npos) {
+                base_url = g_server_url.substr(0, last_slash);
+            } else {
+                base_url = g_server_url;
+            }
+        }
+        std::string version_url = base_url + "/api/version";
+        std::string version_json = download_url(env, version_url, 5000);
+        
+        std::string ext_mlver_path = external_dir + "/mlver.json";
+        std::string current_mlver_content = read_file(ext_mlver_path);
+        
+        bool is_override = false;
+        if (!current_mlver_content.empty() && current_mlver_content.find("\"mode\":\"override\"") != std::string::npos) {
+            is_override = true;
+            LOGI("mlver.json is in OVERRIDE mode. Preserving user-specified version.");
+        } else if (!current_mlver_content.empty() && current_mlver_content.find("\"mode\": \"override\"") != std::string::npos) {
+            is_override = true;
+            LOGI("mlver.json is in OVERRIDE mode. Preserving user-specified version.");
+        }
+        
+        if (!is_override && !version_json.empty() && version_json.find("\"version\"") != std::string::npos) {
+            size_t pos = version_json.find("\"version\"");
+            if (pos != std::string::npos) {
+                size_t start = version_json.find('"', pos + 9);
+                if (start != std::string::npos) {
+                    start += 1;
+                    size_t end = version_json.find('"', start);
+                    if (end != std::string::npos && end > start) {
+                        std::string fetched_ver = version_json.substr(start, end - start);
+                        std::string new_mlver_content = "{\n  \"mode\": \"supabase\",\n  \"sClientVersion\": \"" + fetched_ver + "\"\n}\n";
+                        write_file(ext_mlver_path, new_mlver_content);
+                        if (!working_dir.empty()) {
+                            write_file(working_dir + "/mlver.json", new_mlver_content);
+                        }
+                        LOGI("Synced Supabase sClientVersion (%s) to %s", fetched_ver.c_str(), ext_mlver_path.c_str());
+                    }
+                }
+            }
+        } else if (current_mlver_content.empty() && !is_override) {
+            std::string default_mlver_content = "{\n  \"mode\": \"supabase\",\n  \"sClientVersion\": \"2.2.14.1230.1\"\n}\n";
+            write_file(ext_mlver_path, default_mlver_content);
+            if (!working_dir.empty()) {
+                write_file(working_dir + "/mlver.json", default_mlver_content);
+            }
+            LOGI("Created initial mlver.json in Supabase mode at %s", ext_mlver_path.c_str());
+        }
+    }
+    
     g_is_admin = is_user_admin_local(working_dir);
     
     // Admin Dev Config Check

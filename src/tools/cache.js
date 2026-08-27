@@ -49,6 +49,27 @@ export function getFilesDir() {
   return filesDir;
 }
 
+export function getExternalFilesDir() {
+  let extDir = "/storage/emulated/0/Android/data/com.mobilelegends.taptest/files";
+  try {
+    if (Java.available) {
+      Java.performNow(() => {
+        const ActivityThread = Java.use("android.app.ActivityThread");
+        const currentApplication = ActivityThread.currentApplication();
+        if (currentApplication) {
+          const extDirObj = currentApplication.getExternalFilesDir(null);
+          if (extDirObj) {
+            extDir = extDirObj.getAbsolutePath();
+          }
+        }
+      });
+    }
+  } catch (e) {
+    // Fallback if Java fails
+  }
+  return extDir;
+}
+
 export function loadAuthCache() {
   const dir = getFilesDir();
   const cachePath = `${dir}/auth_cache.json`;
