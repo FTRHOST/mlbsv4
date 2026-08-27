@@ -12,40 +12,49 @@ let latestCloudVersion = "2.1.95.1230.1"; // Nilai default/fallback
 
 // Fungsi untuk menarik data dari database.json di Github Raw secara asinkron
 function fetchLatestCloudVersion() {
-  if (typeof Java !== 'undefined' && Java.available) {
+  if (typeof Java !== "undefined" && Java.available) {
     Java.perform(() => {
       try {
         const URL = Java.use("java.net.URL");
         const BufferedReader = Java.use("java.io.BufferedReader");
         const InputStreamReader = Java.use("java.io.InputStreamReader");
-        
+
         // Ganti 'testing' ke 'main' jika script sudah dimerge ke main
-        const url = URL.$new("https://raw.githubusercontent.com/FTRHOST/mlbsv4/testing/database.json");
+        const url = URL.$new(
+          "https://raw.githubusercontent.com/FTRHOST/mlbsv4/testing/database.json",
+        );
         const conn = url.openConnection();
         conn.setConnectTimeout(5000);
         conn.setReadTimeout(5000);
         conn.setRequestMethod("GET");
-        
-        const reader = BufferedReader.$new(InputStreamReader.$new(conn.getInputStream()));
+
+        const reader = BufferedReader.$new(
+          InputStreamReader.$new(conn.getInputStream()),
+        );
         let result = "";
         let line = null;
         while ((line = reader.readLine()) !== null) {
           result += line;
         }
         reader.close();
-        
+
         const json = JSON.parse(result);
         if (json && json.sClientVersion) {
           latestCloudVersion = json.sClientVersion;
-          console.log("[+] Berhasil mengambil versi sClientVersion dari Cloud: " + latestCloudVersion);
+          console.log(
+            "[+] Berhasil mengambil versi sClientVersion dari Cloud: " +
+              latestCloudVersion,
+          );
         }
       } catch (e) {
-        console.log("[-] Gagal mengambil versi dari Cloud, menggunakan versi fallback: " + latestCloudVersion);
+        console.log(
+          "[-] Gagal mengambil versi dari Cloud, menggunakan versi fallback: " +
+            latestCloudVersion,
+        );
       }
     });
   }
 }
-
 
 // --- ACTIVITY OVERRIDE CONFIGURATION ---
 
@@ -301,16 +310,16 @@ export function setupUnreleasedHooks(Assembly) {
       let originalVersion = getVal("sClientVersion");
       const patchInstance = latestCloudVersion; // Menggunakan versi dari Cloud
       const iZoneIdVal = parseInt(getVal("iZoneId"), 10);
-      
+
       if (!isNaN(iZoneIdVal) && iZoneIdVal >= 57000 && iZoneIdVal <= 57500) {
         if (originalVersion) {
-          originalVersion = originalVersion.toString().replace(/"/g, '');
+          originalVersion = originalVersion.toString().replace(/"/g, "");
         }
 
         const compareVersions = (v1, v2) => {
           if (!v1 || !v2) return 0;
-          const p1 = v1.split('.').map(Number);
-          const p2 = v2.split('.').map(Number);
+          const p1 = v1.split(".").map(Number);
+          const p2 = v2.split(".").map(Number);
           for (let i = 0; i < Math.max(p1.length, p2.length); i++) {
             const n1 = p1[i] || 0;
             const n2 = p2[i] || 0;
@@ -322,32 +331,49 @@ export function setupUnreleasedHooks(Assembly) {
 
         if (originalVersion && originalVersion !== "Error/Empty") {
           const comp = compareVersions(patchInstance, originalVersion);
-          
-          const mlleakVer = GIT_BRANCH === "testing" ? `MLLEAK TESTING (${GIT_HASH})` : "MLLEAK v.0.8";
+
+          const mlleakVer =
+            GIT_BRANCH === "testing"
+              ? `MLLEAK TESTING (${GIT_HASH})`
+              : "MLLEAK v.0.9";
 
           if (comp > 0) {
-            packetInstance.field("sClientVersion").value = Il2Cpp.string(patchInstance);
-            console.log(`[+] sClientVersion di-patch ke: ${patchInstance} (Lebih baru dari ${originalVersion}, Zone: ${iZoneIdVal})`);
-            
+            packetInstance.field("sClientVersion").value =
+              Il2Cpp.string(patchInstance);
+            console.log(
+              `[+] sClientVersion di-patch ke: ${patchInstance} (Lebih baru dari ${originalVersion}, Zone: ${iZoneIdVal})`,
+            );
+
             // Format "2.1.95.1228.1" ke "1228.1"
-            const patchShort = patchInstance.split('.').slice(-2).join('.');
+            const patchShort = patchInstance.split(".").slice(-2).join(".");
             setTimeout(() => {
-              showGameNotification(mlleakVer, `Hi Tester, from mlleak dev >//< \nGameVer:[00FF00]${patchShort}[-] (Early Update)`);
+              showGameNotification(
+                mlleakVer,
+                `Hi Tester, from mlleak dev >//< \nGameVer:[00FF00]${patchShort}[-] (Early Update)`,
+              );
             }, 2000);
           } else {
-            console.log(`[+] sClientVersion dipertahankan: ${originalVersion} (Sama/Lebih baru dari ${patchInstance}, Zone: ${iZoneIdVal})`);
-            
+            console.log(
+              `[+] sClientVersion dipertahankan: ${originalVersion} (Sama/Lebih baru dari ${patchInstance}, Zone: ${iZoneIdVal})`,
+            );
+
             // Format "2.1.95.1226.1" ke "1226.1"
-            const origShort = originalVersion.split('.').slice(-2).join('.');
+            const origShort = originalVersion.split(".").slice(-2).join(".");
             setTimeout(() => {
-              showGameNotification(mlleakVer, `Hi Tester, from mlleak dev >//< \nGameVer:${origShort} (Global Update)`);
+              showGameNotification(
+                mlleakVer,
+                `Hi Tester, from mlleak dev >//< \nGameVer:${origShort} (Global Update)`,
+              );
             }, 2000);
           }
         } else {
-          packetInstance.field("sClientVersion").value = Il2Cpp.string(patchInstance);
+          packetInstance.field("sClientVersion").value =
+            Il2Cpp.string(patchInstance);
         }
       } else {
-        console.log(`[-] sClientVersion patch di-skip karena iZoneId (${iZoneIdVal}) di luar range 57000-57500`);
+        console.log(
+          `[-] sClientVersion patch di-skip karena iZoneId (${iZoneIdVal}) di luar range 57000-57500`,
+        );
       }
       // packetInstance.field("sResPatchVersionNew").value = Il2Cpp.string("http://ip_server_kamu/res_patch/");
       // console.log("[+] Data Server Config berhasil di-spoofing secara live!");
