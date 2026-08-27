@@ -1,6 +1,17 @@
-const fs = require("fs");
+require("dotenv").config();
 const https = require("https");
-const path = require("path");
+const { createClient } = require("@supabase/supabase-js");
+
+// ================= KONFIGURASI SUPABASE =================
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+  console.error("[-] Error: SUPABASE_URL atau SUPABASE_SERVICE_ROLE_KEY tidak terdefinisi di Environment Variables!");
+  process.exit(1);
+}
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ================= KONFIGURASI TELEGRAM =================
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN; // Diambil dari Repository Secret / Environment Variables
@@ -16,9 +27,6 @@ async function sendTelegramMessage(text) {
   });
 }
 // ========================================================
-
-const DB_PATH = path.join(__dirname, "../database.json");
-const db = JSON.parse(fs.readFileSync(DB_PATH, "utf8"));
 
 // Fungsi untuk mengecek URL dan mengambil versi utuh dari XML
 async function fetchVersionXml(url) {
@@ -50,9 +58,49 @@ async function fetchVersionXml(url) {
 // Fungsi jeda (delay) agar tidak memberatkan server
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+async function getStoredClientVersion() {
+  const { data, error } = await supabase
+    .from("app_config")
+    .select("value")
+    .eq("key", "sClientVersion")
+    .single();
+
+  if (error || !data || !data.value) {
+    console.warn("[!] Gagal mengambil versi dari Supabase atau belum ada data. Menggunakan fallback version '2.1.95.1228.1'.", error ? error.message : "");
+    return "2.1.95.1228.1";
+  }
+
+  return data.value;
+}
+
+async function updateStoredClientVersion(newVersion) {
+  const now = new Date().toISOString();
+
+  // 1. Update/Upsert tabel app_config
+  const { error: configError } = await supabase
+    .from("app_config")
+    .upsert({ key: "sClientVersion", value: newVersion, updated_at: now }, { onConflict: "key" });
+
+  if (configError) {
+    console.error("[-] Error saat menyimpan versi baru ke Supabase app_config:", configError.message);
+  } else {
+    console.log(`[+] Sukses update app_config ke versi ${newVersion}`);
+  }
+
+  // 2. Insert ke tabel update_history
+  const { error: historyError } = await supabase
+    .from("update_history")
+    .insert([{ version: newVersion, detected_at: now }]);
+
+  if (historyError) {
+    console.error("[-] Error saat mencatat update_history ke Supabase:", historyError.message);
+  }
+}
+
 async function run() {
   console.log(`[*] Memulai Scanner Pintar (Lompat Major)...`);
-  const currentFullVer = db.sClientVersion; // contoh: "2.1.95.1228.1"
+  const currentFullVer = await getStoredClientVersion();
+  console.log(`[*] Versi saat ini di Supabase: ${currentFullVer}`);
   const parts = currentFullVer.split(".");
 
   const currentMajor = parseInt(parts[parts.length - 2], 10);
@@ -116,26 +164,14 @@ async function run() {
     }
   }
 
-  // === FASE UPDATE DATABASE ===
+  // === FASE UPDATE DATABASE (SUPABASE) ===
   const foundNewVersion =
     highestMajor !== currentMajor || highestMinor !== currentMinor;
 
   if (foundNewVersion && latestFullVer) {
-    db.sClientVersion = latestFullVer;
-
-    const now = new Date().toISOString();
-    db.lastUpdated = now;
-
-    if (!db.updateHistory) db.updateHistory = [];
-
-    db.updateHistory.push({
-      version: latestFullVer,
-      detectedAt: now,
-    });
-
-    fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2));
+    await updateStoredClientVersion(latestFullVer);
     console.log(
-      `[+] Sukses! Database diperbarui ke versi tertinggi: ${latestFullVer}`,
+      `[+] Sukses! Supabase diperbarui ke versi tertinggi: ${latestFullVer}`,
     );
 
     // Kirim notifikasi Telegram

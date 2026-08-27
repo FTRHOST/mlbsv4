@@ -30,19 +30,8 @@ jobs:
 
       - name: Run scanner script
         env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: node scripts/scanner.js
-
-      - name: Commit and Push changes
-        run: |
-          # Atur identitas bot untuk melakukan commit
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          
-          # Tambahkan perubahan di database.json
-          git add database.json
-          
-          # Cek apakah ada perbedaan (apakah versi baru ditemukan)
-          # Jika ada perbedaan, commit dan push
-          git diff --quiet && git diff --staged --quiet || (git commit -m "chore: game version updated to latest detected" && git push)

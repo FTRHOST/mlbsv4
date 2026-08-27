@@ -7,8 +7,8 @@ import { debugLog } from "../tools/utils";
 import { showGameNotification } from "../index";
 import { GIT_BRANCH, GIT_HASH, LATEST_CLOUD_VERSION } from "../env";
 
-// Versi terbaru di-inject langsung saat proses 'npm run build' via scripts/prebuild.js
-const latestCloudVersion = LATEST_CLOUD_VERSION || "2.1.95.1228.1";
+// Versi terbaru di-inject langsung dari Supabase saat proses 'npm run build' via scripts/prebuild.js
+const latestCloudVersion = LATEST_CLOUD_VERSION || "2.2.14.1230.1";
 
 // --- ACTIVITY OVERRIDE CONFIGURATION ---
 

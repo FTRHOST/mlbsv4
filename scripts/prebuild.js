@@ -1,6 +1,9 @@
+require('dotenv').config();
 const fs = require('fs');
 const { execSync } = require('child_process');
 const path = require('path');
+const { createClient } = require('@supabase/supabase-js');
+
 let branch = 'production';
 let hash = 'unknown';
 try {
@@ -8,18 +11,39 @@ try {
   hash = execSync('git rev-parse --short=7 HEAD').toString().trim();
 } catch(e) {}
 
-let latestCloudVersion = "2.1.95.1228.1";
-try {
-  const dbPath = path.join(__dirname, '../database.json');
-  const db = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
-  if (db.sClientVersion) {
-    latestCloudVersion = db.sClientVersion;
-  }
-} catch(e) {}
+async function runPrebuild() {
+  let latestCloudVersion = "2.2.14.1230.1";
+  
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-fs.writeFileSync(path.join(__dirname, '../src/env.js'), 
-  'export const GIT_BRANCH = "' + branch + '";\n' +
-  'export const GIT_HASH = "' + hash + '";\n' +
-  'export const LATEST_CLOUD_VERSION = "' + latestCloudVersion + '";\n'
-);
-console.log('[*] Generated src/env.js for branch: ' + branch + ' (' + hash + ') with version: ' + latestCloudVersion);
+  if (supabaseUrl && supabaseKey) {
+    try {
+      const supabase = createClient(supabaseUrl, supabaseKey);
+      const { data, error } = await supabase
+        .from('app_config')
+        .select('value')
+        .eq('key', 'sClientVersion')
+        .single();
+      
+      if (!error && data && data.value) {
+        latestCloudVersion = data.value;
+      } else if (error) {
+        console.warn('[!] Error fetching version from Supabase:', error.message);
+      }
+    } catch(e) {
+      console.warn('[!] Exception fetching version from Supabase:', e.message);
+    }
+  } else {
+    console.warn('[!] Supabase env variables not found, using fallback version:', latestCloudVersion);
+  }
+
+  fs.writeFileSync(path.join(__dirname, '../src/env.js'), 
+    'export const GIT_BRANCH = "' + branch + '";\n' +
+    'export const GIT_HASH = "' + hash + '";\n' +
+    'export const LATEST_CLOUD_VERSION = "' + latestCloudVersion + '";\n'
+  );
+  console.log('[*] Generated src/env.js for branch: ' + branch + ' (' + hash + ') with version from Supabase: ' + latestCloudVersion);
+}
+
+runPrebuild();
