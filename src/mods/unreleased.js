@@ -9,25 +9,34 @@ import { getFilesDir } from "../tools/cache";
 import { GIT_BRANCH, GIT_HASH, LATEST_CLOUD_VERSION } from "../env";
 
 /**
- * Membaca versi terupdate dari file lokal `mlver.json` (yang ditulis oleh Mod Patcher)
+ * Membaca versi terupdate dari file lokal `mlver.json` (yang ditulis oleh Mod Patcher).
+ * Jika file belum ada, akan otomatis digenerate dengan versi default.
  */
 export function getCloudVersionFromFile() {
+  const defaultVer = LATEST_CLOUD_VERSION || "2.2.14.1230.1";
   try {
     const dir = getFilesDir();
     const mlverPath = `${dir}/mlver.json`;
-    const content = File.readAllText(mlverPath);
-    if (content) {
-      const json = JSON.parse(content.trim());
-      if (json && (json.sClientVersion || json.version)) {
-        const ver = json.sClientVersion || json.version;
-        debugLog("Cloud Version", `Read cloud version from mlver.json: ${ver}`);
-        return ver;
+    try {
+      const content = File.readAllText(mlverPath);
+      if (content) {
+        const json = JSON.parse(content.trim());
+        if (json && (json.sClientVersion || json.version)) {
+          const ver = json.sClientVersion || json.version;
+          debugLog("Cloud Version", `Read cloud version from mlver.json: ${ver}`);
+          return ver;
+        }
       }
+    } catch (readErr) {
+      // File belum ada atau format bermasalah -> Otomatis generate mlver.json
+      const initialData = JSON.stringify({ sClientVersion: defaultVer }, null, 2);
+      File.writeAllText(mlverPath, initialData);
+      debugLog("Cloud Version", `mlver.json belum ada. Otomatis membuat ${mlverPath} dengan versi: ${defaultVer}`);
     }
   } catch (e) {
-    // Skip error if file not found or invalid format
+    debugLog("Cloud Version", `Error handling mlver.json: ${e.message}`);
   }
-  return LATEST_CLOUD_VERSION || "2.2.14.1230.1";
+  return defaultVer;
 }
 
 /**
