@@ -5,109 +5,70 @@
 import { CONFIG, sessionState } from "../tools/config";
 import { debugLog } from "../tools/utils";
 import { showGameNotification } from "../index";
+import { getFilesDir } from "../tools/cache";
 import { GIT_BRANCH, GIT_HASH, LATEST_CLOUD_VERSION } from "../env";
 
-export const versionState = {
-  isReady: false,
-  version: LATEST_CLOUD_VERSION || "2.2.14.1230.1",
-};
-
-// Versi terbaru yang dapat di-update secara realtime dari Supabase
-let latestCloudVersion = versionState.version;
+/**
+ * Membaca versi terupdate dari file lokal `mlver.json` (yang ditulis oleh Mod Patcher)
+ */
+export function getCloudVersionFromFile() {
+  try {
+    const dir = getFilesDir();
+    const mlverPath = `${dir}/mlver.json`;
+    const content = File.readAllText(mlverPath);
+    if (content) {
+      const json = JSON.parse(content.trim());
+      if (json && (json.sClientVersion || json.version)) {
+        const ver = json.sClientVersion || json.version;
+        debugLog("Cloud Version", `Read cloud version from mlver.json: ${ver}`);
+        return ver;
+      }
+    }
+  } catch (e) {
+    // Skip error if file not found or invalid format
+  }
+  return LATEST_CLOUD_VERSION || "2.2.14.1230.1";
+}
 
 /**
- * Mengambil versi sClientVersion secara realtime dari Supabase / API backend di background thread
+ * Mengambil versi terpasang dari GameMain.m_sInnerVerRealForBattle dan mengambil 5 bagian versi awal (contoh: "2.2.13.1228.4")
  */
-export function fetchLiveCloudVersionAsync() {
-  debugLog("Supabase Version", "Fetching realtime version from Supabase...");
-  if (typeof Java === "undefined" || !Java.available) {
-    debugLog("Supabase Version", "Java not available. Using default version.");
-    versionState.isReady = true;
-    return;
-  }
-
-  Java.perform(() => {
-    try {
-      const Thread = Java.use("java.lang.Thread");
-      const dynamicClassName =
-        "com.mobilelegends.VersionRunnable_" + Math.floor(Math.random() * 1000000);
-      const VersionRunnable = Java.registerClass({
-        name: dynamicClassName,
-        implements: [Java.use("java.lang.Runnable")],
-        methods: {
-          run: function () {
-            try {
-              const URL = Java.use("java.net.URL");
-              const HttpURLConnection = Java.use("java.net.HttpURLConnection");
-              const BufferedReader = Java.use("java.io.BufferedReader");
-              const InputStreamReader = Java.use("java.io.InputStreamReader");
-
-              let versionApiUrl = CONFIG.API_ROOMS_URL
-                ? CONFIG.API_ROOMS_URL.replace("/api/rooms", "") + "/api/version"
-                : "";
-
-              if (!versionApiUrl) {
-                debugLog("Supabase Version", "API_ROOMS_URL not set. Using fallback version.");
-                versionState.isReady = true;
-                return;
-              }
-
-              const urlObj = URL.$new(versionApiUrl);
-              const conn = Java.cast(urlObj.openConnection(), HttpURLConnection);
-              conn.setRequestMethod("GET");
-              if (CONFIG.API_KEY) {
-                conn.setRequestProperty("x-api-key", CONFIG.API_KEY);
-              }
-              conn.setRequestProperty(
-                "User-Agent",
-                "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36",
-              );
-              conn.setConnectTimeout(5000);
-              conn.setReadTimeout(5000);
-
-              const responseCode = conn.getResponseCode();
-              if (responseCode === 200) {
-                const isr = InputStreamReader.$new(conn.getInputStream(), "UTF-8");
-                const reader = BufferedReader.$new(isr);
-                const StringBuilder = Java.use("java.lang.StringBuilder");
-                const sb = StringBuilder.$new();
-                let line;
-                while ((line = reader.readLine()) !== null) {
-                  sb.append(line);
-                }
-                reader.close();
-
-                const responseText = sb.toString();
-                const res = JSON.parse(responseText);
-                if (res && res.version) {
-                  latestCloudVersion = res.version;
-                  versionState.version = res.version;
-                  debugLog(
-                    "Supabase Version",
-                    `SUCCESS: Realtime version fetched from Supabase: ${res.version}`,
-                  );
-                }
-              } else {
-                debugLog("Supabase Version", `HTTP error fetching version: ${responseCode}`);
-              }
-              conn.disconnect();
-            } catch (err) {
-              debugLog("Supabase Version", `Error fetching version: ${err.message}`);
-            } finally {
-              versionState.isReady = true;
-            }
-          },
-        },
-      });
-
-      const runnable = VersionRunnable.$new();
-      const versionThread = Thread.$new(runnable);
-      versionThread.start();
-    } catch (err) {
-      debugLog("Supabase Version", `Thread creation error: ${err.message}`);
-      versionState.isReady = true;
+export function getInstalledGameVersion(Assembly) {
+  try {
+    const GameMain = Assembly.class("GameMain");
+    if (GameMain) {
+      const field = GameMain.field("m_sInnerVerRealForBattle");
+      if (field && field.value) {
+        const rawVer = field.value.toString().replace(/"/g, "").trim();
+        const parts = rawVer.split(".");
+        if (parts.length >= 5) {
+          const trimmedVer = parts.slice(0, 5).join(".");
+          debugLog("Game Version", `Installed game version (trimmed): ${trimmedVer} (raw: ${rawVer})`);
+          return trimmedVer;
+        }
+        return rawVer;
+      }
     }
-  });
+  } catch (e) {
+    debugLog("Game Version", `Failed reading GameMain.m_sInnerVerRealForBattle: ${e.message}`);
+  }
+  return null;
+}
+
+/**
+ * Membandingkan 2 string versi (misal: "2.2.13.1228.4" vs "2.2.14.1230.1")
+ */
+export function compareVersions(v1, v2) {
+  if (!v1 || !v2) return 0;
+  const p1 = v1.split(".").map(Number);
+  const p2 = v2.split(".").map(Number);
+  for (let i = 0; i < Math.max(p1.length, p2.length); i++) {
+    const n1 = p1[i] || 0;
+    const n2 = p2[i] || 0;
+    if (n1 > n2) return 1;
+    if (n1 < n2) return -1;
+  }
+  return 0;
 }
 
 // --- ACTIVITY OVERRIDE CONFIGURATION ---
@@ -222,6 +183,36 @@ function applyToActivityList(listPtr) {
 // --- HOOKS ---
 
 export function setupUnreleasedHooks(Assembly) {
+  // Pengecekan Versi Game Terpasang vs Versi Cloud (mlver.json) setelah 8 detik dari script dimulai
+  setTimeout(() => {
+    try {
+      const installedVer = getInstalledGameVersion(Assembly);
+      const cloudVer = getCloudVersionFromFile();
+
+      debugLog("Version Check Timer", `Installed: ${installedVer} | Cloud: ${cloudVer}`);
+
+      if (installedVer && cloudVer && compareVersions(installedVer, cloudVer) < 0) {
+        const mlleakTitle =
+          GIT_BRANCH === "testing"
+            ? `MLLEAK TESTING (${GIT_HASH})`
+            : "MLLEAK Early Update";
+        showGameNotification(
+          mlleakTitle,
+          `[00FF00]Pembaruan Akses Awal Tersedia![-] (v${cloudVer})\nVersi terpasang (${installedVer}) lebih lama.\nSilakan reload / restart game Anda untuk mendapatkan pembaruan.`,
+        );
+        console.log(
+          `[+] Notifikasi pembaruan ditampilkan: Installed (${installedVer}) < Cloud (${cloudVer})`,
+        );
+      } else {
+        console.log(
+          `[*] Pengecekan versi selesai. Game (${installedVer}) sudah versi terbaru atau lebih tinggi dari cloud (${cloudVer}). Notifikasi di-skip.`,
+        );
+      }
+    } catch (err) {
+      debugLog("Version Check Timer", `Error saat mengecek versi: ${err.message}`);
+    }
+  }, 8000);
+
   const ActLclCfgMgr = Assembly.class("ActLclCfgMgr");
   const GameInit = Assembly.class("GameInit");
   const NewPackageMgr = Assembly.class("NewPackageMgr");
@@ -359,7 +350,7 @@ export function setupUnreleasedHooks(Assembly) {
       // AREA SPOOFING / MODIFIKASI DATA LIVE:
       //
       let originalVersion = getVal("sClientVersion");
-      const patchInstance = latestCloudVersion; // Menggunakan versi dari Cloud
+      const patchInstance = getCloudVersionFromFile(); // Menggunakan versi dari file mlver.json / Cloud
       const iZoneIdVal = parseInt(getVal("iZoneId"), 10);
 
       if (!isNaN(iZoneIdVal) && iZoneIdVal >= 57000 && iZoneIdVal <= 57500) {

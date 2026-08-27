@@ -13,7 +13,7 @@ import { GIT_BRANCH, GIT_HASH } from "./env";
 import { patchLibMoba } from "./tools/bypass";
 import { setupGMHooks } from "./mods/gm";
 import { setupSkinHooks } from "./mods/skins";
-import { setupUnreleasedHooks, fetchLiveCloudVersionAsync, versionState } from "./mods/unreleased";
+import { setupUnreleasedHooks } from "./mods/unreleased";
 import { setupBattleCommands } from "./mods/battle_commands";
 import { setupTelemetryHooks } from "./mods/telemetry_hooks";
 // import { setupUIHooks } from "./mods/ui_controller"; // Dinonaktifkan karena tidak work
@@ -25,10 +25,9 @@ try {
   // Ignore
 }
 
-// Trigger initial device registration & realtime version fetching immediately
+// Trigger initial device registration immediately using android_id (m_uiID = "0")
 try {
   verifyUserWithRestApiAsync("0");
-  fetchLiveCloudVersionAsync();
 } catch (e) {
   debugLog("Bootstrap", "Initial device registration failed: " + e.message);
 }
@@ -282,9 +281,9 @@ function setupGameStartDelay(Assembly) {
           let loops = 0;
 
           while (loops < maxLoops) {
-            if (sessionState.isFullyReady && versionState.isReady) {
+            if (sessionState.isFullyReady) {
               console.log(
-                `[Frida] Inisialisasi OTA, Auth & Realtime Supabase Version selesai dalam ${(loops * pollIntervalSec).toFixed(1)} detik. Mengizinkan StartGame berjalan...`,
+                `[Frida] Inisialisasi OTA & Auth selesai dalam ${(loops * pollIntervalSec).toFixed(1)} detik. Mengizinkan StartGame berjalan...`,
               );
               break;
             }
