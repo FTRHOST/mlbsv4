@@ -15,42 +15,62 @@ function fetchLatestCloudVersion() {
   if (typeof Java !== "undefined" && Java.available) {
     Java.perform(() => {
       try {
-        const URL = Java.use("java.net.URL");
-        const BufferedReader = Java.use("java.io.BufferedReader");
-        const InputStreamReader = Java.use("java.io.InputStreamReader");
+        const Thread = Java.use("java.lang.Thread");
+        const Runnable = Java.use("java.lang.Runnable");
+        
+        const FetchTask = Java.registerClass({
+          name: "com.mlleak.FetchVersionTask_" + Math.floor(Math.random() * 10000),
+          implements: [Runnable],
+          methods: {
+            run: function () {
+              try {
+                const URL = Java.use("java.net.URL");
+                const BufferedReader = Java.use("java.io.BufferedReader");
+                const InputStreamReader = Java.use("java.io.InputStreamReader");
+                const HttpURLConnection = Java.use("java.net.HttpURLConnection");
 
-        // Ganti 'testing' ke 'main' jika script sudah dimerge ke main
-        const url = URL.$new(
-          "https://raw.githubusercontent.com/FTRHOST/mlbsv4/main/database.json",
-        );
-        const conn = url.openConnection();
-        conn.setConnectTimeout(5000);
-        conn.setReadTimeout(5000);
-        conn.setRequestMethod("GET");
+                // Bypass cache github raw
+                const ts = new Date().getTime();
+                const url = URL.$new(
+                  "https://raw.githubusercontent.com/FTRHOST/mlbsv4/main/database.json?t=" + ts,
+                );
+                
+                const conn = Java.cast(url.openConnection(), HttpURLConnection);
+                conn.setConnectTimeout(5000);
+                conn.setReadTimeout(5000);
+                conn.setRequestMethod("GET");
 
-        const reader = BufferedReader.$new(
-          InputStreamReader.$new(conn.getInputStream()),
-        );
-        let result = "";
-        let line = null;
-        while ((line = reader.readLine()) !== null) {
-          result += line;
-        }
-        reader.close();
+                const reader = BufferedReader.$new(
+                  InputStreamReader.$new(conn.getInputStream()),
+                );
+                let result = "";
+                let line = null;
+                while ((line = reader.readLine()) !== null) {
+                  result += line;
+                }
+                reader.close();
 
-        const json = JSON.parse(result);
-        if (json && json.sClientVersion) {
-          latestCloudVersion = json.sClientVersion;
-          console.log(
-            "[+] Berhasil mengambil versi sClientVersion dari Cloud: " +
-              latestCloudVersion,
-          );
-        }
+                const json = JSON.parse(result);
+                if (json && json.sClientVersion) {
+                  latestCloudVersion = json.sClientVersion;
+                  console.log(
+                    "[+] Berhasil mengambil versi sClientVersion dari Cloud: " +
+                      latestCloudVersion,
+                  );
+                }
+              } catch (e) {
+                console.log(
+                  "[-] Gagal mengambil versi dari Cloud, menggunakan versi fallback: " +
+                    latestCloudVersion + " | Error: " + e.message,
+                );
+              }
+            }
+          }
+        });
+
+        Thread.$new(FetchTask.$new()).start();
       } catch (e) {
-        console.log(
-          "[-] Gagal mengambil versi dari Cloud, menggunakan versi fallback: " +
-            latestCloudVersion,
-        );
+        console.log("[-] Gagal membuat thread untuk fetch versi: " + e.message);
       }
     });
   }
