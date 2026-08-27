@@ -3,11 +3,11 @@ const https = require("https");
 const path = require("path");
 
 // ================= KONFIGURASI TELEGRAM =================
-const TELEGRAM_BOT_TOKEN = "ISI_BOT_TOKEN_KAMU_DISINI"; // Ganti dengan token dari @BotFather
-const TELEGRAM_CHAT_ID = "ISI_CHAT_ID_KAMU_DISINI"; // Ganti dengan ID user/grup/channel kamu
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN; // Diambil dari Repository Secret / Environment Variables
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID; // Diambil dari Repository Secret / Environment Variables
 
 async function sendTelegramMessage(text) {
-  if (TELEGRAM_BOT_TOKEN === "ISI_BOT_TOKEN_KAMU_DISINI") return; // Skip jika belum disetting
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return; // Skip jika secret tidak ditemukan
   const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=${encodeURIComponent(text)}`;
   return new Promise((resolve) => {
     https.get(url, (res) => {
@@ -20,14 +20,29 @@ async function sendTelegramMessage(text) {
 const DB_PATH = path.join(__dirname, "../database.json");
 const db = JSON.parse(fs.readFileSync(DB_PATH, "utf8"));
 
-// Fungsi untuk mengecek URL
-async function checkUrl(url) {
+// Fungsi untuk mengecek URL dan mengambil versi utuh dari XML
+async function fetchVersionXml(url) {
   return new Promise((resolve) => {
     https
       .get(url, (res) => {
-        resolve(res.statusCode === 200);
+        if (res.statusCode === 200) {
+          let data = "";
+          res.on("data", (chunk) => {
+            data += chunk;
+          });
+          res.on("end", () => {
+            const match = data.match(/version="([^"]+)"/);
+            if (match && match[1]) {
+              resolve(match[1]); // Kembalikan string versi
+            } else {
+              resolve(null);
+            }
+          });
+        } else {
+          resolve(null);
+        }
       })
-      .on("error", () => resolve(false));
+      .on("error", () => resolve(null));
   });
 }
 
@@ -45,6 +60,7 @@ async function run() {
   let highestMajor = currentMajor;
   let highestMinor = currentMinor;
   let targetMajorFound = null;
+  let latestFullVer = null; // Menyimpan versi utuh dari XML
 
   // === FASE 1: SCANNING LOMPAT MAJOR (Mengecek .1 ke depan) ===
   console.log(`[~] Fase 1: Mencari kenaikan Major baru dengan Minor .1...`);
@@ -55,13 +71,14 @@ async function run() {
     const url = `https://akmcdn.ml.youngjoygame.com/res_version5_ind/${testVer}/version/android/version.xml`;
 
     console.log(`[~] Mengecek Major: ${testVer} ...`);
-    const exists = await checkUrl(url);
+    const foundVersion = await fetchVersionXml(url);
 
-    if (exists) {
-      console.log(`[+] DITEMUKAN MAJOR BARU: ${testVer}`);
+    if (foundVersion) {
+      console.log(`[+] DITEMUKAN MAJOR BARU: ${testVer} (Versi XML: ${foundVersion})`);
       targetMajorFound = major;
       highestMajor = major;
       highestMinor = 1; // Set ke 1 karena .1 aktif
+      latestFullVer = foundVersion;
 
       // Berhenti melompat ke Major berikutnya, langsung fokus ke Major ini
       break;
@@ -81,11 +98,12 @@ async function run() {
       const url = `https://akmcdn.ml.youngjoygame.com/res_version5_ind/${testVer}/version/android/version.xml`;
 
       console.log(`[~] Mengecek Minor: ${testVer} ...`);
-      const exists = await checkUrl(url);
+      const foundVersion = await fetchVersionXml(url);
 
-      if (exists) {
-        console.log(`[+] DITEMUKAN SUB-VERSION: ${testVer}`);
+      if (foundVersion) {
+        console.log(`[+] DITEMUKAN SUB-VERSION: ${testVer} (Versi XML: ${foundVersion})`);
         highestMinor = minor; // Perbarui ke Minor tertinggi yang aktif
+        latestFullVer = foundVersion;
       } else {
         console.log(
           `[-] Minor ${testVer} tidak tersedia. Menghentikan eksplorasi Minor.`,
@@ -101,12 +119,8 @@ async function run() {
   const foundNewVersion =
     highestMajor !== currentMajor || highestMinor !== currentMinor;
 
-  if (foundNewVersion) {
-    parts[parts.length - 2] = highestMajor.toString();
-    parts[parts.length - 1] = highestMinor.toString();
-    const newFullVer = parts.join(".");
-
-    db.sClientVersion = newFullVer;
+  if (foundNewVersion && latestFullVer) {
+    db.sClientVersion = latestFullVer;
 
     const now = new Date().toISOString();
     db.lastUpdated = now;
@@ -114,17 +128,17 @@ async function run() {
     if (!db.updateHistory) db.updateHistory = [];
 
     db.updateHistory.push({
-      version: newFullVer,
+      version: latestFullVer,
       detectedAt: now,
     });
 
     fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2));
     console.log(
-      `[+] Sukses! Database diperbarui ke versi tertinggi: ${newFullVer}`,
+      `[+] Sukses! Database diperbarui ke versi tertinggi: ${latestFullVer}`,
     );
 
     // Kirim notifikasi Telegram
-    await sendTelegramMessage(`🚀 Update Versi Baru Terdeteksi!\n\nVersi Sebelumnya: ${currentFullVer}\nVersi Terbaru: ${newFullVer}`);
+    await sendTelegramMessage(`🚀 Update Versi Baru Terdeteksi!\n\nVersi Sebelumnya: ${currentFullVer}\nVersi Terbaru: ${latestFullVer}`);
   } else {
     console.log(
       `[*] Tidak ada update baru. Versi saat ini tetap: ${currentFullVer}`,
