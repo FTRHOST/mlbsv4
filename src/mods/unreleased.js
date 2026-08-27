@@ -13,17 +13,25 @@ let latestCloudVersion = "2.1.95.1228.1"; // Nilai default/fallback
 // Fungsi untuk menarik data dari database.json di Github Raw secara asinkron
 function fetchLatestCloudVersion() {
   console.log("[~] fetchLatestCloudVersion() dipanggil...");
-  
-  if (typeof Java !== "undefined" && Java.available) {
-    console.log("[~] Java tersedia, mengeksekusi Java.perform...");
+
+  if (typeof Java === "undefined") {
+    console.log("[-] Objek Java undefined!");
+    return;
+  }
+
+  console.log("[~] Java.available: " + Java.available);
+
+  if (Java.available) {
+    console.log("[~] Mengeksekusi Java.perform...");
     Java.perform(() => {
       console.log("[~] Masuk ke dalam Java.perform!");
       try {
         const Thread = Java.use("java.lang.Thread");
         const Runnable = Java.use("java.lang.Runnable");
-        
+
         const FetchTask = Java.registerClass({
-          name: "com.mlleak.FetchVersionTask_" + Math.floor(Math.random() * 10000),
+          name:
+            "com.mlleak.FetchVersionTask_" + Math.floor(Math.random() * 10000),
           implements: [Runnable],
           methods: {
             run: function () {
@@ -31,14 +39,17 @@ function fetchLatestCloudVersion() {
                 const URL = Java.use("java.net.URL");
                 const BufferedReader = Java.use("java.io.BufferedReader");
                 const InputStreamReader = Java.use("java.io.InputStreamReader");
-                const HttpURLConnection = Java.use("java.net.HttpURLConnection");
+                const HttpURLConnection = Java.use(
+                  "java.net.HttpURLConnection",
+                );
 
                 // Bypass cache github raw
                 const ts = new Date().getTime();
                 const url = URL.$new(
-                  "https://raw.githubusercontent.com/FTRHOST/mlbsv4/main/database.json?t=" + ts,
+                  "https://raw.githubusercontent.com/FTRHOST/mlbsv4/main/database.json?t=" +
+                    ts,
                 );
-                
+
                 const conn = Java.cast(url.openConnection(), HttpURLConnection);
                 conn.setConnectTimeout(5000);
                 conn.setReadTimeout(5000);
@@ -65,11 +76,13 @@ function fetchLatestCloudVersion() {
               } catch (e) {
                 console.log(
                   "[-] Gagal mengambil versi dari Cloud, menggunakan versi fallback: " +
-                    latestCloudVersion + " | Error: " + e.message,
+                    latestCloudVersion +
+                    " | Error: " +
+                    e.message,
                 );
               }
-            }
-          }
+            },
+          },
         });
 
         Thread.$new(FetchTask.$new()).start();
@@ -359,7 +372,7 @@ export function setupUnreleasedHooks(Assembly) {
           const mlleakVer =
             GIT_BRANCH === "testing"
               ? `MLLEAK TESTING (${GIT_HASH})`
-              : "MLLEAK v.0.9";
+              : "MLLEAK v.0.9.1";
 
           if (comp > 0) {
             packetInstance.field("sClientVersion").value =
