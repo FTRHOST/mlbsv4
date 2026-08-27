@@ -1,4 +1,5 @@
 require("dotenv").config();
+global.WebSocket = require("ws");
 const https = require("https");
 const { createClient } = require("@supabase/supabase-js");
 
