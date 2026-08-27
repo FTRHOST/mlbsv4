@@ -114,7 +114,11 @@ function waitForLogicLib() {
         },
         onLeave: function (retval) {
           try {
-            if (this.path && typeof this.path === 'string' && this.path.indexOf(TARGET_LIB) !== -1) {
+            if (
+              this.path &&
+              typeof this.path === "string" &&
+              this.path.indexOf(TARGET_LIB) !== -1
+            ) {
               monitor.detach();
               const targetMod = Process.getModuleByName(TARGET_LIB);
               setupIl2CppHook(targetMod);
@@ -232,7 +236,7 @@ function executeSimpleHooks() {
     GIT_BRANCH === "testing" ? `MLLEAK TESTING (${GIT_HASH})` : "MLLEAK v.0.8";
 
   // Setup StartGame delay hook first to wait for OTA/Auth readiness
-  setupGameStartDelay(Assembly);
+  // setupGameStartDelay(Assembly);
 
   // Setup Modular Mod Functions
   patchLibMoba(Assembly);
@@ -248,12 +252,18 @@ function setupGameStartDelay(Assembly) {
   try {
     const GameStart = Assembly.class("GameStart");
     if (!GameStart) {
-      debugLog("GameStart", "Class GameStart tidak ditemukan di Assembly-CSharp.");
+      debugLog(
+        "GameStart",
+        "Class GameStart tidak ditemukan di Assembly-CSharp.",
+      );
       return;
     }
     const startGameMethod = GameStart.method("StartGame");
     if (!startGameMethod) {
-      debugLog("GameStart", "Method StartGame tidak ditemukan pada class GameStart.");
+      debugLog(
+        "GameStart",
+        "Method StartGame tidak ditemukan pada class GameStart.",
+      );
       return;
     }
 
@@ -261,7 +271,9 @@ function setupGameStartDelay(Assembly) {
     if (targetPointer && !targetPointer.isNull()) {
       Interceptor.attach(targetPointer, {
         onEnter: function (args) {
-          console.log("[Frida] StartGame terpicu via Interceptor! Menunggu persiapan OTA & Auth...");
+          console.log(
+            "[Frida] StartGame terpicu via Interceptor! Menunggu persiapan OTA & Auth...",
+          );
 
           const maxTimeoutSec = 50;
           const pollIntervalSec = 0.2;
@@ -270,7 +282,9 @@ function setupGameStartDelay(Assembly) {
 
           while (loops < maxLoops) {
             if (sessionState.isFullyReady) {
-              console.log(`[Frida] Inisialisasi OTA & Auth selesai dalam ${(loops * pollIntervalSec).toFixed(1)} detik. Mengizinkan StartGame berjalan...`);
+              console.log(
+                `[Frida] Inisialisasi OTA & Auth selesai dalam ${(loops * pollIntervalSec).toFixed(1)} detik. Mengizinkan StartGame berjalan...`,
+              );
               break;
             }
             Thread.sleep(pollIntervalSec);
@@ -278,16 +292,24 @@ function setupGameStartDelay(Assembly) {
           }
 
           if (loops >= maxLoops) {
-            console.log("[Frida] Timeout 50 detik tercapai (atau offline), melanjutkan StartGame...");
+            console.log(
+              "[Frida] Timeout 50 detik tercapai (atau offline), melanjutkan StartGame...",
+            );
           }
-        }
+        },
       });
-      debugLog("GameStart", "Hook penundaan GameStart.StartGame berhasil dipasang.");
+      debugLog(
+        "GameStart",
+        "Hook penundaan GameStart.StartGame berhasil dipasang.",
+      );
     } else {
       console.log("[Frida] Error: Alamat fungsi StartGame tidak ditemukan.");
     }
   } catch (err) {
-    debugLog("GameStart", `Error pada hook penundaan GameStart: ${err.message}`);
+    debugLog(
+      "GameStart",
+      `Error pada hook penundaan GameStart: ${err.message}`,
+    );
   }
 }
 
