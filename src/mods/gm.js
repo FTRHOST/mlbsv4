@@ -40,42 +40,53 @@ export function setupGMHooks(Assembly) {
   // hookSandboxMethod("LogicExtension", "IsAdjustSandBox");
   //
 
-  const GameServerConfig = Il2Cpp.domain
-    .assembly("Assembly-CSharp")
-    .image.class("GameServerConfig");
+  const GameServerConfig = Assembly.class("GameServerConfig");
   const loadVersionCompelte = GameServerConfig.method("loadVersionCompelte");
 
   Interceptor.attach(loadVersionCompelte.virtualAddress, {
     onEnter(args) {
-      if (args[1].isNull()) return;
+      // Berdasarkan log trace:
+      // args[0] = this (GameServerConfig)
+      // args[1] = strXmlData (String XML)
+      const xmlPtr = args[1];
 
-      // 1. Ambil konten XML asli
-      let xmlData = new Il2Cpp.String(args[1]).content;
+      if (xmlPtr.isNull()) return;
 
-      // 2. Definisi target perubahan (Key: Value)
-      const replacements = {
-        adjust: "sand",
-        channel: "and_usa",
-        //'version': '2.2.14.1230.1',
-        // 'logip': 'aliyun-test-gate.ml.moontonapp.com'
-      };
+      try {
+        // 1. Ambil konten XML asli
+        const il2cppStr = new Il2Cpp.String(xmlPtr);
+        let xmlData = il2cppStr.content;
 
-      let isModified = false;
+        // 2. Daftar perubahan yang diinginkan (Key: Value)
+        const replacements = {
+          adjust: "sand",
+          channel: "and_usa",
+          //'version': '2.2.14.1230.1' // Contoh tambahan jika ingin sekalian ganti versi
+        };
 
-      // 3. Loop untuk mengganti setiap key yang ditentukan
-      for (const [key, newValue] of Object.entries(replacements)) {
-        // Regex dinamis: mencari key="isi_apapun"
-        const regex = new RegExp(`${key}="[^"]*"`, "g");
+        let isModified = false;
 
-        if (xmlData.match(regex)) {
-          xmlData = xmlData.replace(regex, `${key}="${newValue}"`);
-          isModified = true;
+        // 3. Proses penggantian menggunakan Regex
+        for (const [key, newValue] of Object.entries(replacements)) {
+          const regex = new RegExp(`${key}="[^"]*"`, "g");
+          if (xmlData.match(regex)) {
+            xmlData = xmlData.replace(regex, `${key}="${newValue}"`);
+            isModified = true;
+          }
         }
-      }
 
-      if (isModified) {
-        // 4. Alokasikan kembali string yang sudah dimodifikasi total
-        args[1] = new Il2Cpp.String(xmlData);
+        if (isModified) {
+          // 4. Alokasikan string baru di heap Unity dan timpa args[1]
+          // Menggunakan Il2Cpp.string() adalah cara paling aman di bridge terbaru
+          args[1] = Il2Cpp.string(xmlData);
+
+          console.log("[Spoof] XML data modified and injected successfully:");
+          console.log(" -> New adjust : " + replacements.adjust);
+          console.log(" -> New channel: " + replacements.channel);
+        }
+      } catch (e) {
+        // Menggunakan console.error agar tidak memutus eksekusi script utama
+        console.error("[Error] Gagal memanipulasi XML: " + e.message);
       }
     },
   });
