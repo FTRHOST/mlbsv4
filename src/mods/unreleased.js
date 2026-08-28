@@ -105,12 +105,23 @@ export function getInstalledGameVersion(Assembly) {
 }
 
 /**
- * Membandingkan 2 string versi (misal: "2.2.13.1228.4" vs "2.2.14.1230.1")
+ * Membandingkan 2 string versi berdasarkan 2 bagian versi terakhir (Major.Minor)
+ * Contoh: "2.1.95.1230.1" dan "2.2.14.1230.1" -> keduanya mengambil "1230.1" sehingga dianggap SAMA (0).
  */
 export function compareVersions(v1, v2) {
   if (!v1 || !v2) return 0;
-  const p1 = v1.split(".").map(Number);
-  const p2 = v2.split(".").map(Number);
+  
+  const getShortVer = (v) => {
+    const parts = v.split(".").map(Number);
+    if (parts.length >= 2) {
+      return parts.slice(-2);
+    }
+    return parts;
+  };
+
+  const p1 = getShortVer(v1);
+  const p2 = getShortVer(v2);
+
   for (let i = 0; i < Math.max(p1.length, p2.length); i++) {
     const n1 = p1[i] || 0;
     const n2 = p2[i] || 0;
@@ -416,19 +427,6 @@ export function setupUnreleasedHooks(Assembly) {
         if (originalVersion) {
           originalVersion = originalVersion.toString().replace(/"/g, "");
         }
-
-        const compareVersions = (v1, v2) => {
-          if (!v1 || !v2) return 0;
-          const p1 = v1.split(".").map(Number);
-          const p2 = v2.split(".").map(Number);
-          for (let i = 0; i < Math.max(p1.length, p2.length); i++) {
-            const n1 = p1[i] || 0;
-            const n2 = p2[i] || 0;
-            if (n1 > n2) return 1;
-            if (n1 < n2) return -1;
-          }
-          return 0;
-        };
 
         if (originalVersion && originalVersion !== "Error/Empty") {
           const comp = compareVersions(patchInstance, originalVersion);
