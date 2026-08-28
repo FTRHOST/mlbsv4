@@ -4,10 +4,21 @@ serviceAccountKey.json
 .vercel
 keys/
 
+# Build artifacts
+public/hook.js
+public/hook.js.sig
+public/dashboard.html
 public/libmypatch.so
 public/libmypatch.so.sig
-public/*/libmypatch.so
-public/*/libmypatch.so.sig
+public/*/
+native-patcher/libs/
+native-patcher/obj/
+native-patcher/assets/
+build/
+*.so
+*.sig
+*.apk
+
 android-ndk-r26d/
 android-ndk-*/
 dump.cs
