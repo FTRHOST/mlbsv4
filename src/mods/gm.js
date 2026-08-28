@@ -31,12 +31,12 @@ export function setupGMHooks(Assembly) {
 
   // Base Triggers
   hookSandboxMethod("GameInit", "IsSandBoxIp");
-  hookSandboxMethod("LuaHelper", "IsEditor");
-  hookSandboxMethod("LuaHelper", "IsTestChannel");
+  // hookSandboxMethod("LuaHelper", "IsEditor");
+  // hookSandboxMethod("LuaHelper", "IsTestChannel");
   hookSandboxMethod("SDKCommon", "IsSandbox");
   hookSandboxMethod("PingServerData", "CheckInTestServer");
   hookSandboxMethod("PingServerData", "CheckIsTestServer");
-  hookSandboxMethod("GMVideoPlayer", "IsGMBackend");
+  // hookSandboxMethod("GMVideoPlayer", "IsGMBackend");
   hookSandboxMethod("LogicExtension", "IsAdjustSandBox");
 
   // --- EXTENDED GM UI & PROFILER HOOKS ---
