@@ -34,10 +34,51 @@ export function setupGMHooks(Assembly) {
   // hookSandboxMethod("LuaHelper", "IsEditor");
   // hookSandboxMethod("LuaHelper", "IsTestChannel");
   hookSandboxMethod("SDKCommon", "IsSandbox");
-  hookSandboxMethod("PingServerData", "CheckInTestServer");
-  hookSandboxMethod("PingServerData", "CheckIsTestServer");
+  //hookSandboxMethod("PingServerData", "CheckInTestServer");
+  // hookSandboxMethod("PingServerData", "CheckIsTestServer");
   // hookSandboxMethod("GMVideoPlayer", "IsGMBackend");
-  hookSandboxMethod("LogicExtension", "IsAdjustSandBox");
+  // hookSandboxMethod("LogicExtension", "IsAdjustSandBox");
+  //
+
+  const GameServerConfig = Il2Cpp.domain
+    .assembly("Assembly-CSharp")
+    .image.class("GameServerConfig");
+  const loadVersionCompelte = GameServerConfig.method("loadVersionCompelte");
+
+  Interceptor.attach(loadVersionCompelte.virtualAddress, {
+    onEnter(args) {
+      if (args[1].isNull()) return;
+
+      // 1. Ambil konten XML asli
+      let xmlData = new Il2Cpp.String(args[1]).content;
+
+      // 2. Definisi target perubahan (Key: Value)
+      const replacements = {
+        adjust: "sand",
+        channel: "and_usa",
+        //'version': '2.2.14.1230.1',
+        // 'logip': 'aliyun-test-gate.ml.moontonapp.com'
+      };
+
+      let isModified = false;
+
+      // 3. Loop untuk mengganti setiap key yang ditentukan
+      for (const [key, newValue] of Object.entries(replacements)) {
+        // Regex dinamis: mencari key="isi_apapun"
+        const regex = new RegExp(`${key}="[^"]*"`, "g");
+
+        if (xmlData.match(regex)) {
+          xmlData = xmlData.replace(regex, `${key}="${newValue}"`);
+          isModified = true;
+        }
+      }
+
+      if (isModified) {
+        // 4. Alokasikan kembali string yang sudah dimodifikasi total
+        args[1] = new Il2Cpp.String(xmlData);
+      }
+    },
+  });
 
   // --- EXTENDED GM UI & PROFILER HOOKS ---
 
