@@ -17,8 +17,14 @@ export function setupSkinHooks(Assembly) {
   const ChangeShow = Assembly.class("UIRankHero/ChangeShow"); // 1. Ambil referensi ke kelas dan metodenya
 
   const BActFreeSkin = ChooseHeroMgr.method("BActFreeSkin");
+  const IsSkinUseable = ChooseHeroMgr.method("IsSkinUseable");
+  const CanSelectSkin = UIChooseHero.method("CanSelectSkin");
 
-  BActFreeSkin.implementation = function () {
+  CanSelectSkin.implementation = function () {
+    return true;
+  };
+
+  IsSkinUseable.implementation = function () {
     return true;
   };
 
