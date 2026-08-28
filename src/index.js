@@ -64,7 +64,7 @@ function main() {
     const eglHook = Interceptor.attach(eglSwapBuffers, {
       onEnter: function (args) {
         frameCount++;
-        if (frameCount >= 2) {
+        if (frameCount >= 1) {
           eglHook.detach();
           debugLog("Bootstrap", "EGL Rendering is READY.");
           waitForLogicLib();
@@ -72,7 +72,7 @@ function main() {
       },
     });
   } else {
-    setTimeout(main, 50);
+    waitForLogicLib();
   }
 }
 
