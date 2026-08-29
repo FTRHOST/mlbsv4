@@ -96,7 +96,7 @@ async function updateStoredClientVersion(newVersion) {
 }
 
 async function run() {
-  console.log(`[*] Memulai Scanner Pintar (Lompat Major)...`);
+  console.log(`[*] Memulai Scanner Pintar (Pengecekan Minor & Lompat Major)...`);
   const currentFullVer = await getStoredClientVersion();
   console.log(`[*] Versi saat ini di Supabase: ${currentFullVer}`);
   const parts = currentFullVer.split(".");
@@ -107,9 +107,29 @@ async function run() {
   let highestMajor = currentMajor;
   let highestMinor = currentMinor;
   let targetMajorFound = null;
-  let latestFullVer = null; // Menyimpan versi utuh dari XML
+  let latestFullVer = null;
 
-  // === FASE 1: SCANNING LOMPAT MAJOR (Mengecek .1 ke depan) ===
+  // === FASE 0: CEK MINOR PADA MAJOR SAAT INI ===
+  console.log(`[~] Fase 0: Mengecek update minor pada Major saat ini (${currentMajor})...`);
+  for (let minor = currentMinor + 1; minor <= 9; minor++) {
+    const testVer = `${currentMajor}.${minor}`;
+    const url = `https://akmcdn.ml.youngjoygame.com/res_version5_ind/${testVer}/version/android/version.xml`;
+
+    console.log(`[~] Mengecek Minor: ${testVer} ...`);
+    const foundVersion = await fetchVersionXml(url);
+
+    if (foundVersion) {
+      console.log(`[+] DITEMUKAN SUB-VERSION (Major Saat Ini): ${testVer} (XML: ${foundVersion})`);
+      highestMinor = minor;
+      latestFullVer = foundVersion;
+    } else {
+      console.log(`[-] Minor ${testVer} tidak tersedia. Selesai eksplorasi minor saat ini.`);
+      break; // Stop jika minor terputus
+    }
+    await sleep(500);
+  }
+
+  // === FASE 1: SCANNING LOMPAT MAJOR ===
   console.log(`[~] Fase 1: Mencari kenaikan Major baru dengan Minor .1...`);
   const targetMajorLimit = currentMajor + 10;
 
@@ -121,41 +141,33 @@ async function run() {
     const foundVersion = await fetchVersionXml(url);
 
     if (foundVersion) {
-      console.log(`[+] DITEMUKAN MAJOR BARU: ${testVer} (Versi XML: ${foundVersion})`);
+      console.log(`[+] DITEMUKAN MAJOR BARU: ${testVer} (XML: ${foundVersion})`);
       targetMajorFound = major;
       highestMajor = major;
-      highestMinor = 1; // Set ke 1 karena .1 aktif
+      highestMinor = 1;
       latestFullVer = foundVersion;
-
-      // Berhenti melompat ke Major berikutnya, langsung fokus ke Major ini
-      break;
+      break; // Fokus ke major ini, berhenti melompat
     }
     await sleep(500);
   }
 
-  // === FASE 2: EKSPLORASI MINOR (Hanya berjalan jika Major baru ditemukan) ===
+  // === FASE 2: EKSPLORASI MINOR MAJOR BARU ===
   if (targetMajorFound !== null) {
-    console.log(
-      `[~] Fase 2: Menjelajahi sub-versi Minor untuk Major ${targetMajorFound}...`,
-    );
+    console.log(`[~] Fase 2: Menjelajahi sub-versi Minor untuk Major baru ${targetMajorFound}...`);
 
-    // Memindai Minor mulai dari .2 sampai .9
     for (let minor = 2; minor <= 9; minor++) {
       const testVer = `${targetMajorFound}.${minor}`;
       const url = `https://akmcdn.ml.youngjoygame.com/res_version5_ind/${testVer}/version/android/version.xml`;
 
-      console.log(`[~] Mengecek Minor: ${testVer} ...`);
+      console.log(`[~] Mengecek Minor Major Baru: ${testVer} ...`);
       const foundVersion = await fetchVersionXml(url);
 
       if (foundVersion) {
-        console.log(`[+] DITEMUKAN SUB-VERSION: ${testVer} (Versi XML: ${foundVersion})`);
-        highestMinor = minor; // Perbarui ke Minor tertinggi yang aktif
+        console.log(`[+] DITEMUKAN SUB-VERSION (Major Baru): ${testVer} (XML: ${foundVersion})`);
+        highestMinor = minor;
         latestFullVer = foundVersion;
       } else {
-        console.log(
-          `[-] Minor ${testVer} tidak tersedia. Menghentikan eksplorasi Minor.`,
-        );
-        // Berhenti jika Minor setelahnya mati (misal .1, .2, .3 hidup, .4 mati -> stop)
+        console.log(`[-] Minor ${testVer} tidak tersedia. Menghentikan eksplorasi Minor.`);
         break;
       }
       await sleep(500);
@@ -163,21 +175,14 @@ async function run() {
   }
 
   // === FASE UPDATE DATABASE (SUPABASE) ===
-  const foundNewVersion =
-    highestMajor !== currentMajor || highestMinor !== currentMinor;
+  const foundNewVersion = latestFullVer !== null && latestFullVer !== currentFullVer;
 
-  if (foundNewVersion && latestFullVer) {
+  if (foundNewVersion) {
     await updateStoredClientVersion(latestFullVer);
-    console.log(
-      `[+] Sukses! Supabase diperbarui ke versi tertinggi: ${latestFullVer}`,
-    );
-
-    // Kirim notifikasi Telegram
+    console.log(`[+] Sukses! Supabase diperbarui ke versi tertinggi: ${latestFullVer}`);
     await sendTelegramMessage(`🚀 Update Versi Baru Terdeteksi!\n\nVersi Sebelumnya: ${currentFullVer}\nVersi Terbaru: ${latestFullVer}`);
   } else {
-    console.log(
-      `[*] Tidak ada update baru. Versi saat ini tetap: ${currentFullVer}`,
-    );
+    console.log(`[*] Tidak ada update baru. Versi saat ini tetap: ${currentFullVer}`);
   }
 }
 
