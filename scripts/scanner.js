@@ -40,21 +40,18 @@ async function fetchVersionXml(url) {
             data += chunk;
           });
           res.on("end", () => {
-            // Memastikan regex mengambil version dari tag <root> agar tidak salah ambil dari <?xml version="1.0"?>
             const match = data.match(/<root\s+version="([^"]+)"/);
-            if (match && match[1]) {
-              resolve(match[1]); // Kembalikan string versi
-            } else {
-              resolve(null);
-            }
+            resolve(match && match[1] ? match[1] : null);
           });
         } else {
+          res.resume(); // Bebaskan memori jika status bukan 200
           resolve(null);
         }
       })
       .on("error", () => resolve(null));
   });
 }
+
 
 // Fungsi jeda (delay) agar tidak memberatkan server
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -184,4 +181,12 @@ async function run() {
   }
 }
 
-run();
+run()
+  .then(() => {
+    console.log("[*] Proses pencarian selesai.");
+    process.exit(0); // Memaksa script berhenti dengan status sukses
+  })
+  .catch((error) => {
+    console.error("[-] Terjadi kesalahan fatal:", error);
+    process.exit(1); // Memaksa script berhenti dengan status error
+  });
