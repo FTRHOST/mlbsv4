@@ -60,7 +60,7 @@ export function setupGMHooks(Assembly) {
         // 2. Daftar perubahan yang diinginkan (Key: Value)
         const replacements = {
           adjust: "sand",
-          channel: "and_usa",
+          // channel: "and_usa",
           //'version': '2.2.14.1230.1' // Contoh tambahan jika ingin sekalian ganti versi
         };
 
