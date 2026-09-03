@@ -1270,14 +1270,11 @@ void ensure_assets_exist(JNIEnv *env) {
         "assets/UI/android/UI_GM_public.unity3d"
     };
 
-    // 1. Ambil versi secara default jika file mlver.json belum ada
     std::string res_version = "1230.2"; 
-    
-    // 2. Baca file mlver.json yang disinkronkan dari Supabase
     std::string mlver_path = g_external_dir + "/mlver.json";
     std::string mlver_content = read_file(mlver_path);
 
-    // 3. Ekstrak sClientVersion (Misal: "2.2.14.1230.2" -> "1230.2")
+    // 1. Ekstrak versi dari Supabase
     if (!mlver_content.empty()) {
         size_t ver_pos = mlver_content.find("\"sClientVersion\"");
         if (ver_pos != std::string::npos) {
@@ -1286,14 +1283,11 @@ void ensure_assets_exist(JNIEnv *env) {
                 size_t end = mlver_content.find('"', start + 1);
                 if (end != std::string::npos) {
                     std::string full_ver = mlver_content.substr(start + 1, end - start - 1);
-                    
-                    // Cari 2 titik terakhir untuk mendapatkan "1230.2"
                     size_t last_dot = full_ver.rfind('.');
                     if (last_dot != std::string::npos && last_dot > 0) {
                         size_t second_last_dot = full_ver.rfind('.', last_dot - 1);
                         if (second_last_dot != std::string::npos) {
                             res_version = full_ver.substr(second_last_dot + 1);
-                            LOGI("Berhasil mengekstrak versi CDN dari Supabase: %s", res_version.c_str());
                         }
                     }
                 }
@@ -1301,16 +1295,24 @@ void ensure_assets_exist(JNIEnv *env) {
         }
     }
 
-    // 4. Rakit URL Server secara dinamis
+    // 2. Baca Marker Versi Lokal
+    std::string version_marker_path = g_external_dir + "/dragon2017/assets_version.txt";
+    std::string local_asset_version = read_file(version_marker_path);
+    
+    // Perlu update jika versi Supabase berbeda dengan versi lokal
+    bool needs_update = (local_asset_version != res_version);
+    if (needs_update) {
+        LOGI("Versi aset baru terdeteksi atau belum ada. Update ke versi: %s", res_version.c_str());
+    }
+
     std::string base_url = "https://akmcdn.ml.youngjoygame.com/res_version5_ind/" + res_version;
+    bool all_success = true;
 
     for (const auto& asset : assets) {
         std::string target_path = g_external_dir + "/dragon2017/" + asset;
         
-        // Pengecekan MD5 idealnya menggantikan `access(...)` di bawah ini
-        // Namun saat ini kita menggunakan fallback cek eksistensi file
-        if (access(target_path.c_str(), F_OK) == -1) {
-            LOGI("Aset tidak ditemukan, mendownload: %s", asset.c_str());
+        // 3. Download jika butuh update ATAU jika file fisiknya hilang
+        if (needs_update || access(target_path.c_str(), F_OK) == -1) {
             create_directories(target_path);
             
             std::string url_path = asset;
@@ -1319,21 +1321,26 @@ void ensure_assets_exist(JNIEnv *env) {
             }
             
             std::string download_url_str = base_url + "/" + url_path;
-            LOGI("Attempting download from: %s", download_url_str.c_str());
+            LOGI("Mendownload: %s", download_url_str.c_str());
             
             std::string content = download_url(env, download_url_str, g_timeout_ms);
             
             if (!content.empty()) {
-                if (write_file(target_path, content)) {
-                    LOGI("Berhasil download: %s", asset.c_str());
-                } else {
+                if (!write_file(target_path, content)) {
                     LOGE("Gagal menulis file: %s", target_path.c_str());
+                    all_success = false;
                 }
             } else {
                 LOGE("Gagal download dari server: %s", download_url_str.c_str());
+                all_success = false;
             }
-        } else {
-            LOGI("Aset sudah ada: %s (Lewati download)", asset.c_str());
+        }
+    }
+
+    // 4. Simpan versi baru ke marker lokal jika semua berhasil diunduh
+    if (needs_update && all_success) {
+        if (write_file(version_marker_path, res_version)) {
+            LOGI("Berhasil menyimpan marker versi lokal: %s", res_version.c_str());
         }
     }
 }
