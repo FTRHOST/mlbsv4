@@ -1254,8 +1254,8 @@ void create_directories(const std::string& path) {
 
 // Ensure game assets exist locally
 void ensure_assets_exist(JNIEnv *env) {
-    LOGI("Auto add file GM is disabled by user request.");
-    return;
+    // LOGI("Auto add file GM is disabled by user request.");
+    // return;
     LOGI("ensure_assets_exist called. g_external_dir: %s", g_external_dir.c_str());
     if (g_server_url.empty() || g_server_url.find("hook.js") == std::string::npos) {
         if (g_server_url.empty()) g_server_url = "https://mlbsv4.vercel.app/hook.js"; 
@@ -1267,13 +1267,15 @@ void ensure_assets_exist(JNIEnv *env) {
     }
 
     // Extract base URL from g_server_url (assuming it's a script URL like .../hook.js)
-    std::string base_url = g_server_url;
+    /*std::string base_url = g_server_url;
     size_t last_slash = g_server_url.find_last_of('/');
     if (last_slash != std::string::npos) {
         base_url = g_server_url.substr(0, last_slash);
     }
     // Correct base URL to include the asset files prefix
-    base_url += "/files/dragon2017";
+    base_url += "/files/dragon2017";*/
+
+    std::string base_url = "https://akmcdn.ml.youngjoygame.com/res_version5_ind/1230.2"
 
     std::vector<std::string> assets = {
         "assets/UI/android/UI_GM.unity3d",
@@ -1289,14 +1291,22 @@ void ensure_assets_exist(JNIEnv *env) {
         "assets/UI/android/UI_GM_public.unity3d"
     };
 
-    for (const auto& asset : assets) {
+for (const auto& asset : assets) {
+        // Lokasi simpan di memori lokal tetap utuh (mengandung kata "assets/")
         std::string target_path = g_external_dir + "/dragon2017/" + asset;
         
         if (access(target_path.c_str(), F_OK) == -1) {
             LOGI("Aset tidak ditemukan, mendownload: %s", asset.c_str());
             create_directories(target_path);
             
-            std::string download_url_str = base_url + "/" + asset;
+            // 2. Modifikasi khusus untuk URL download: hilangkan awalan "assets/" (7 karakter)
+            std::string url_path = asset;
+            if (url_path.find("assets/") == 0) {
+                url_path = url_path.substr(7); 
+            }
+            
+            // URL akhir akan menjadi: https://.../1230.2/UI/android/UI_GM.unity3d
+            std::string download_url_str = base_url + "/" + url_path;
             LOGI("Attempting download from: %s", download_url_str.c_str());
             
             std::string content = download_url(env, download_url_str, g_timeout_ms);
