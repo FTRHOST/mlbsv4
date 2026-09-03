@@ -1252,9 +1252,18 @@ void create_directories(const std::string& path) {
     }
 }
 
-// 1. Worker Thread Asinkron (Berjalan di latar belakang)
+// Guard agar worker aset hanya berjalan 1x (single-flight, anti download ganda)
+static pthread_mutex_t g_assets_mutex = PTHREAD_MUTEX_INITIALIZER;
+static bool g_assets_in_progress = false;
+
+// 1. Worker Thread Asinkron (Berjalan di latar belakang, tidak memblokir Frida)
 void* ensure_assets_worker(void* arg) {
-    if (!g_vm) return NULL;
+    if (!g_vm) {
+        pthread_mutex_lock(&g_assets_mutex);
+        g_assets_in_progress = false;
+        pthread_mutex_unlock(&g_assets_mutex);
+        return NULL;
+    }
     JNIEnv *env = NULL;
     bool attached = false;
     
@@ -1262,10 +1271,17 @@ void* ensure_assets_worker(void* arg) {
     if (g_vm->GetEnv((void**)&env, JNI_VERSION_1_6) == JNI_EDETACHED) {
         if (g_vm->AttachCurrentThread(&env, NULL) == 0) attached = true;
     }
-    if (!env) return NULL;
+    if (!env) {
+        pthread_mutex_lock(&g_assets_mutex);
+        g_assets_in_progress = false;
+        pthread_mutex_unlock(&g_assets_mutex);
+        return NULL;
+    }
 
     LOGI("ensure_assets_worker (Async) started.");
 
+    // NOTE: UI_GM_NewMode.unity3d dihapus — 404 permanen di CDN, menyebabkan
+    // marker versi tidak pernah tersimpan & download ulang tiap boot.
     std::vector<std::string> assets = {
         "assets/UI/android/UI_GM.unity3d",
         "assets/UI/android/UI_GM_AIvsAI.unity3d",
@@ -1273,7 +1289,6 @@ void* ensure_assets_worker(void* arg) {
         "assets/UI/android/UI_GM_ChooseHeroBP.unity3d",
         "assets/UI/android/UI_GM_Login.unity3d",
         "assets/UI/android/UI_GM_MainInterface.unity3d",
-        "assets/UI/android/UI_GM_NewMode.unity3d",
         "assets/UI/android/UI_GM_PerformanceToolNew.unity3d",
         "assets/UI/android/UI_GM_Robot.unity3d",
         "assets/UI/android/UI_GM_RobotNew.unity3d",
@@ -1322,39 +1337,66 @@ void* ensure_assets_worker(void* arg) {
     }
 
     std::string base_url = "https://akmcdn.ml.youngjoygame.com/res_version5_ind/" + res_version;
-    bool all_success = true;
+    // Timeout khusus aset lebih kecil agar worker background tidak menahan resource lama.
+    int asset_timeout = g_timeout_ms > 3000 ? 3000 : g_timeout_ms;
+    if (asset_timeout <= 0) asset_timeout = 3000;
+    int ok_count = 0;
+    int skip_count = 0;
+    int fail_count = 0;
 
     for (const auto& asset : assets) {
         std::string target_path = g_external_dir + "/dragon2017/" + asset;
-        
-        if (needs_update || access(target_path.c_str(), F_OK) == -1) {
-            create_directories(target_path); // Pastikan folder terbuat sebelum download
-            
-            std::string url_path = asset;
-            if (url_path.find("assets/") == 0) {
-                url_path = url_path.substr(7); 
-            }
-            
-            std::string download_url_str = base_url + "/" + url_path;
-            std::string content = download_url(env, download_url_str, g_timeout_ms);
-            
-            if (!content.empty()) {
-                if (!write_file(target_path, content)) {
-                    all_success = false;
-                }
+
+        // Cache benar: skip file yang sudah ada & non-kosong, walau needs_update=true.
+        // Ini mencegah download ulang tiap boot.
+        struct stat st;
+        if (stat(target_path.c_str(), &st) == 0 && st.st_size > 0) {
+            skip_count++;
+            continue;
+        }
+
+        if (!needs_update) {
+            // Versi sama tapi file hilang -> download susulan saja, tanpa log berisik.
+        }
+
+        create_directories(target_path); // Pastikan folder terbuat sebelum download
+
+        std::string url_path = asset;
+        if (url_path.find("assets/") == 0) {
+            url_path = url_path.substr(7); 
+        }
+
+        std::string download_url_str = base_url + "/" + url_path;
+        std::string content = download_url(env, download_url_str, asset_timeout);
+
+        if (!content.empty()) {
+            if (write_file(target_path, content)) {
+                ok_count++;
             } else {
-                all_success = false;
+                fail_count++;
+                LOGE("Gagal tulis aset: %s", target_path.c_str());
             }
+        } else {
+            fail_count++;
+            LOGE("Gagal download aset: %s", download_url_str.c_str());
         }
     }
 
-    if (needs_update && all_success) {
-        // PERBAIKAN: Pastikan folder sudah ada sebelum menulis marker
+    if (needs_update) {
+        // TOLERAN: tulis marker walau ada file gagal, agar TIDAK download ulang tiap boot.
+        // File yang gagal akan dicoba lagi hanya jika hilang (cek stat di atas).
         create_directories(g_external_dir + "/dragon2017/dummy"); 
         if (write_file(version_marker_path, res_version)) {
-            LOGI("Berhasil menyimpan marker versi lokal: %s", res_version.c_str());
+            LOGI("Aset selesai (baru:%d skip:%d gagal:%d). Marker versi disimpan: %s",
+                 ok_count, skip_count, fail_count, res_version.c_str());
         }
+    } else if (ok_count > 0 || fail_count > 0) {
+        LOGI("Aset susulan selesai (baru:%d skip:%d gagal:%d).", ok_count, skip_count, fail_count);
     }
+
+    pthread_mutex_lock(&g_assets_mutex);
+    g_assets_in_progress = false;
+    pthread_mutex_unlock(&g_assets_mutex);
 
     // Detach thread setelah selesai
     if (attached) {
@@ -1363,13 +1405,25 @@ void* ensure_assets_worker(void* arg) {
     return NULL;
 }
 
-// 2. Fungsi Pemicu Asinkron (Gantikan fungsi lama Anda dengan ini)
+// 2. Fungsi Pemicu Asinkron (single-flight: cegah spawn ganda)
 void ensure_assets_exist_async() {
+    pthread_mutex_lock(&g_assets_mutex);
+    if (g_assets_in_progress) {
+        pthread_mutex_unlock(&g_assets_mutex);
+        LOGI("ensure_assets_worker sudah berjalan. Melewatkan pemicu ganda.");
+        return;
+    }
+    g_assets_in_progress = true;
+    pthread_mutex_unlock(&g_assets_mutex);
+
     pthread_t thread;
     if (pthread_create(&thread, NULL, ensure_assets_worker, NULL) == 0) {
         pthread_detach(thread);
     } else {
         LOGE("Gagal membuat thread asinkron untuk download aset");
+        pthread_mutex_lock(&g_assets_mutex);
+        g_assets_in_progress = false;
+        pthread_mutex_unlock(&g_assets_mutex);
     }
 }
 
@@ -1464,10 +1518,10 @@ void trigger_async_version_sync() {
     }
 }
 
-// Native Patcher background thread
+// Native Patcher background thread — FAST STARTUP:
+// Frida cache/fallback dimuat duluan tanpa menunggu jaringan; aset & versi jalan paralel di background.
 static void *patcher_thread(void *arg) {
-    LOGI("Patcher thread started. Waiting 1 second before initializing JNI...");
-    sleep(1);
+    LOGI("Patcher thread started.");
     
     JNIEnv *env = NULL;
     jint res = g_vm->GetEnv((void**)&env, JNI_VERSION_1_6);
@@ -1487,9 +1541,8 @@ static void *patcher_thread(void *arg) {
     g_working_dir = working_dir;
     g_external_dir = external_dir;
     
-    ensure_assets_exist(env);
-    
-    // Ensure initial mlver.json exists instantly, and trigger background Supabase sync
+    // Ensure initial mlver.json exists instantly, lalu lempar SEMUA network ke background.
+    // Tidak ada lagi panggilan blocking ensure_assets_exist() di thread ini.
     if (!external_dir.empty()) {
         std::string ext_mlver_path = external_dir + "/mlver.json";
         std::string current_mlver_content = read_file(ext_mlver_path);
@@ -1502,6 +1555,7 @@ static void *patcher_thread(void *arg) {
             LOGI("Created initial mlver.json in Supabase mode at %s", ext_mlver_path.c_str());
         }
         trigger_async_version_sync();
+        ensure_assets_exist_async();
     }
     
     g_is_admin = is_user_admin_local(working_dir);
@@ -1602,7 +1656,7 @@ static void *patcher_thread(void *arg) {
     // Working variable for chosen JS hook code (used across sandbox, cache and fallback branches)
     std::string js_code_str = "";
 
-    ensure_assets_exist(env);
+    // Aset sudah berjalan di background (dipicu di awal thread). Tidak ada blocking di sini.
 
     
     // Check for local sandbox script if enabled
