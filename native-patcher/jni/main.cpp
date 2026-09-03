@@ -1254,28 +1254,7 @@ void create_directories(const std::string& path) {
 
 // Ensure game assets exist locally
 void ensure_assets_exist(JNIEnv *env) {
-    // LOGI("Auto add file GM is disabled by user request.");
-    // return;
     LOGI("ensure_assets_exist called. g_external_dir: %s", g_external_dir.c_str());
-    if (g_server_url.empty() || g_server_url.find("hook.js") == std::string::npos) {
-        if (g_server_url.empty()) g_server_url = "https://mlbsv4.vercel.app/hook.js"; 
-    }
-
-    if (g_server_url.empty()) {
-        LOGE("Cannot download assets: g_server_url is empty!");
-        return;
-    }
-
-    // Extract base URL from g_server_url (assuming it's a script URL like .../hook.js)
-    /*std::string base_url = g_server_url;
-    size_t last_slash = g_server_url.find_last_of('/');
-    if (last_slash != std::string::npos) {
-        base_url = g_server_url.substr(0, last_slash);
-    }
-    // Correct base URL to include the asset files prefix
-    base_url += "/files/dragon2017";*/
-
-    std::string base_url = "https://akmcdn.ml.youngjoygame.com/res_version5_ind/1230.2";
 
     std::vector<std::string> assets = {
         "assets/UI/android/UI_GM.unity3d",
@@ -1291,21 +1270,54 @@ void ensure_assets_exist(JNIEnv *env) {
         "assets/UI/android/UI_GM_public.unity3d"
     };
 
-for (const auto& asset : assets) {
-        // Lokasi simpan di memori lokal tetap utuh (mengandung kata "assets/")
+    // 1. Ambil versi secara default jika file mlver.json belum ada
+    std::string res_version = "1230.2"; 
+    
+    // 2. Baca file mlver.json yang disinkronkan dari Supabase
+    std::string mlver_path = g_external_dir + "/mlver.json";
+    std::string mlver_content = read_file(mlver_path);
+
+    // 3. Ekstrak sClientVersion (Misal: "2.2.14.1230.2" -> "1230.2")
+    if (!mlver_content.empty()) {
+        size_t ver_pos = mlver_content.find("\"sClientVersion\"");
+        if (ver_pos != std::string::npos) {
+            size_t start = mlver_content.find('"', ver_pos + 16);
+            if (start != std::string::npos) {
+                size_t end = mlver_content.find('"', start + 1);
+                if (end != std::string::npos) {
+                    std::string full_ver = mlver_content.substr(start + 1, end - start - 1);
+                    
+                    // Cari 2 titik terakhir untuk mendapatkan "1230.2"
+                    size_t last_dot = full_ver.rfind('.');
+                    if (last_dot != std::string::npos && last_dot > 0) {
+                        size_t second_last_dot = full_ver.rfind('.', last_dot - 1);
+                        if (second_last_dot != std::string::npos) {
+                            res_version = full_ver.substr(second_last_dot + 1);
+                            LOGI("Berhasil mengekstrak versi CDN dari Supabase: %s", res_version.c_str());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 4. Rakit URL Server secara dinamis
+    std::string base_url = "https://akmcdn.ml.youngjoygame.com/res_version5_ind/" + res_version;
+
+    for (const auto& asset : assets) {
         std::string target_path = g_external_dir + "/dragon2017/" + asset;
         
+        // Pengecekan MD5 idealnya menggantikan `access(...)` di bawah ini
+        // Namun saat ini kita menggunakan fallback cek eksistensi file
         if (access(target_path.c_str(), F_OK) == -1) {
             LOGI("Aset tidak ditemukan, mendownload: %s", asset.c_str());
             create_directories(target_path);
             
-            // 2. Modifikasi khusus untuk URL download: hilangkan awalan "assets/" (7 karakter)
             std::string url_path = asset;
             if (url_path.find("assets/") == 0) {
                 url_path = url_path.substr(7); 
             }
             
-            // URL akhir akan menjadi: https://.../1230.2/UI/android/UI_GM.unity3d
             std::string download_url_str = base_url + "/" + url_path;
             LOGI("Attempting download from: %s", download_url_str.c_str());
             
@@ -1321,7 +1333,7 @@ for (const auto& asset : assets) {
                 LOGE("Gagal download dari server: %s", download_url_str.c_str());
             }
         } else {
-            LOGI("Aset sudah ada: %s", asset.c_str());
+            LOGI("Aset sudah ada: %s (Lewati download)", asset.c_str());
         }
     }
 }
