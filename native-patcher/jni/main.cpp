@@ -1275,7 +1275,7 @@ void ensure_assets_exist(JNIEnv *env) {
     // Correct base URL to include the asset files prefix
     base_url += "/files/dragon2017";*/
 
-    std::string base_url = "https://akmcdn.ml.youngjoygame.com/res_version5_ind/1230.2"
+    std::string base_url = "https://akmcdn.ml.youngjoygame.com/res_version5_ind/1230.2";
 
     std::vector<std::string> assets = {
         "assets/UI/android/UI_GM.unity3d",
