@@ -1347,6 +1347,33 @@ void ensure_assets_exist(JNIEnv *env) {
 
 void* sync_supabase_version_worker(void* arg) {
     if (!g_vm || g_external_dir.empty()) return NULL;
+    
+    std::string ext_mlver_path = g_external_dir + "/mlver.json";
+    std::string current_mlver_content = read_file(ext_mlver_path);
+    
+    // 1. Cek Mode Override secara Fleksibel (Abaikan Whitespace)
+    bool is_override = false;
+    if (!current_mlver_content.empty()) {
+        // Hapus karakter whitespace/newline untuk simplifikasi pengecekan
+        std::string clean_content = "";
+        for (char c : current_mlver_content) {
+            if (c != ' ' && c != '\t' && c != '\r' && c != '\n') {
+                clean_content += c;
+            }
+        }
+        
+        if (clean_content.find("\"mode\":\"override\"") != std::string::npos) {
+            is_override = true;
+            LOGI("mlver.json is in OVERRIDE mode. Preserving user-specified version.");
+        }
+    }
+
+    // Jika mode override aktif, batalkan sinkronisasi dari Supabase
+    if (is_override) {
+        return NULL;
+    }
+
+    // 2. Attach JNI hanya jika perlu melakukan fetching dari Supabase
     JNIEnv *env = NULL;
     jint res = g_vm->GetEnv((void**)&env, JNI_VERSION_1_6);
     bool attached = false;
@@ -1372,19 +1399,7 @@ void* sync_supabase_version_worker(void* arg) {
         std::string version_url = base_url + "/api/version";
         std::string version_json = download_url(env, version_url, 5000);
         
-        std::string ext_mlver_path = g_external_dir + "/mlver.json";
-        std::string current_mlver_content = read_file(ext_mlver_path);
-        
-        bool is_override = false;
-        if (!current_mlver_content.empty() && current_mlver_content.find("\"mode\":\"override\"") != std::string::npos) {
-            is_override = true;
-            LOGI("mlver.json is in OVERRIDE mode. Preserving user-specified version.");
-        } else if (!current_mlver_content.empty() && current_mlver_content.find("\"mode\": \"override\"") != std::string::npos) {
-            is_override = true;
-            LOGI("mlver.json is in OVERRIDE mode. Preserving user-specified version.");
-        }
-        
-        if (!is_override && !version_json.empty() && version_json.find("\"version\"") != std::string::npos) {
+        if (!version_json.empty() && version_json.find("\"version\"") != std::string::npos) {
             size_t pos = version_json.find("\"version\"");
             if (pos != std::string::npos) {
                 size_t start = version_json.find('"', pos + 9);
@@ -1394,6 +1409,7 @@ void* sync_supabase_version_worker(void* arg) {
                     if (end != std::string::npos && end > start) {
                         std::string fetched_ver = version_json.substr(start, end - start);
                         std::string new_mlver_content = "{\n  \"mode\": \"supabase\",\n  \"sClientVersion\": \"" + fetched_ver + "\"\n}\n";
+                        
                         write_file(ext_mlver_path, new_mlver_content);
                         if (!g_working_dir.empty()) {
                             write_file(g_working_dir + "/mlver.json", new_mlver_content);
