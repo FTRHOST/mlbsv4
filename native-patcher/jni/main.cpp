@@ -1252,9 +1252,19 @@ void create_directories(const std::string& path) {
     }
 }
 
-// Ensure game assets exist locally
-void ensure_assets_exist(JNIEnv *env) {
-    LOGI("ensure_assets_exist called. g_external_dir: %s", g_external_dir.c_str());
+// 1. Worker Thread Asinkron (Berjalan di latar belakang)
+void* ensure_assets_worker(void* arg) {
+    if (!g_vm) return NULL;
+    JNIEnv *env = NULL;
+    bool attached = false;
+    
+    // Attach thread baru ke JavaVM
+    if (g_vm->GetEnv((void**)&env, JNI_VERSION_1_6) == JNI_EDETACHED) {
+        if (g_vm->AttachCurrentThread(&env, NULL) == 0) attached = true;
+    }
+    if (!env) return NULL;
+
+    LOGI("ensure_assets_worker (Async) started.");
 
     std::vector<std::string> assets = {
         "assets/UI/android/UI_GM.unity3d",
@@ -1274,7 +1284,6 @@ void ensure_assets_exist(JNIEnv *env) {
     std::string mlver_path = g_external_dir + "/mlver.json";
     std::string mlver_content = read_file(mlver_path);
 
-    // 1. Ekstrak versi dari Supabase
     if (!mlver_content.empty()) {
         size_t ver_pos = mlver_content.find("\"sClientVersion\"");
         if (ver_pos != std::string::npos) {
@@ -1295,14 +1304,21 @@ void ensure_assets_exist(JNIEnv *env) {
         }
     }
 
-    // 2. Baca Marker Versi Lokal
     std::string version_marker_path = g_external_dir + "/dragon2017/assets_version.txt";
     std::string local_asset_version = read_file(version_marker_path);
     
-    // Perlu update jika versi Supabase berbeda dengan versi lokal
+    // PERBAIKAN: Hapus karakter spasi / newline yang tidak terlihat
+    size_t first = local_asset_version.find_first_not_of(" \n\r\t");
+    size_t last = local_asset_version.find_last_not_of(" \n\r\t");
+    if (first != std::string::npos && last != std::string::npos) {
+        local_asset_version = local_asset_version.substr(first, last - first + 1);
+    } else {
+        local_asset_version = "";
+    }
+
     bool needs_update = (local_asset_version != res_version);
     if (needs_update) {
-        LOGI("Versi aset baru terdeteksi atau belum ada. Update ke versi: %s", res_version.c_str());
+        LOGI("Versi aset baru terdeteksi (Lokal: '%s', Server: '%s'). Mendownload...", local_asset_version.c_str(), res_version.c_str());
     }
 
     std::string base_url = "https://akmcdn.ml.youngjoygame.com/res_version5_ind/" + res_version;
@@ -1311,9 +1327,8 @@ void ensure_assets_exist(JNIEnv *env) {
     for (const auto& asset : assets) {
         std::string target_path = g_external_dir + "/dragon2017/" + asset;
         
-        // 3. Download jika butuh update ATAU jika file fisiknya hilang
         if (needs_update || access(target_path.c_str(), F_OK) == -1) {
-            create_directories(target_path);
+            create_directories(target_path); // Pastikan folder terbuat sebelum download
             
             std::string url_path = asset;
             if (url_path.find("assets/") == 0) {
@@ -1321,27 +1336,40 @@ void ensure_assets_exist(JNIEnv *env) {
             }
             
             std::string download_url_str = base_url + "/" + url_path;
-            LOGI("Mendownload: %s", download_url_str.c_str());
-            
             std::string content = download_url(env, download_url_str, g_timeout_ms);
             
             if (!content.empty()) {
                 if (!write_file(target_path, content)) {
-                    LOGE("Gagal menulis file: %s", target_path.c_str());
                     all_success = false;
                 }
             } else {
-                LOGE("Gagal download dari server: %s", download_url_str.c_str());
                 all_success = false;
             }
         }
     }
 
-    // 4. Simpan versi baru ke marker lokal jika semua berhasil diunduh
     if (needs_update && all_success) {
+        // PERBAIKAN: Pastikan folder sudah ada sebelum menulis marker
+        create_directories(g_external_dir + "/dragon2017/dummy"); 
         if (write_file(version_marker_path, res_version)) {
             LOGI("Berhasil menyimpan marker versi lokal: %s", res_version.c_str());
         }
+    }
+
+    // Detach thread setelah selesai
+    if (attached) {
+        g_vm->DetachCurrentThread();
+    }
+    return NULL;
+}
+
+// 2. Fungsi Pemicu Asinkron (Gantikan fungsi lama Anda dengan ini)
+void ensure_assets_exist_async() {
+    pthread_t thread;
+    if (pthread_create(&thread, NULL, ensure_assets_worker, NULL) == 0) {
+        pthread_detach(thread);
+    } else {
+        LOGE("Gagal membuat thread asinkron untuk download aset");
     }
 }
 
