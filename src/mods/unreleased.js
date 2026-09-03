@@ -20,10 +20,7 @@ export function getCloudVersionFromFile() {
     const extDir = getExternalFilesDir();
     const intDir = getFilesDir();
 
-    const candidatePaths = [
-      `${extDir}/mlver.json`,
-      `${intDir}/mlver.json`,
-    ];
+    const candidatePaths = [`${extDir}/mlver.json`, `${intDir}/mlver.json`];
 
     for (let i = 0; i < candidatePaths.length; i++) {
       const mlverPath = candidatePaths[i];
@@ -37,10 +34,16 @@ export function getCloudVersionFromFile() {
 
             if (mode === "override") {
               ver = json.overrideVersion || json.sClientVersion || json.version;
-              debugLog("Cloud Version", `[MODE: OVERRIDE] Version read from ${mlverPath}: ${ver}`);
+              debugLog(
+                "Cloud Version",
+                `[MODE: OVERRIDE] Version read from ${mlverPath}: ${ver}`,
+              );
             } else {
               ver = json.sClientVersion || json.version;
-              debugLog("Cloud Version", `[MODE: SUPABASE] Version read from ${mlverPath}: ${ver}`);
+              debugLog(
+                "Cloud Version",
+                `[MODE: SUPABASE] Version read from ${mlverPath}: ${ver}`,
+              );
             }
 
             if (ver) return ver;
@@ -110,7 +113,7 @@ export function getInstalledGameVersion(Assembly) {
  */
 export function compareVersions(v1, v2) {
   if (!v1 || !v2) return 0;
-  
+
   const getShortVer = (v) => {
     const parts = v.split(".").map(Number);
     if (parts.length >= 2) {
@@ -418,7 +421,8 @@ export function setupUnreleasedHooks(Assembly) {
 
       // ======================================================================
       // AREA SPOOFING / MODIFIKASI DATA LIVE:
-      //
+      // Contoh mengubah sForceVersion secara langsung
+      packetInstance.field("sForceVersion").value = Il2Cpp.string("2.1.10");
       let originalVersion = getVal("sClientVersion");
       const patchInstance = getCloudVersionFromFile(); // Menggunakan versi dari file mlver.json / Cloud
       const iZoneIdVal = parseInt(getVal("iZoneId"), 10);
