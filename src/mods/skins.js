@@ -20,6 +20,10 @@ export function setupSkinHooks(Assembly) {
   const IsSkinUseable = ChooseHeroMgr.method("IsSkinUseable");
   const CanSelectSkin = UIChooseHero.method("CanSelectSkin");
 
+  BActFreeSkin.implementation = function () {
+    return true;
+  };
+
   /*CanSelectSkin.implementation = function () {
     return true;
   };
@@ -63,7 +67,7 @@ export function setupSkinHooks(Assembly) {
     return "0";
   };
   */
-
+  /*
   // --- MODIFIKASI SISTEM SKIN & STATUE (JAVASCRIPT MODE) ---
   SystemData.method("GetHeroSkin").implementation = function (
     m_heroskins,
@@ -142,7 +146,7 @@ export function setupSkinHooks(Assembly) {
     return instance;
   };
 
-  /*UIChooseHero.method("BatttleSelectSkin").implementation = function (
+  UIChooseHero.method("BatttleSelectSkin").implementation = function (
     uid,
     skinid,
   ) {
