@@ -5,7 +5,7 @@
 import { CONFIG, sessionState } from "../tools/config";
 import { debugLog } from "../tools/utils";
 import { showGameNotification } from "../index";
-import { getFilesDir, getExternalFilesDir } from "../tools/cache";
+import { getExternalFilesDir } from "../tools/cache";
 import { GIT_BRANCH, GIT_HASH, LATEST_CLOUD_VERSION } from "../env";
 
 /**

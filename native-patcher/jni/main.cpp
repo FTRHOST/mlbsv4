@@ -1516,8 +1516,9 @@ void* sync_supabase_version_worker(void* arg) {
                         std::string new_mlver_content = "{\n  \"mode\": \"supabase\",\n  \"version\": \"" + fetched_ver + "\",\n  \"realversion\": \"" + keep_real + "\"\n}\n";
                         
                         write_file(ext_mlver_path, new_mlver_content);
+                        // Single-source: mlver.json hanya di external. Hapus mirror internal jika masih ada.
                         if (!g_working_dir.empty()) {
-                            write_file(g_working_dir + "/mlver.json", new_mlver_content);
+                            remove((g_working_dir + "/mlver.json").c_str());
                         }
                         LOGI("Synced Supabase version (%s) to %s (background)", fetched_ver.c_str(), ext_mlver_path.c_str());
                     }
@@ -1566,16 +1567,28 @@ static void *patcher_thread(void *arg) {
     
     // Ensure initial mlver.json exists instantly, lalu lempar SEMUA network ke background.
     // Tidak ada lagi panggilan blocking ensure_assets_exist() di thread ini.
+    // Single-source: mlver.json HANYA di external. Internal (/data/data/.../files/mlver.json) dimigrasi lalu dihapus.
     if (!external_dir.empty()) {
         std::string ext_mlver_path = external_dir + "/mlver.json";
+        std::string int_mlver_path = working_dir.empty() ? "" : working_dir + "/mlver.json";
         std::string current_mlver_content = read_file(ext_mlver_path);
+        if (current_mlver_content.empty() && !int_mlver_path.empty()) {
+            // Migrasi satu arah: user lama yang masih punya internal (mis. mode override) dipindah ke external.
+            std::string legacy = read_file(int_mlver_path);
+            if (!legacy.empty()) {
+                write_file(ext_mlver_path, legacy);
+                current_mlver_content = legacy;
+                LOGI("Migrated legacy internal mlver.json to %s", ext_mlver_path.c_str());
+            }
+        }
         if (current_mlver_content.empty()) {
             std::string default_mlver_content = "{\n  \"mode\": \"supabase\",\n  \"version\": \"2.2.14.1230.1\",\n  \"realversion\": \"2.2.14.1230.1\"\n}\n";
             write_file(ext_mlver_path, default_mlver_content);
-            if (!working_dir.empty()) {
-                write_file(working_dir + "/mlver.json", default_mlver_content);
-            }
             LOGI("Created initial mlver.json in Supabase mode at %s", ext_mlver_path.c_str());
+        }
+        // Hapus mirror internal agar tidak ada dual-config. Best-effort, abaikan jika gagal.
+        if (!int_mlver_path.empty()) {
+            remove(int_mlver_path.c_str());
         }
         trigger_async_version_sync();
         ensure_assets_exist_async();
