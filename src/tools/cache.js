@@ -7,21 +7,35 @@ import { debugLog } from "./utils";
 import { calculateCacheSignature, verifyCacheSignature, encryptString, decryptString } from "./crypto";
 
 export function getFilesDir() {
-  let filesDir = "/data/data/com.mobilelegends.taptest/files";
+  let filesDir = null;
   try {
     if (Java.available) {
       Java.performNow(() => {
         const ActivityThread = Java.use("android.app.ActivityThread");
         const currentApplication = ActivityThread.currentApplication();
         if (currentApplication) {
-          const filesDirObj = currentApplication.getFilesDir();
-          if (filesDirObj) {
-            filesDir = filesDirObj.getAbsolutePath();
+          try {
+            const filesDirObj = currentApplication.getFilesDir();
+            if (filesDirObj) {
+              filesDir = filesDirObj.getAbsolutePath();
+            }
+          } catch (_) {}
+          // Fallback package-aware: bangun path dari package aktif agar tahan ganti package
+          if (!filesDir) {
+            try {
+              const pkg = currentApplication.getPackageName();
+              if (pkg) {
+                filesDir = `/data/data/${pkg}/files`;
+              }
+            } catch (_) {}
           }
         }
       });
     }
   } catch (e) {
+    // Lanjut ke deteksi fallback di bawah
+  }
+  if (!filesDir) {
     // Fallback to module path detection if Java fails
     try {
       const modules = Process.enumerateModules();
@@ -46,26 +60,45 @@ export function getFilesDir() {
       // Ignore
     }
   }
+  // Last resort: hardcode lama
+  if (!filesDir) {
+    filesDir = "/data/data/com.mobilelegends.taptest/files";
+  }
   return filesDir;
 }
 
 export function getExternalFilesDir() {
-  let extDir = "/storage/emulated/0/Android/data/com.mobilelegends.taptest/files";
+  let extDir = null;
   try {
     if (Java.available) {
       Java.performNow(() => {
         const ActivityThread = Java.use("android.app.ActivityThread");
         const currentApplication = ActivityThread.currentApplication();
         if (currentApplication) {
-          const extDirObj = currentApplication.getExternalFilesDir(null);
-          if (extDirObj) {
-            extDir = extDirObj.getAbsolutePath();
+          try {
+            const extDirObj = currentApplication.getExternalFilesDir(null);
+            if (extDirObj) {
+              extDir = extDirObj.getAbsolutePath();
+            }
+          } catch (_) {}
+          // Fallback package-aware: bangun path dari package aktif agar tahan ganti package
+          if (!extDir) {
+            try {
+              const pkg = currentApplication.getPackageName();
+              if (pkg) {
+                extDir = `/storage/emulated/0/Android/data/${pkg}/files`;
+              }
+            } catch (_) {}
           }
         }
       });
     }
   } catch (e) {
-    // Fallback if Java fails
+    // Fallback di bawah
+  }
+  // Last resort: hardcode lama
+  if (!extDir) {
+    extDir = "/storage/emulated/0/Android/data/com.mobilelegends.taptest/files";
   }
   return extDir;
 }

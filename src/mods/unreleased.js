@@ -10,39 +10,67 @@ import { GIT_BRANCH, GIT_HASH, LATEST_CLOUD_VERSION } from "../env";
 
 /**
  * Membaca versi terupdate dari file lokal `mlver.json` di external user directory (/sdcard/Android/data/<package_name>/files/mlver.json).
- * Mendukung 2 mode:
- * 1. "supabase": Menggunakan versi `version` (rename dari sClientVersion) yang disinkronkan dari Supabase oleh Native Patcher.
- * 2. "override": Menggunakan versi `version` + `realversion` yang ditentukan manual oleh user di file mlver.json.
- *    Hook GameServerConfig.loadRealVersionCompelte (spoof version="..." XML) hanya aktif pada mode ini.
+ * Skema: { "override": boolean, "version": string, "realversion": string }
+ * - override=false (default): terhubung ke Supabase, versi disinkronkan Native Patcher.
+ * - override=true: manual oleh user; hook GameServerConfig.loadRealVersionCompelte AKTIF.
+ * Kompatibilitas mundur: "mode": "override"/"supabase" (string lama) masih dibaca.
  */
+export function ensureDirExists(dir) {
+  if (!dir) return;
+  try {
+    if (typeof Directory !== "undefined" && Directory.CreateDirectory) {
+      Directory.CreateDirectory(dir);
+      return;
+    }
+  } catch (_) {}
+  try {
+    if (typeof Java !== "undefined" && Java.available) {
+      Java.performNow(() => {
+        const JFile = Java.use("java.io.File");
+        JFile.$new(dir).mkdirs();
+      });
+    }
+  } catch (_) {}
+}
+
 /**
  * Skema mlver.json (external user directory):
  * {
- *   "mode": "supabase" | "override",
- *   "version": "2.2.14.1230.1",     // rename dari sClientVersion — dipakai untuk spoof sClientVersion + asset version
- *   "realversion": "2.2.14.1230.2"  // KHUSUS override — dipakai untuk spoof version="..." pada XML loadRealVersionCompelte
+ *   "override": false,               // boolean — false = Supabase, true = manual override
+ *   "version": "2.2.14.1230.1",      // dipakai untuk spoof sClientVersion + asset version
+ *   "realversion": "2.2.14.1230.2"   // KHUSUS override=true — dipakai untuk spoof version="..." pada XML loadRealVersionCompelte
  * }
- * Kompatibilitas mundur: sClientVersion / overrideVersion masih dibaca sebagai fallback.
- * Jalur: /sdcard/Android/data/<package_name>/files/mlver.json
+ * Kompatibilitas mundur: "mode" (string lama) dan sClientVersion / overrideVersion masih dibaca sebagai fallback.
+ * Path package-aware mengikuti getExternalFilesDir() (tahan ganti package).
+ * Jalur contoh: /sdcard/Android/data/<package_name>/files/mlver.json
  */
 export function getMlverConfig() {
   const defaultVer = LATEST_CLOUD_VERSION || "2.2.14.1230.1";
-  const defaults = { mode: "supabase", version: defaultVer, realversion: defaultVer };
+  const defaults = { override: false, version: defaultVer, realversion: defaultVer };
   try {
     const extDir = getExternalFilesDir();
     const mlverPath = `${extDir}/mlver.json`;
 
+    let readErrMsg = null;
     try {
       const content = File.readAllText(mlverPath);
       if (content && content.trim().length > 0) {
         const json = JSON.parse(content.trim());
         if (json) {
-          const mode = (json.mode || "supabase").toLowerCase();
-          // Key utama: version (fallback ke sClientVersion / overrideVersion / version lama)
+          // Key utama: override boolean (fallback ke string "mode" lama)
+          let override = false;
+          if (typeof json.override === "boolean") {
+            override = json.override;
+          } else if (typeof json.override === "string") {
+            override = json.override.toLowerCase() === "true";
+          } else if (json.mode) {
+            override = json.mode.toString().toLowerCase() === "override";
+          }
+          // Key utama: version (fallback ke sClientVersion / overrideVersion lama)
           const version = (
             json.version ||
             json.sClientVersion ||
-            (mode === "override" ? json.overrideVersion : null) ||
+            (override ? json.overrideVersion : null) ||
             ""
           )
             .toString()
@@ -56,33 +84,49 @@ export function getMlverConfig() {
             .toString()
             .trim();
           return {
-            mode,
+            override,
             version: version.length > 0 ? version : defaultVer,
             realversion: realversion.length > 0 ? realversion : defaultVer,
             path: mlverPath,
           };
         }
+        readErrMsg = "empty-json";
+      } else {
+        readErrMsg = "empty-file";
       }
     } catch (readErr) {
-      // File tidak ditemukan atau struktur JSON tidak valid — lanjut buat default di bawah
+      readErrMsg = readErr && readErr.message ? readErr.message : String(readErr);
     }
 
-    // Buat file default HANYA di external directory jika file belum ada / invalid
+    // File hilang / kosong / invalid → buat default dan TIMPA (sesuai keputusan user)
     const initialData = JSON.stringify(
       {
-        mode: "supabase",
+        override: false,
         version: defaultVer,
         realversion: defaultVer,
       },
       null,
       2,
     );
+    ensureDirExists(extDir);
+    let writeErrMsg = null;
     try {
       File.writeAllText(mlverPath, initialData);
-    } catch (_) {}
+      // Verifikasi tulis berhasil dibaca kembali
+      try {
+        const verify = File.readAllText(mlverPath);
+        if (!verify || !verify.trim().length) {
+          writeErrMsg = "verify-empty";
+        }
+      } catch (vErr) {
+        writeErrMsg = vErr && vErr.message ? vErr.message : String(vErr);
+      }
+    } catch (wErr) {
+      writeErrMsg = wErr && wErr.message ? wErr.message : String(wErr);
+    }
     debugLog(
       "Cloud Version",
-      `mlver.json tidak ditemukan. Otomatis membuat ${mlverPath} (Mode: Supabase, Version: ${defaultVer})`,
+      `mlver.json dibuat ulang di ${mlverPath} (override: false, Version: ${defaultVer}) | read: ${readErrMsg} | write: ${writeErrMsg || "ok"}`,
     );
   } catch (e) {
     debugLog("Cloud Version", `Error handling mlver.json: ${e.message}`);
@@ -99,7 +143,7 @@ export function getCloudVersionFromFile() {
   const cfg = getMlverConfig();
   debugLog(
     "Cloud Version",
-    `[MODE: ${cfg.mode.toUpperCase()}] Version read: ${cfg.version}`,
+    `[OVERRIDE: ${cfg.override}] Version read: ${cfg.version} (${cfg.path || "external"})`,
   );
   return cfg.version;
 }
@@ -107,8 +151,8 @@ export function getCloudVersionFromFile() {
 /**
  * Hook GameServerConfig.loadRealVersionCompelte untuk memodifikasi
  * atribut version="..." di dalam XML realversion.xml.
- * Hanya berjalan ketika mlver.json mode === "override".
- * Jika mode supabase → lewati hooking sepenuhnya.
+ * Hanya berjalan ketika mlver.json override === true.
+ * Jika override === false (Supabase) → lewati hooking sepenuhnya.
  */
 export function setupRealVersionSpoof(Assembly) {
   let cfg;
@@ -119,9 +163,9 @@ export function setupRealVersionSpoof(Assembly) {
     return;
   }
 
-  if (!cfg || cfg.mode !== "override") {
+  if (!cfg || cfg.override !== true) {
     console.log(
-      `[-] RealVersion spoof di-skip (mode: ${cfg ? cfg.mode : "unknown"}). Hook loadRealVersionCompelte hanya aktif pada mode override.`,
+      `[-] RealVersion spoof di-skip (override: ${cfg ? cfg.override : "unknown"}). Hook loadRealVersionCompelte hanya aktif saat override=true.`,
     );
     return;
   }
@@ -129,7 +173,7 @@ export function setupRealVersionSpoof(Assembly) {
   const targetVersion = (cfg.realversion || "").trim();
   if (!targetVersion) {
     console.log(
-      "[-] RealVersion spoof di-skip: key realversion kosong di mlver.json (mode override).",
+      "[-] RealVersion spoof di-skip: key realversion kosong di mlver.json (override=true).",
     );
     return;
   }
@@ -161,7 +205,7 @@ export function setupRealVersionSpoof(Assembly) {
   }
 
   console.log(
-    `[+] RealVersion spoof AKTIF (mode: override). Target version="${targetVersion}" pada loadRealVersionCompelte.`,
+    `[+] RealVersion spoof AKTIF (override=true). Target version="${targetVersion}" pada loadRealVersionCompelte.`,
   );
 
   Interceptor.attach(loadRealVersionCompelte.virtualAddress, {
@@ -381,7 +425,7 @@ function applyToActivityList(listPtr) {
 // --- HOOKS ---
 
 export function setupUnreleasedHooks(Assembly) {
-  // Hook XML realversion.xml — hanya aktif pada mode override (supabase → skip).
+  // Hook XML realversion.xml — hanya aktif saat override=true (false → skip).
   try {
     setupRealVersionSpoof(Assembly);
   } catch (e) {

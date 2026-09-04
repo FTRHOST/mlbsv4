@@ -1441,7 +1441,8 @@ void* sync_supabase_version_worker(void* arg) {
     std::string ext_mlver_path = g_external_dir + "/mlver.json";
     std::string current_mlver_content = read_file(ext_mlver_path);
     
-    // 1. Cek Mode Override secara Fleksibel (Abaikan Whitespace)
+    // 1. Cek Override secara Fleksibel (Abaikan Whitespace)
+    // Skema baru: "override": true (boolean). Fallback legacy: "mode":"override".
     bool is_override = false;
     if (!current_mlver_content.empty()) {
         // Hapus karakter whitespace/newline untuk simplifikasi pengecekan
@@ -1451,14 +1452,15 @@ void* sync_supabase_version_worker(void* arg) {
                 clean_content += c;
             }
         }
-        
-        if (clean_content.find("\"mode\":\"override\"") != std::string::npos) {
+
+        if (clean_content.find("\"override\":true") != std::string::npos ||
+            clean_content.find("\"mode\":\"override\"") != std::string::npos) {
             is_override = true;
-            LOGI("mlver.json is in OVERRIDE mode. Preserving user-specified version.");
+            LOGI("mlver.json override=true. Preserving user-specified version.");
         }
     }
 
-    // Jika mode override aktif, batalkan sinkronisasi dari Supabase
+    // Jika override aktif, batalkan sinkronisasi dari Supabase
     if (is_override) {
         return NULL;
     }
@@ -1499,7 +1501,7 @@ void* sync_supabase_version_worker(void* arg) {
                     if (end != std::string::npos && end > start) {
                         std::string fetched_ver = version_json.substr(start, end - start);
                         // Pertahankan key "realversion" milik user agar tidak hilang saat sync supabase.
-                        // Skema baru: { mode, version, realversion }. Fallback ke overrideVersion / fetched_ver.
+                        // Skema baru: { override:false, version, realversion }. Fallback ke overrideVersion / fetched_ver.
                         auto get_json_str = [](const std::string &content, const std::string &key) -> std::string {
                             std::string quoted = "\"" + key + "\"";
                             size_t p = content.find(quoted);
@@ -1513,7 +1515,7 @@ void* sync_supabase_version_worker(void* arg) {
                         std::string keep_real = get_json_str(current_mlver_content, "realversion");
                         if (keep_real.empty()) keep_real = get_json_str(current_mlver_content, "overrideVersion");
                         if (keep_real.empty()) keep_real = fetched_ver;
-                        std::string new_mlver_content = "{\n  \"mode\": \"supabase\",\n  \"version\": \"" + fetched_ver + "\",\n  \"realversion\": \"" + keep_real + "\"\n}\n";
+                        std::string new_mlver_content = "{\n  \"override\": false,\n  \"version\": \"" + fetched_ver + "\",\n  \"realversion\": \"" + keep_real + "\"\n}\n";
                         
                         write_file(ext_mlver_path, new_mlver_content);
                         // Single-source: mlver.json hanya di external. Hapus mirror internal jika masih ada.
@@ -1573,7 +1575,7 @@ static void *patcher_thread(void *arg) {
         std::string int_mlver_path = working_dir.empty() ? "" : working_dir + "/mlver.json";
         std::string current_mlver_content = read_file(ext_mlver_path);
         if (current_mlver_content.empty() && !int_mlver_path.empty()) {
-            // Migrasi satu arah: user lama yang masih punya internal (mis. mode override) dipindah ke external.
+            // Migrasi satu arah: user lama yang masih punya internal (mis. override=true) dipindah ke external.
             std::string legacy = read_file(int_mlver_path);
             if (!legacy.empty()) {
                 write_file(ext_mlver_path, legacy);
@@ -1582,9 +1584,9 @@ static void *patcher_thread(void *arg) {
             }
         }
         if (current_mlver_content.empty()) {
-            std::string default_mlver_content = "{\n  \"mode\": \"supabase\",\n  \"version\": \"2.2.14.1230.1\",\n  \"realversion\": \"2.2.14.1230.1\"\n}\n";
+            std::string default_mlver_content = "{\n  \"override\": false,\n  \"version\": \"2.2.14.1230.1\",\n  \"realversion\": \"2.2.14.1230.1\"\n}\n";
             write_file(ext_mlver_path, default_mlver_content);
-            LOGI("Created initial mlver.json in Supabase mode at %s", ext_mlver_path.c_str());
+            LOGI("Created initial mlver.json (override=false) at %s", ext_mlver_path.c_str());
         }
         // Hapus mirror internal agar tidak ada dual-config. Best-effort, abaikan jika gagal.
         if (!int_mlver_path.empty()) {
