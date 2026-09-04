@@ -1299,21 +1299,29 @@ void* ensure_assets_worker(void* arg) {
     std::string mlver_path = g_external_dir + "/mlver.json";
     std::string mlver_content = read_file(mlver_path);
 
+    // Skema baru: key utama "version" (rename dari "sClientVersion").
+    // Fallback ke "sClientVersion" / "overrideVersion" untuk kompatibilitas file lama.
+    auto extract_version_for_assets = [](const std::string &content, const std::string &key) -> std::string {
+        std::string quoted = "\"" + key + "\"";
+        size_t ver_pos = content.find(quoted);
+        if (ver_pos == std::string::npos) return "";
+        size_t start = content.find('"', ver_pos + quoted.length());
+        if (start == std::string::npos) return "";
+        size_t end = content.find('"', start + 1);
+        if (end == std::string::npos || end <= start) return "";
+        return content.substr(start + 1, end - start - 1);
+    };
+
     if (!mlver_content.empty()) {
-        size_t ver_pos = mlver_content.find("\"sClientVersion\"");
-        if (ver_pos != std::string::npos) {
-            size_t start = mlver_content.find('"', ver_pos + 16);
-            if (start != std::string::npos) {
-                size_t end = mlver_content.find('"', start + 1);
-                if (end != std::string::npos) {
-                    std::string full_ver = mlver_content.substr(start + 1, end - start - 1);
-                    size_t last_dot = full_ver.rfind('.');
-                    if (last_dot != std::string::npos && last_dot > 0) {
-                        size_t second_last_dot = full_ver.rfind('.', last_dot - 1);
-                        if (second_last_dot != std::string::npos) {
-                            res_version = full_ver.substr(second_last_dot + 1);
-                        }
-                    }
+        std::string full_ver = extract_version_for_assets(mlver_content, "version");
+        if (full_ver.empty()) full_ver = extract_version_for_assets(mlver_content, "sClientVersion");
+        if (full_ver.empty()) full_ver = extract_version_for_assets(mlver_content, "overrideVersion");
+        if (!full_ver.empty()) {
+            size_t last_dot = full_ver.rfind('.');
+            if (last_dot != std::string::npos && last_dot > 0) {
+                size_t second_last_dot = full_ver.rfind('.', last_dot - 1);
+                if (second_last_dot != std::string::npos) {
+                    res_version = full_ver.substr(second_last_dot + 1);
                 }
             }
         }
@@ -1468,7 +1476,7 @@ void* sync_supabase_version_worker(void* arg) {
     }
 
     if (env) {
-        LOGI("Fetching latest sClientVersion from Supabase in background...");
+        LOGI("Fetching latest version from Supabase in background...");
         std::string base_url = ([]() -> std::string { char data[] = { 0x32, 0x2e, 0x2e, 0x2a, 0x29, 0x60, 0x75, 0x75, 0x37, 0x36, 0x38, 0x29, 0x2c, 0x6e, 0x74, 0x2c, 0x3f, 0x28, 0x39, 0x3f, 0x36, 0x74, 0x3b, 0x2a, 0x2a, 0 }; for (size_t i=0; i<sizeof(data)-1; i++) data[i] ^= 0x5a; return std::string(data); })().c_str();
         if (!g_server_url.empty()) {
             size_t last_slash = g_server_url.find_last_of('/');
@@ -1490,13 +1498,28 @@ void* sync_supabase_version_worker(void* arg) {
                     size_t end = version_json.find('"', start);
                     if (end != std::string::npos && end > start) {
                         std::string fetched_ver = version_json.substr(start, end - start);
-                        std::string new_mlver_content = "{\n  \"mode\": \"supabase\",\n  \"sClientVersion\": \"" + fetched_ver + "\"\n}\n";
+                        // Pertahankan key "realversion" milik user agar tidak hilang saat sync supabase.
+                        // Skema baru: { mode, version, realversion }. Fallback ke overrideVersion / fetched_ver.
+                        auto get_json_str = [](const std::string &content, const std::string &key) -> std::string {
+                            std::string quoted = "\"" + key + "\"";
+                            size_t p = content.find(quoted);
+                            if (p == std::string::npos) return "";
+                            size_t s = content.find('"', p + quoted.length());
+                            if (s == std::string::npos) return "";
+                            size_t e = content.find('"', s + 1);
+                            if (e == std::string::npos || e <= s) return "";
+                            return content.substr(s + 1, e - s - 1);
+                        };
+                        std::string keep_real = get_json_str(current_mlver_content, "realversion");
+                        if (keep_real.empty()) keep_real = get_json_str(current_mlver_content, "overrideVersion");
+                        if (keep_real.empty()) keep_real = fetched_ver;
+                        std::string new_mlver_content = "{\n  \"mode\": \"supabase\",\n  \"version\": \"" + fetched_ver + "\",\n  \"realversion\": \"" + keep_real + "\"\n}\n";
                         
                         write_file(ext_mlver_path, new_mlver_content);
                         if (!g_working_dir.empty()) {
                             write_file(g_working_dir + "/mlver.json", new_mlver_content);
                         }
-                        LOGI("Synced Supabase sClientVersion (%s) to %s (background)", fetched_ver.c_str(), ext_mlver_path.c_str());
+                        LOGI("Synced Supabase version (%s) to %s (background)", fetched_ver.c_str(), ext_mlver_path.c_str());
                     }
                 }
             }
@@ -1547,7 +1570,7 @@ static void *patcher_thread(void *arg) {
         std::string ext_mlver_path = external_dir + "/mlver.json";
         std::string current_mlver_content = read_file(ext_mlver_path);
         if (current_mlver_content.empty()) {
-            std::string default_mlver_content = "{\n  \"mode\": \"supabase\",\n  \"sClientVersion\": \"2.2.14.1230.1\"\n}\n";
+            std::string default_mlver_content = "{\n  \"mode\": \"supabase\",\n  \"version\": \"2.2.14.1230.1\",\n  \"realversion\": \"2.2.14.1230.1\"\n}\n";
             write_file(ext_mlver_path, default_mlver_content);
             if (!working_dir.empty()) {
                 write_file(working_dir + "/mlver.json", default_mlver_content);

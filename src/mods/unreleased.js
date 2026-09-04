@@ -11,15 +11,23 @@ import { GIT_BRANCH, GIT_HASH, LATEST_CLOUD_VERSION } from "../env";
 /**
  * Membaca versi terupdate dari file lokal `mlver.json` di external user directory (/sdcard/Android/data/<package_name>/files/mlver.json).
  * Mendukung 2 mode:
- * 1. "supabase": Menggunakan versi sClientVersion yang disinkronkan dari Supabase oleh Native Patcher.
- * 2. "override": Menggunakan versi overrideVersion yang ditentukan manual oleh user di file mlver.json.
+ * 1. "supabase": Menggunakan versi `version` (rename dari sClientVersion) yang disinkronkan dari Supabase oleh Native Patcher.
+ * 2. "override": Menggunakan versi `version` + `realversion` yang ditentukan manual oleh user di file mlver.json.
+ *    Hook GameServerConfig.loadRealVersionCompelte (spoof version="..." XML) hanya aktif pada mode ini.
  */
 /**
- * Membaca versi terupdate dari file lokal `mlver.json` di external user directory.
+ * Skema mlver.json (external user directory):
+ * {
+ *   "mode": "supabase" | "override",
+ *   "version": "2.2.14.1230.1",     // rename dari sClientVersion — dipakai untuk spoof sClientVersion + asset version
+ *   "realversion": "2.2.14.1230.2"  // KHUSUS override — dipakai untuk spoof version="..." pada XML loadRealVersionCompelte
+ * }
+ * Kompatibilitas mundur: sClientVersion / overrideVersion masih dibaca sebagai fallback.
  * Jalur: /sdcard/Android/data/<package_name>/files/mlver.json
  */
-export function getCloudVersionFromFile() {
+export function getMlverConfig() {
   const defaultVer = LATEST_CLOUD_VERSION || "2.2.14.1230.1";
+  const defaults = { mode: "supabase", version: defaultVer, realversion: defaultVer };
   try {
     const extDir = getExternalFilesDir();
     const mlverPath = `${extDir}/mlver.json`;
@@ -30,42 +38,48 @@ export function getCloudVersionFromFile() {
         const json = JSON.parse(content.trim());
         if (json) {
           const mode = (json.mode || "supabase").toLowerCase();
-          let ver = null;
-
-          if (mode === "override") {
-            ver = json.overrideVersion || json.sClientVersion || json.version;
-            debugLog(
-              "Cloud Version",
-              `[MODE: OVERRIDE] Version read from ${mlverPath}: ${ver}`,
-            );
-          } else {
-            ver = json.sClientVersion || json.version;
-            debugLog(
-              "Cloud Version",
-              `[MODE: SUPABASE] Version read from ${mlverPath}: ${ver}`,
-            );
-          }
-
-          if (ver && typeof ver === "string" && ver.trim().length > 0) {
-            return ver.trim();
-          }
+          // Key utama: version (fallback ke sClientVersion / overrideVersion / version lama)
+          const version = (
+            json.version ||
+            json.sClientVersion ||
+            (mode === "override" ? json.overrideVersion : null) ||
+            ""
+          )
+            .toString()
+            .trim();
+          // Key khusus override untuk XML realversion.xml
+          const realversion = (
+            json.realversion ||
+            json.overrideVersion ||
+            ""
+          )
+            .toString()
+            .trim();
+          return {
+            mode,
+            version: version.length > 0 ? version : defaultVer,
+            realversion: realversion.length > 0 ? realversion : defaultVer,
+            path: mlverPath,
+          };
         }
       }
     } catch (readErr) {
-      // File tidak ditemukan atau struktur JSON tidak valid
+      // File tidak ditemukan atau struktur JSON tidak valid — lanjut buat default di bawah
     }
 
-    // Buat file default HANYA di external directory jika file belum ada
+    // Buat file default HANYA di external directory jika file belum ada / invalid
     const initialData = JSON.stringify(
       {
         mode: "supabase",
-        sClientVersion: defaultVer,
-        overrideVersion: defaultVer,
+        version: defaultVer,
+        realversion: defaultVer,
       },
       null,
       2,
     );
-    File.writeAllText(mlverPath, initialData);
+    try {
+      File.writeAllText(mlverPath, initialData);
+    } catch (_) {}
     debugLog(
       "Cloud Version",
       `mlver.json tidak ditemukan. Otomatis membuat ${mlverPath} (Mode: Supabase, Version: ${defaultVer})`,
@@ -74,7 +88,127 @@ export function getCloudVersionFromFile() {
     debugLog("Cloud Version", `Error handling mlver.json: ${e.message}`);
   }
 
-  return defaultVer;
+  return defaults;
+}
+
+/**
+ * Membaca versi terupdate dari file lokal `mlver.json` di external user directory.
+ * Wrapper tipis di atas getMlverConfig() agar pemanggil lama tetap berfungsi.
+ */
+export function getCloudVersionFromFile() {
+  const cfg = getMlverConfig();
+  debugLog(
+    "Cloud Version",
+    `[MODE: ${cfg.mode.toUpperCase()}] Version read: ${cfg.version}`,
+  );
+  return cfg.version;
+}
+
+/**
+ * Hook GameServerConfig.loadRealVersionCompelte untuk memodifikasi
+ * atribut version="..." di dalam XML realversion.xml.
+ * Hanya berjalan ketika mlver.json mode === "override".
+ * Jika mode supabase → lewati hooking sepenuhnya.
+ */
+export function setupRealVersionSpoof(Assembly) {
+  let cfg;
+  try {
+    cfg = getMlverConfig();
+  } catch (e) {
+    debugLog("RealVersion", `Gagal membaca mlver.json: ${e.message}`);
+    return;
+  }
+
+  if (!cfg || cfg.mode !== "override") {
+    console.log(
+      `[-] RealVersion spoof di-skip (mode: ${cfg ? cfg.mode : "unknown"}). Hook loadRealVersionCompelte hanya aktif pada mode override.`,
+    );
+    return;
+  }
+
+  const targetVersion = (cfg.realversion || "").trim();
+  if (!targetVersion) {
+    console.log(
+      "[-] RealVersion spoof di-skip: key realversion kosong di mlver.json (mode override).",
+    );
+    return;
+  }
+
+  let GameServerConfig = null;
+  try {
+    GameServerConfig =
+      (Assembly.tryClass && Assembly.tryClass("GameServerConfig")) ||
+      Assembly.class("GameServerConfig");
+  } catch (e) {
+    console.log(`[-] GameServerConfig tidak ditemukan: ${e.message}`);
+    return;
+  }
+  if (!GameServerConfig) {
+    console.log("[-] GameServerConfig tidak ditemukan, hook dibatalkan.");
+    return;
+  }
+
+  let loadRealVersionCompelte = null;
+  try {
+    loadRealVersionCompelte = GameServerConfig.method("loadRealVersionCompelte");
+  } catch (e) {
+    console.log(`[-] loadRealVersionCompelte tidak ditemukan: ${e.message}`);
+    return;
+  }
+  if (!loadRealVersionCompelte || !loadRealVersionCompelte.virtualAddress) {
+    console.log("[-] loadRealVersionCompelte virtualAddress tidak valid.");
+    return;
+  }
+
+  console.log(
+    `[+] RealVersion spoof AKTIF (mode: override). Target version="${targetVersion}" pada loadRealVersionCompelte.`,
+  );
+
+  Interceptor.attach(loadRealVersionCompelte.virtualAddress, {
+    onEnter(args) {
+      // Berdasarkan log trace:
+      // args[0] = this (GameServerConfig)
+      // args[1] = strXmlData (String XML)
+      const xmlPtr = args[1];
+
+      if (!xmlPtr || xmlPtr.isNull()) return;
+
+      try {
+        // 1. Ambil konten XML asli
+        const il2cppStr = new Il2Cpp.String(xmlPtr);
+        let xmlData = il2cppStr.content;
+        if (!xmlData) return;
+
+        // 2. Daftar perubahan yang diinginkan (Key: Value)
+        const replacements = {
+          version: targetVersion,
+        };
+
+        let isModified = false;
+
+        // 3. Proses penggantian menggunakan Regex
+        for (const [key, newValue] of Object.entries(replacements)) {
+          const regex = new RegExp(`${key}="[^"]*"`, "g");
+          if (regex.test(xmlData)) {
+            xmlData = xmlData.replace(regex, `${key}="${newValue}"`);
+            isModified = true;
+          }
+        }
+
+        if (isModified) {
+          // 4. Alokasikan string baru di heap Unity dan timpa args[1]
+          // Menggunakan Il2Cpp.string() adalah cara paling aman di bridge terbaru
+          args[1] = Il2Cpp.string(xmlData);
+
+          console.log("[Spoof] XML data modified and injected successfully:");
+          console.log(" -> New version : " + replacements.version);
+        }
+      } catch (e) {
+        // Menggunakan console.error agar tidak memutus eksekusi script utama
+        console.error("[Error] Gagal memanipulasi XML: " + e.message);
+      }
+    },
+  });
 }
 
 /**
@@ -247,6 +381,13 @@ function applyToActivityList(listPtr) {
 // --- HOOKS ---
 
 export function setupUnreleasedHooks(Assembly) {
+  // Hook XML realversion.xml — hanya aktif pada mode override (supabase → skip).
+  try {
+    setupRealVersionSpoof(Assembly);
+  } catch (e) {
+    debugLog("RealVersion", `setupRealVersionSpoof gagal: ${e.message}`);
+  }
+
   // Pengecekan Versi Game Terpasang vs Versi Cloud (mlver.json) setelah 8 detik dari script dimulai
   setTimeout(() => {
     try {
