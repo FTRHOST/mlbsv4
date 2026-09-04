@@ -2,9 +2,45 @@
  * Secure Local Cache Handler for Asynchronous Licensing
  */
 
-import { updateSession } from "./config";
+import { updateSession, sessionState } from "./config";
 import { debugLog } from "./utils";
 import { calculateCacheSignature, verifyCacheSignature, encryptString, decryptString } from "./crypto";
+
+/**
+ * Deteksi package name aktif tanpa bergantung pada Java bridge
+ * (Java.available sering false saat hook berjalan sehingga fallback hardcode taptest terpakai).
+ * Urutan: Java bridge → Il2Cpp bridge → /proc/self/cmdline → null.
+ */
+export function getPackageNameSync() {
+  try {
+    if (typeof Java !== "undefined" && Java.available) {
+      let pkg = null;
+      Java.performNow(() => {
+        try {
+          const currentApplication = Java.use("android.app.ActivityThread").currentApplication();
+          if (currentApplication) {
+            pkg = currentApplication.getPackageName();
+          }
+        } catch (_) {}
+      });
+      if (pkg) return pkg;
+    }
+  } catch (_) {}
+  try {
+    if (typeof Il2Cpp !== "undefined" && Il2Cpp.application && Il2Cpp.application.identifier) {
+      const id = Il2Cpp.application.identifier;
+      if (id) return id;
+    }
+  } catch (_) {}
+  try {
+    const raw = File.readAllText("/proc/self/cmdline");
+    if (raw) {
+      const pkg = raw.split("\0")[0].replace(/[^A-Za-z0-9_.]/g, "").trim();
+      if (pkg && pkg.indexOf(".") !== -1) return pkg;
+    }
+  } catch (_) {}
+  return null;
+}
 
 export function getFilesDir() {
   let filesDir = null;
@@ -60,6 +96,13 @@ export function getFilesDir() {
       // Ignore
     }
   }
+  // Fallback package-aware tanpa Java bridge (tahan ganti package)
+  if (!filesDir) {
+    const pkg = getPackageNameSync();
+    if (pkg) {
+      filesDir = `/data/data/${pkg}/files`;
+    }
+  }
   // Last resort: hardcode lama
   if (!filesDir) {
     filesDir = "/data/data/com.mobilelegends.taptest/files";
@@ -95,6 +138,13 @@ export function getExternalFilesDir() {
     }
   } catch (e) {
     // Fallback di bawah
+  }
+  // Fallback package-aware tanpa Java bridge (tahan ganti package)
+  if (!extDir) {
+    const pkg = getPackageNameSync();
+    if (pkg) {
+      extDir = `/storage/emulated/0/Android/data/${pkg}/files`;
+    }
   }
   // Last resort: hardcode lama
   if (!extDir) {
