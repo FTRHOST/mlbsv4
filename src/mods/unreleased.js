@@ -46,7 +46,11 @@ export function ensureDirExists(dir) {
  */
 export function getMlverConfig() {
   const defaultVer = LATEST_CLOUD_VERSION || "2.2.14.1230.1";
-  const defaults = { override: false, version: defaultVer, realversion: defaultVer };
+  const defaults = {
+    override: false,
+    version: defaultVer,
+    realversion: defaultVer,
+  };
   try {
     const extDir = getExternalFilesDir();
     const mlverPath = `${extDir}/mlver.json`;
@@ -76,11 +80,7 @@ export function getMlverConfig() {
             .toString()
             .trim();
           // Key khusus override untuk XML realversion.xml
-          const realversion = (
-            json.realversion ||
-            json.overrideVersion ||
-            ""
-          )
+          const realversion = (json.realversion || json.overrideVersion || "")
             .toString()
             .trim();
           return {
@@ -95,7 +95,8 @@ export function getMlverConfig() {
         readErrMsg = "empty-file";
       }
     } catch (readErr) {
-      readErrMsg = readErr && readErr.message ? readErr.message : String(readErr);
+      readErrMsg =
+        readErr && readErr.message ? readErr.message : String(readErr);
     }
 
     // File hilang / kosong / invalid → buat default dan TIMPA (sesuai keputusan user)
@@ -194,7 +195,9 @@ export function setupRealVersionSpoof(Assembly) {
 
   let loadRealVersionCompelte = null;
   try {
-    loadRealVersionCompelte = GameServerConfig.method("loadRealVersionCompelte");
+    loadRealVersionCompelte = GameServerConfig.method(
+      "loadRealVersionCompelte",
+    );
   } catch (e) {
     console.log(`[-] loadRealVersionCompelte tidak ditemukan: ${e.message}`);
     return;
@@ -426,11 +429,11 @@ function applyToActivityList(listPtr) {
 
 export function setupUnreleasedHooks(Assembly) {
   // Hook XML realversion.xml — hanya aktif saat override=true (false → skip).
-  try {
+  /*try {
     setupRealVersionSpoof(Assembly);
   } catch (e) {
     debugLog("RealVersion", `setupRealVersionSpoof gagal: ${e.message}`);
-  }
+  }*/
 
   // Pengecekan Versi Game Terpasang vs Versi Cloud (mlver.json) setelah 8 detik dari script dimulai
   setTimeout(() => {
