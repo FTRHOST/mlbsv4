@@ -429,11 +429,11 @@ function applyToActivityList(listPtr) {
 
 export function setupUnreleasedHooks(Assembly) {
   // Hook XML realversion.xml — hanya aktif saat override=true (false → skip).
-  /*try {
+  try {
     setupRealVersionSpoof(Assembly);
   } catch (e) {
     debugLog("RealVersion", `setupRealVersionSpoof gagal: ${e.message}`);
-  }*/
+  }
 
   // Pengecekan Versi Game Terpasang vs Versi Cloud (mlver.json) setelah 8 detik dari script dimulai
   setTimeout(() => {
