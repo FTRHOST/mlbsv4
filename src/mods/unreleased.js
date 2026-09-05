@@ -155,7 +155,7 @@ export function getCloudVersionFromFile() {
  * Hanya berjalan ketika mlver.json override === true.
  * Jika override === false (Supabase) → lewati hooking sepenuhnya.
  */
-/*export function setupRealVersionSpoof(Assembly) {
+export function setupRealVersionSpoof(Assembly) {
   let cfg;
   try {
     cfg = getMlverConfig();
@@ -256,7 +256,7 @@ export function getCloudVersionFromFile() {
       }
     },
   });
-}*/
+}
 
 /**
  * Mengambil versi terpasang dari GameMain.m_sInnerVerRealForBattle dan mengambil 5 bagian versi awal (contoh: "2.2.13.1228.4")
