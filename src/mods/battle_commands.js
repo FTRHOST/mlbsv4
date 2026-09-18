@@ -68,7 +68,7 @@ export function setupBattleCommands(Assembly) {
         try {
           const bridge = getBridgeInstance(BattleBridge);
           if (bridge) {
-            const toggle = safeMethod(bridge.class, "ToggleAllUIShow");
+            const toggle = safeMethod(BattleBridge, "ToggleAllUIShow");
             if (toggle) bridge.method("ToggleAllUIShow").invoke();
           }
         } catch (e) {}

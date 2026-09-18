@@ -33,21 +33,30 @@ export function setupSkinHooks(Assembly) {
   const CmdHeroStatue = safeClass("MTTDProto.CmdHeroStatue");
   if (!SystemData || !CmdHeroSkin || !CmdHeroStatue) return;
 
-  // Stealth: user tanpa izin = zero hook (tanpa jejak .implementation).
-  if (!(sessionState.isAuthorized && sessionState.permissions.allowFreeSkin)) {
-    debugLog("Skin", "Skipped (no allowFreeSkin).");
-    return;
-  }
+  // Izin dicek di DALAM tiap hook (bukan saat setup), karena verifikasi
+  // auth operator bersifat async dan biasanya belum selesai saat setup.
+  // Tanpa izin: teruskan ke fungsi asli (no-op, stealth untuk banned).
+  const allowed = () =>
+    sessionState.isAuthorized && sessionState.permissions.allowFreeSkin;
 
   // ===== Dragon Crystal (pewarnaan skin) => dimiliki semua ===== //
   hookMethod(SystemData, "IsUnlockDragonCrystal", function (
     crystalID,
     bCheckShareInfo,
   ) {
+    if (!allowed()) {
+      return this.method("IsUnlockDragonCrystal").invoke(
+        crystalID,
+        bCheckShareInfo,
+      );
+    }
     return true;
   });
 
   hookMethod(SystemData, "IsRealHaveHero", function (heroid) {
+    if (!allowed()) {
+      return this.method("IsRealHaveHero").invoke(heroid);
+    }
     return true;
   });
 
@@ -76,17 +85,19 @@ export function setupSkinHooks(Assembly) {
       experienceDict,
     ) {
       // Daftarkan katalog hero ke dict (jalur data, bukan UI)
-      try {
-        const count = heros.method("get_Count").invoke();
-        for (let i = 0; i < count; i++) {
-          try {
-            const el = heros.method("get_Item").invoke(i);
-            if (el.isNull()) continue;
-            grantHeroToDict(el.field("m_ID").value);
-          } catch (e) {}
+      if (allowed()) {
+        try {
+          const count = heros.method("get_Count").invoke();
+          for (let i = 0; i < count; i++) {
+            try {
+              const el = heros.method("get_Item").invoke(i);
+              if (el.isNull()) continue;
+              grantHeroToDict(el.field("m_ID").value);
+            } catch (e) {}
+          }
+        } catch (e) {
+          debugLog("Skin", "grant hero bulk gagal: " + e.message);
         }
-      } catch (e) {
-        debugLog("Skin", "grant hero bulk gagal: " + e.message);
       }
 
       const ret = this.method("GetHeroKeyInfoList").invoke(
@@ -153,30 +164,35 @@ export function setupSkinHooks(Assembly) {
   hookMethod(SystemData, "GetHeroSkin", function (m_heroskins, skinid) {
     const ret = this.method("GetHeroSkin").invoke(m_heroskins, skinid);
     if (!ret.handle.isNull() && ret.handle.toInt32() > 0x100) return ret;
+    if (!allowed()) return ret;
     return fakeSkin(skinid);
   });
 
   hookMethod(SystemData, "IsHaveSkin", function (skinid) {
     const ret = this.method("IsHaveSkin").invoke(skinid);
     if (!ret.handle.isNull() && ret.handle.toInt32() > 0x100) return ret;
+    if (!allowed()) return ret;
     return fakeSkin(skinid);
   });
 
   hookMethod(SystemData, "IsHaveSkinForever", function (skinid) {
     const ret = this.method("IsHaveSkinForever").invoke(skinid);
     if (!ret.handle.isNull() && ret.handle.toInt32() > 0x100) return ret;
+    if (!allowed()) return ret;
     return fakeSkin(skinid);
   });
 
   hookMethod(SystemData, "IsHaveStatue", function (statueid) {
     const ret = this.method("IsHaveStatue").invoke(statueid);
     if (!ret.handle.isNull() && ret.handle.toInt32() > 0x100) return ret;
+    if (!allowed()) return ret;
     return fakeStatue(statueid);
   });
 
   hookMethod(SystemData, "IsHaveStatueForever", function (statueid) {
     const ret = this.method("IsHaveStatueForever").invoke(statueid);
     if (!ret.handle.isNull() && ret.handle.toInt32() > 0x100) return ret;
+    if (!allowed()) return ret;
     return fakeStatue(statueid);
   });
 
@@ -189,6 +205,7 @@ export function setupSkinHooks(Assembly) {
       statueid,
     );
     if (!ret.handle.isNull() && ret.handle.toInt32() > 0x100) return ret;
+    if (!allowed()) return ret;
     return fakeStatue(statueid);
   });
   debugLog("Skin", "Skin & Statue hooks installed.");

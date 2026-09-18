@@ -15,8 +15,9 @@ import { setupGMHooks } from "./mods/gm";
 import { setupSkinHooks } from "./mods/skins";
 import { setupUnreleasedHooks } from "./mods/unreleased";
 import { setupBattleCommands } from "./mods/battle_commands";
-// Telemetry dimatikan (stealth): modul tidak di-bundle.
-// import { setupTelemetryHooks } from "./mods/telemetry_hooks";
+// Telemetry (hook + kirim data) dimatikan, tapi stub auth-only tetap dipakai:
+// tanpa ini sessionState tidak pernah authorized dan semua gate mod mati.
+import { setupTelemetryHooks } from "./mods/telemetry_hooks";
 // import { setupUIHooks } from "./mods/ui_controller"; // Dinonaktifkan karena tidak work
 
 // Load auth cache immediately at global startup to determine user role
@@ -210,7 +211,12 @@ function executeSimpleHooks() {
   setupSkinHooks(Assembly);
   setupUnreleasedHooks(Assembly);
   setupBattleCommands(Assembly);
-  // setupTelemetryHooks(Assembly);
+  // Auth-only (poll operator ID untuk lisensi; tanpa hook/pengiriman data)
+  try {
+    setupTelemetryHooks(Assembly);
+  } catch (e) {
+    debugLog("Bootstrap", "setupTelemetryHooks skipped: " + e.message);
+  }
   // setupUIHooks(Assembly); // Dinonaktifkan karena tidak work
 }
 
