@@ -13,13 +13,14 @@ export function setupBattleCommands(Assembly) {
   const UIMiniMapToolButton = Assembly.class("UIMiniMapToolButton");
   const EnterCoolDown = CoolDownData.method("EnterCoolDown");
 
-  if (!BattleBridge || BattleBridge.handle.isNull()) return;
+  // if (!BattleBridge || BattleBridge.handle.isNull()) return;
 
-  const ShowChatHistoryText = BattleBridge.method("ShowChatHistoryText");
+  const instanceBattleBridge = Il2Cpp.gc.choose(BattleBridge);
+  const objekAktifBattleBridge = instanceBattleBridge[0];
+
+  /* const ShowChatHistoryText = BattleBridge.method("ShowChatHistoryText");
   if (ShowChatHistoryText) {
-          const instanceBattleBridge = Il2Cpp.gc.choose(BattleBridge);
-      const objekAktifBattleBridge = instanceBattleBridge[0];
-    /*ShowChatHistoryText.implementation = function (messageStr) {
+    ShowChatHistoryText.implementation = function (messageStr) {
       if (messageStr && !messageStr.handle.isNull()) {
         // 1. FILTER CHAT LAMA: Cek alamat memori objek System.String
         // Jika alamatnya sama dengan yang terakhir diproses, abaikan!
@@ -74,10 +75,10 @@ export function setupBattleCommands(Assembly) {
             }
           }
         }
-      }*/
+      }
       return ShowChatHistoryText.invoke(this, messageStr);
     };
-  }
+  }*/
 
   UIMiniMapToolButton.method("OnGM").implementation = function (go) {
     const ori = this.method("OnGM").invoke(go);
