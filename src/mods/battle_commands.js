@@ -10,6 +10,7 @@ export function setupBattleCommands(Assembly) {
   const EntityBaseGlobalVar = Assembly.class("Battle.EntityBaseGlobalVar");
   const TrainingGuide = Assembly.class("TrainingGuide");
   const CoolDownData = Assembly.class("Battle.CoolDownData");
+  const UIMiniMapToolButton = Assembly.class("UIMiniMapToolButton");
   const EnterCoolDown = CoolDownData.method("EnterCoolDown");
 
   if (!BattleBridge || BattleBridge.handle.isNull()) return;
@@ -75,6 +76,12 @@ export function setupBattleCommands(Assembly) {
       return ShowChatHistoryText.invoke(this, messageStr);
     };
   }*/
+  const instancebb = Il2Cpp.gc.choose(BattleBridge)[0];
+
+  UIMiniMapToolButton.method("OnGM").implementation = function (go) {
+    instancebb.method("ToggleAllUIShow").invoke();
+    return this.method("OnGM").invoke(go);
+  };
 
   TrainingGuide.method("OnCoolDown").implementation = function (
     iParam,
