@@ -15,9 +15,11 @@ export function setupBattleCommands(Assembly) {
 
   if (!BattleBridge || BattleBridge.handle.isNull()) return;
 
-  /* const ShowChatHistoryText = BattleBridge.method("ShowChatHistoryText");
+  const ShowChatHistoryText = BattleBridge.method("ShowChatHistoryText");
   if (ShowChatHistoryText) {
-    ShowChatHistoryText.implementation = function (messageStr) {
+          const instanceBattleBridge = Il2Cpp.gc.choose(BattleBridge);
+      const objekAktifBattleBridge = instanceBattleBridge[0];
+    /*ShowChatHistoryText.implementation = function (messageStr) {
       if (messageStr && !messageStr.handle.isNull()) {
         // 1. FILTER CHAT LAMA: Cek alamat memori objek System.String
         // Jika alamatnya sama dengan yang terakhir diproses, abaikan!
@@ -72,15 +74,15 @@ export function setupBattleCommands(Assembly) {
             }
           }
         }
-      }
+      }*/
       return ShowChatHistoryText.invoke(this, messageStr);
     };
-  }*/
-  const instancebb = Il2Cpp.gc.choose(BattleBridge)[0];
+  }
 
   UIMiniMapToolButton.method("OnGM").implementation = function (go) {
-    instancebb.method("ToggleAllUIShow").invoke();
-    return this.method("OnGM").invoke(go);
+    const ori = this.method("OnGM").invoke(go);
+    objekAktifBattleBridge.method("ToggleAllUIShow").invoke();
+    return ori;
   };
 
   TrainingGuide.method("OnCoolDown").implementation = function (
