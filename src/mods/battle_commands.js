@@ -16,10 +16,9 @@ export function setupBattleCommands(Assembly) {
 
   if (!BattleBridge || BattleBridge.handle.isNull()) return;
 
-  const ShowChatHistoryText = BattleBridge.method("ShowChatHistoryText");
+  /*const ShowChatHistoryText = BattleBridge.method("ShowChatHistoryText");
   if (ShowChatHistoryText) {
-    const instanceBattleBridge = Il2Cpp.gc.choose(BattleBridge);
-    const objekAktifBattleBridge = instanceBattleBridge[0];
+
     ShowChatHistoryText.implementation = function (messageStr) {
       if (messageStr && !messageStr.handle.isNull()) {
         // 1. FILTER CHAT LAMA: Cek alamat memori objek System.String
@@ -73,13 +72,7 @@ export function setupBattleCommands(Assembly) {
                 }
               }
 
-              UIMiniMapToolButton.method("OnGM").implementation = function (
-                go,
-              ) {
-                const ori = this.method("OnGM").invoke(go);
-                objekAktifBattleBridge.method("ToggleAllUIShow").invoke();
-                return ori;
-              };
+
             }
           }
         }
@@ -87,6 +80,16 @@ export function setupBattleCommands(Assembly) {
       return ShowChatHistoryText.invoke(this, messageStr);
     };
   }
+
+      const instanceBattleBridge = Il2Cpp.gc.choose(BattleBridge);
+    const objekAktifBattleBridge = instanceBattleBridge[0];
+                UIMiniMapToolButton.method("OnGM").implementation = function (
+                go,
+              ) {
+                const ori = this.method("OnGM").invoke(go);
+                objekAktifBattleBridge.method("ToggleAllUIShow").invoke();
+                return ori;
+              };*/
 
   TrainingGuide.method("OnCoolDown").implementation = function (
     iParam,
