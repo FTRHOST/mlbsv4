@@ -82,7 +82,9 @@ export function setupBattleCommands(Assembly) {
   }*/
 
   const instanceBattleBridge = Il2Cpp.gc.choose(BattleBridge);
-  const objekAktifBattleBridge = instanceBattleBridge[0];
+  const objekAktifBattleBridge =
+    instanceBattleBridge.length > 0 ? instanceBattleBridge[0] : null;
+
   UIMiniMapToolButton.method("OnGM").implementation = function (go) {
     const ori = this.method("OnGM").invoke(go);
     objekAktifBattleBridge.method("ToggleAllUIShow").invoke();
