@@ -87,10 +87,10 @@ export function setupSkinHooks(Assembly) {
   // bukan bool) — pola fake-object sama seperti CmdHeroSkin pada skin.
   let HeroKeyInfoCls = null;
   try {
-    HeroKeyInfoCls = asm.image.class("SystemData/HeroKeyInfo");
+    HeroKeyInfoCls = Assembly.class("SystemData/HeroKeyInfo");
   } catch (e) {
     try {
-      HeroKeyInfoCls = asm.image.class("HeroKeyInfo");
+      HeroKeyInfoCls = Assembly.class("HeroKeyInfo");
     } catch (e2) {
       console.log("[!] class HeroKeyInfo tidak ditemukan: " + e2);
     }
