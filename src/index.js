@@ -243,7 +243,7 @@ function executeSimpleHooks() {
   setupGMHooks(Assembly);
   setupSkinHooks(Assembly);
   setupUnreleasedHooks(Assembly);
-  // setupBattleCommands(Assembly);
+  setupBattleCommands(Assembly);
   // setupTelemetryHooks(Assembly);
   // setupUIHooks(Assembly); // Dinonaktifkan karena tidak work
 }
