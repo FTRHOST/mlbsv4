@@ -20,9 +20,9 @@ export function setupSkinHooks(Assembly) {
   const IsSkinUseable = ChooseHeroMgr.method("IsSkinUseable");
   const CanSelectSkin = UIChooseHero.method("CanSelectSkin");
 
-  BActFreeSkin.implementation = function () {
+  /*BActFreeSkin.implementation = function () {
     return true;
-  };
+  };*/
 
   /*CanSelectSkin.implementation = function () {
     return true;
@@ -67,7 +67,75 @@ export function setupSkinHooks(Assembly) {
     return "0";
   };
   */
-  /*
+
+  // ===== Dragon Crystal (pewarnaan skin) => dimiliki semua ===== //
+  // Gate utama kepemilikan: selalu anggap crystal sudah di-unlock
+  SystemData.method("IsUnlockDragonCrystal").implementation = function (
+    crystalID,
+    bCheckShareInfo,
+  ) {
+    return true;
+  };
+
+  // Validasi kombinasi skin + crystal selalu lolos agar semua warna bisa dipakai
+  SystemData.method("IsRealHaveHero").implementation = function (heroid) {
+    return true;
+  };
+
+  // ===== Hero object-model (mirip pola skin: kembalikan objek palsu bila null) ===== //
+  // GetHeroKeyInfo / GetHeroInfo mengembalikan SystemData.HeroKeyInfo (objek,
+  // bukan bool) — pola fake-object sama seperti CmdHeroSkin pada skin.
+  let HeroKeyInfoCls = null;
+  try {
+    HeroKeyInfoCls = asm.image.class("SystemData/HeroKeyInfo");
+  } catch (e) {
+    try {
+      HeroKeyInfoCls = asm.image.class("HeroKeyInfo");
+    } catch (e2) {
+      console.log("[!] class HeroKeyInfo tidak ditemukan: " + e2);
+    }
+  }
+
+  const fakeHeroKeyInfo = function (heroid) {
+    const inst = HeroKeyInfoCls.alloc();
+    try {
+      inst.method(".ctor").invoke();
+    } catch (e) {}
+    try {
+      inst.field("m_heroID").value = heroid;
+    } catch (e) {}
+    return inst;
+  };
+
+  // ===== Grant hero ke m_heroInfos (jalur baca game yang sebenarnya) ===== //
+  // Terbukti di device: AddOwnHero TIDAK menulis ke dict, set_Item ya.
+  // Daftar ID berasal dari katalog yang dikirim game via GetHeroKeyInfoList
+  // (dinamis, tanpa hardcode).
+  const grantHeroToDict = function (heroid) {
+    try {
+      const dict = SystemData.field("m_heroInfos").value;
+      if (!dict || dict.isNull()) return;
+
+      let has = false;
+      try {
+        has = dict.method("ContainsKey").invoke(heroid);
+      } catch (e) {}
+
+      if (has || !HeroKeyInfoCls) return;
+
+      const inst = HeroKeyInfoCls.alloc();
+      try {
+        inst.method(".ctor").invoke();
+      } catch (e) {}
+      try {
+        inst.field("m_heroID").value = heroid;
+      } catch (e) {}
+      try {
+        dict.method("set_Item").invoke(heroid, inst);
+      } catch (e) {}
+    } catch (e) {}
+  };
+
   // --- MODIFIKASI SISTEM SKIN & STATUE (JAVASCRIPT MODE) ---
   SystemData.method("GetHeroSkin").implementation = function (
     m_heroskins,
@@ -145,6 +213,7 @@ export function setupSkinHooks(Assembly) {
     instance.field("iSource").value = 0;
     return instance;
   };
+  /*
 
   UIChooseHero.method("BatttleSelectSkin").implementation = function (
     uid,
