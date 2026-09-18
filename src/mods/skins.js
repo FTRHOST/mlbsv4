@@ -107,6 +107,50 @@ export function setupSkinHooks(Assembly) {
     return inst;
   };
 
+  try {
+    const uif2 = Assembly.class("UIFuncs");
+    uif2.method("GetHeroKeyInfoList").implementation = function (
+      heros,
+      infoTable,
+      ownHerolist,
+      starVip,
+      experienceDict,
+    ) {
+      // Daftarkan katalog hero ke dict (jalur data, bukan UI)
+      try {
+        const count = heros.method("get_Count").invoke();
+        for (let i = 0; i < count; i++) {
+          try {
+            const el = heros.method("get_Item").invoke(i);
+            if (el.isNull()) continue;
+            grantHeroToDict(el.field("m_ID").value);
+          } catch (e) {}
+        }
+      } catch (e) {
+        console.log("[!] grant hero bulk gagal: " + e);
+      }
+
+      const ret = this.method("GetHeroKeyInfoList").invoke(
+        heros,
+        infoTable,
+        ownHerolist,
+        starVip,
+        experienceDict,
+      );
+
+      // Setelah bulk hero terdaftar, pastikan semua skin katalog ikut
+      // ter-grant (m_heroskins dibaca langsung oleh Collection/UI).
+      // Dijadwalkan batch async agar tidak memblokir UI thread (anti-freeze).
+      try {
+        setTimeout(() => grantAllSkinsFromCatalog(true), 1000);
+      } catch (e) {}
+
+      return ret;
+    };
+  } catch (e) {
+    console.log("[!] hook UIFuncs.GetHeroKeyInfoList gagal: " + e);
+  }
+
   // ===== Grant hero ke m_heroInfos (jalur baca game yang sebenarnya) ===== //
   // Terbukti di device: AddOwnHero TIDAK menulis ke dict, set_Item ya.
   // Daftar ID berasal dari katalog yang dikirim game via GetHeroKeyInfoList

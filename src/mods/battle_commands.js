@@ -79,17 +79,15 @@ export function setupBattleCommands(Assembly) {
       }
       return ShowChatHistoryText.invoke(this, messageStr);
     };
-  }
+  }*/
 
-      const instanceBattleBridge = Il2Cpp.gc.choose(BattleBridge);
-    const objekAktifBattleBridge = instanceBattleBridge[0];
-                UIMiniMapToolButton.method("OnGM").implementation = function (
-                go,
-              ) {
-                const ori = this.method("OnGM").invoke(go);
-                objekAktifBattleBridge.method("ToggleAllUIShow").invoke();
-                return ori;
-              };*/
+  const instanceBattleBridge = Il2Cpp.gc.choose(BattleBridge);
+  const objekAktifBattleBridge = instanceBattleBridge[0];
+  UIMiniMapToolButton.method("OnGM").implementation = function (go) {
+    const ori = this.method("OnGM").invoke(go);
+    objekAktifBattleBridge.method("ToggleAllUIShow").invoke();
+    return ori;
+  };
 
   TrainingGuide.method("OnCoolDown").implementation = function (
     iParam,
