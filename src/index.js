@@ -239,7 +239,7 @@ function executeSimpleHooks() {
   // setupGameStartDelay(Assembly);
 
   // Setup Modular Mod Functions
-  // patchLibMoba(Assembly);
+  patchLibMoba(Assembly);
   setupGMHooks(Assembly);
   setupSkinHooks(Assembly);
   setupUnreleasedHooks(Assembly);

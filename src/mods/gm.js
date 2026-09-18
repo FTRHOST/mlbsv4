@@ -31,17 +31,11 @@ export function setupGMHooks(Assembly) {
 
   // Base Triggers
   hookSandboxMethod("GameInit", "IsSandBoxIp");
-  // hookSandboxMethod("LuaHelper", "IsEditor");
-  // hookSandboxMethod("LuaHelper", "IsTestChannel");
-  // hookSandboxMethod("SDKCommon", "IsSandbox");
-  //hookSandboxMethod("PingServerData", "CheckInTestServer");
-  // hookSandboxMethod("PingServerData", "CheckIsTestServer");
-  // hookSandboxMethod("GMVideoPlayer", "IsGMBackend");
-  // hookSandboxMethod("LogicExtension", "IsAdjustSandBox");
+
   //
 
   const GameServerConfig = Assembly.class("GameServerConfig");
-  const loadVersionCompelte = GameServerConfig.method("loadVersionCompelte");
+  /*const loadVersionCompelte = GameServerConfig.method("loadVersionCompelte");
 
   Interceptor.attach(loadVersionCompelte.virtualAddress, {
     onEnter(args) {
@@ -89,11 +83,11 @@ export function setupGMHooks(Assembly) {
         console.error("[Error] Gagal memanipulasi XML: " + e.message);
       }
     },
-  });
+  });*/
 
   // --- EXTENDED GM UI & PROFILER HOOKS ---
 
-  if (sessionState.isAuthorized && sessionState.permissions.allowGMMode) {
+  /* if (sessionState.isAuthorized && sessionState.permissions.allowGMMode) {
     // 4. Hook GameInit for Login GM UI
     const GameInit = Assembly.class("GameInit");
     if (GameInit && !GameInit.handle.isNull()) {
@@ -110,5 +104,5 @@ export function setupGMHooks(Assembly) {
         });
       }
     }
-  }
+  }*/
 }

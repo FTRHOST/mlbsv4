@@ -155,6 +155,7 @@ export function getCloudVersionFromFile() {
  * Hanya berjalan ketika mlver.json override === true.
  * Jika override === false (Supabase) → lewati hooking sepenuhnya.
  */
+/*
 export function setupRealVersionSpoof(Assembly) {
   let cfg;
   try {
@@ -256,7 +257,7 @@ export function setupRealVersionSpoof(Assembly) {
       }
     },
   });
-}
+}*/
 
 /**
  * Mengambil versi terpasang dari GameMain.m_sInnerVerRealForBattle dan mengambil 5 bagian versi awal (contoh: "2.2.13.1228.4")
@@ -428,12 +429,12 @@ function applyToActivityList(listPtr) {
 // --- HOOKS ---
 
 export function setupUnreleasedHooks(Assembly) {
-  // Hook XML realversion.xml — hanya aktif saat override=true (false → skip).
+  /*// Hook XML realversion.xml — hanya aktif saat override=true (false → skip).
   try {
     setupRealVersionSpoof(Assembly);
   } catch (e) {
     debugLog("RealVersion", `setupRealVersionSpoof gagal: ${e.message}`);
-  }
+  }*/
 
   // Pengecekan Versi Game Terpasang vs Versi Cloud (mlver.json) setelah 8 detik dari script dimulai
   setTimeout(() => {
