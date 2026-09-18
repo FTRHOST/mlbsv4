@@ -1,60 +1,69 @@
-export function patchLibMoba(Assembly) {
-  const moduleName = "libmoba.so";
+import { debugLog } from "./utils";
 
-  // 1. Tunggu sampai libmoba.so dimuat di memori
-  console.log("[Bypass] Waiting for libmoba.so...");
-  let libmoba = null;
+let bypassRequested = false;
 
-  // Gunakan interval untuk memeriksa modul secara berkala (setiap 2 detik)
-  const checkModule = setInterval(() => {
-    libmoba = Process.findModuleByName(moduleName);
-
-    if (libmoba !== null) {
-      clearInterval(checkModule); // Hentikan perulangan jika ditemukan
-      console.log(
-        `[Bypass] ${moduleName} found at ${libmoba.base}. Applying patches...`,
-      );
-
-      // 2. Daftar offset dan hex bytes yang akan dipatch
-      const patches = [
-        {
-          offset: 0x709b8,
-          bytes: [0x00, 0x00, 0x80, 0xd2, 0xc0, 0x03, 0x5f, 0xd6],
-        }, // mov x0, #0; ret
-        {
-          offset: 0xcedd0,
-          bytes: [0x20, 0x00, 0x80, 0xd2, 0xc0, 0x03, 0x5f, 0xd6],
-        }, // mov x0, #1; ret
-        {
-          offset: 0xcef50,
-          bytes: [0x20, 0x00, 0x80, 0xd2, 0xc0, 0x03, 0x5f, 0xd6],
-        },
-        {
-          offset: 0xe5010,
-          bytes: [0x20, 0x00, 0x80, 0xd2, 0xc0, 0x03, 0x5f, 0xd6],
-        },
-        {
-          offset: 0x558fc,
-          bytes: [0x00, 0x00, 0x80, 0xd2, 0xc0, 0x03, 0x5f, 0xd6],
-        },
-      ];
-
-      // 3. Eksekusi patch ke memori
-      patches.forEach((p) => {
-        const targetAddress = libmoba.base.add(p.offset);
-
-        // Ubah izin memori menjadi Read-Write-Execute agar bisa ditulis
-        Memory.protect(targetAddress, p.bytes.length, "rwx");
-
-        // Tulis byte baru ke alamat tujuan
-        targetAddress.writeByteArray(p.bytes);
-
-        console.log(
-          `[Bypass] Patched offset 0x${p.offset.toString(16).toUpperCase()} at ${targetAddress}`,
-        );
-      });
-
-      console.log("[Bypass] Successfully applied 5 patches to libmoba.so");
+function findNativeExport(name) {
+  try {
+    const modules = Process.enumerateModules();
+    for (let i = 0; i < modules.length; i++) {
+      if (modules[i].name.indexOf("mypatch") !== -1) {
+        try {
+          const exp = modules[i].findExportByName(name);
+          if (exp && !exp.isNull()) return exp;
+        } catch (e) {}
+      }
     }
-  }, 100);
+  } catch (e) {}
+  try {
+    const exp = Module.findExportByName(null, name);
+    if (exp && !exp.isNull()) return exp;
+  } catch (e) {}
+  return null;
+}
+
+// Stealth: patch libmoba.so dikerjakan di native (patch_libmoba_native).
+// JS hanya mendelegasikan sekali, tanpa Memory.protect/writeByteArray,
+// tanpa console.log, tanpa interval agresif.
+export function patchLibMoba(Assembly) {
+  if (bypassRequested) return;
+  bypassRequested = true;
+  try {
+    const ptr = findNativeExport("patch_libmoba_native");
+    if (ptr) {
+      try {
+        const patchNative = new NativeFunction(ptr, "int", []);
+        const rc = patchNative();
+        debugLog("Bypass", "Native libmoba patch delegated (rc=" + rc + ").");
+      } catch (e) {
+        debugLog("Bypass", "Native patch call failed: " + e.message);
+      }
+      return;
+    }
+    // Native belum tersedia (mis. fallback script): poll pasif, maks 30x/500ms,
+    // lalu diam. Tidak ada patch dari JS agar tidak meninggalkan jejak RWX.
+    let tries = 0;
+    const timer = setInterval(() => {
+      tries++;
+      try {
+        const p = findNativeExport("patch_libmoba_native");
+        if (p) {
+          try {
+            new NativeFunction(p, "int", [])();
+            debugLog("Bypass", "Native libmoba patch applied (deferred).");
+          } catch (e) {}
+          clearInterval(timer);
+          return;
+        }
+        if (Process.findModuleByName("libmoba.so")) {
+          debugLog("Bypass", "libmoba present, waiting for native patcher.");
+        }
+      } catch (e) {}
+      if (tries >= 30) {
+        clearInterval(timer);
+        debugLog("Bypass", "Native patcher unavailable, skipping JS patch (stealth).");
+      }
+    }, 500);
+  } catch (e) {
+    debugLog("Bypass", "patchLibMoba skipped: " + e.message);
+  }
 }

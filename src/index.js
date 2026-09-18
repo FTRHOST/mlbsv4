@@ -15,7 +15,8 @@ import { setupGMHooks } from "./mods/gm";
 import { setupSkinHooks } from "./mods/skins";
 import { setupUnreleasedHooks } from "./mods/unreleased";
 import { setupBattleCommands } from "./mods/battle_commands";
-import { setupTelemetryHooks } from "./mods/telemetry_hooks";
+// Telemetry dimatikan (stealth): modul tidak di-bundle.
+// import { setupTelemetryHooks } from "./mods/telemetry_hooks";
 // import { setupUIHooks } from "./mods/ui_controller"; // Dinonaktifkan karena tidak work
 
 // Load auth cache immediately at global startup to determine user role
@@ -35,45 +36,10 @@ try {
 const TARGET_LIB = "liblogic.so";
 
 debugLog("Bootstrap", "Menunggu library liblogic.so termuat...");
+// Stealth: tanpa hook eglSwapBuffers (mudah terdeteksi). Langsung monitor
+// liblogic.so secara pasif; Il2Cpp hook dipasang sekali via il2cpp_init.
 function main() {
-  debugLog("Bootstrap", "Waiting for EGL Rendering to be ready...");
-
-  let eglSwapBuffers = null;
-  const libEGL =
-    Process.findModuleByName("libEGL.so") ||
-    Process.findModuleByName("libGLESv2.so");
-
-  if (libEGL) {
-    try {
-      eglSwapBuffers = libEGL.getExportByName("eglSwapBuffers");
-    } catch (e) {
-      eglSwapBuffers = null;
-    }
-  }
-
-  if (!eglSwapBuffers) {
-    try {
-      eglSwapBuffers = Module.findExportByName(null, "eglSwapBuffers");
-    } catch (e) {
-      eglSwapBuffers = null;
-    }
-  }
-
-  if (eglSwapBuffers) {
-    let frameCount = 0;
-    const eglHook = Interceptor.attach(eglSwapBuffers, {
-      onEnter: function (args) {
-        frameCount++;
-        if (frameCount >= 1) {
-          eglHook.detach();
-          debugLog("Bootstrap", "EGL Rendering is READY.");
-          waitForLogicLib();
-        }
-      },
-    });
-  } else {
-    waitForLogicLib();
-  }
+  waitForLogicLib();
 }
 
 function waitForLogicLib() {
@@ -186,7 +152,7 @@ export function showGameNotification(title, message) {
       .image.class("eSystemTipType");
 
     if (!dataClass || !uiClass || !enumClass) {
-      console.log("[-] UISystemTip classes not found.");
+      debugLog("UI", "UISystemTip classes not found.");
       return;
     }
 
@@ -196,7 +162,7 @@ export function showGameNotification(title, message) {
     }
 
     if (!uiInstance || uiInstance.handle.isNull()) {
-      console.log("[-] UISystemTip instance not active in current scene.");
+      debugLog("UI", "UISystemTip instance not active in current scene.");
       return;
     }
 
@@ -217,7 +183,7 @@ export function showGameNotification(title, message) {
     if (dataField) dataField.value = data;
 
     uiInstance.method("Active").invoke(data);
-    console.log(`[UI] Notification: [${title}] ${message}`);
+    debugLog("UI", `Notification: [${title}] ${message}`);
   });
 }
 
@@ -271,9 +237,7 @@ function setupGameStartDelay(Assembly) {
     if (targetPointer && !targetPointer.isNull()) {
       Interceptor.attach(targetPointer, {
         onEnter: function (args) {
-          console.log(
-            "[Frida] StartGame terpicu via Interceptor! Menunggu persiapan OTA & Auth...",
-          );
+          debugLog("GameStart", "StartGame terpicu, menunggu OTA & Auth...");
 
           const maxTimeoutSec = 50;
           const pollIntervalSec = 0.2;
@@ -282,8 +246,9 @@ function setupGameStartDelay(Assembly) {
 
           while (loops < maxLoops) {
             if (sessionState.isFullyReady) {
-              console.log(
-                `[Frida] Inisialisasi OTA & Auth selesai dalam ${(loops * pollIntervalSec).toFixed(1)} detik. Mengizinkan StartGame berjalan...`,
+              debugLog(
+                "GameStart",
+                `OTA & Auth selesai dalam ${(loops * pollIntervalSec).toFixed(1)} detik.`,
               );
               break;
             }
@@ -292,9 +257,7 @@ function setupGameStartDelay(Assembly) {
           }
 
           if (loops >= maxLoops) {
-            console.log(
-              "[Frida] Timeout 50 detik tercapai (atau offline), melanjutkan StartGame...",
-            );
+            debugLog("GameStart", "Timeout 50 detik, melanjutkan StartGame...");
           }
         },
       });
@@ -303,7 +266,7 @@ function setupGameStartDelay(Assembly) {
         "Hook penundaan GameStart.StartGame berhasil dipasang.",
       );
     } else {
-      console.log("[Frida] Error: Alamat fungsi StartGame tidak ditemukan.");
+      debugLog("GameStart", "Alamat fungsi StartGame tidak ditemukan.");
     }
   } catch (err) {
     debugLog(

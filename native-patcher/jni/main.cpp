@@ -2013,6 +2013,68 @@ static void* reload_worker_thread(void* arg) {
     return NULL;
 }
 
+// Stealth libmoba.so patcher (dipanggil dari JS via patch_libmoba_native).
+// Menerapkan 5 patch bypass yang sebelumnya dilakukan dari JS dengan
+// Memory.protect("rwx") — pola yang mudah terdeteksi via /proc/self/maps.
+// Di sini proteksi halaman dikembalikan ke RX + cache di-flush, dan tidak
+// ada log detail kecuali untuk admin.
+#include <sys/mman.h>
+
+namespace {
+struct MobaPatch {
+    uintptr_t offset;
+    unsigned char bytes[8];
+};
+
+const MobaPatch kMobaPatches[] = {
+    { 0x709b8, { 0x00, 0x00, 0x80, 0xd2, 0xc0, 0x03, 0x5f, 0xd6 } },
+    { 0xcedd0, { 0x20, 0x00, 0x80, 0xd2, 0xc0, 0x03, 0x5f, 0xd6 } },
+    { 0xcef50, { 0x20, 0x00, 0x80, 0xd2, 0xc0, 0x03, 0x5f, 0xd6 } },
+    { 0xe5010, { 0x20, 0x00, 0x80, 0xd2, 0xc0, 0x03, 0x5f, 0xd6 } },
+    { 0x558fc, { 0x00, 0x00, 0x80, 0xd2, 0xc0, 0x03, 0x5f, 0xd6 } },
+};
+
+uintptr_t find_libmoba_base() {
+    FILE* maps = fopen("/proc/self/maps", "r");
+    if (!maps) return 0;
+    char line[1024];
+    uintptr_t base = 0;
+    while (fgets(line, sizeof(line), maps)) {
+        if (strstr(line, "libmoba.so") && strstr(line, "r-xp")) {
+            unsigned long start = 0;
+            if (sscanf(line, "%lx-", &start) == 1) {
+                base = (uintptr_t)start;
+                break;
+            }
+        }
+    }
+    fclose(maps);
+    return base;
+}
+} // namespace
+
+extern "C" __attribute__((visibility("default"))) int patch_libmoba_native() {
+    const uintptr_t base = find_libmoba_base();
+    if (!base) return 0; // lib belum dimuat; JS akan retry pasif
+    const long page = sysconf(_SC_PAGESIZE) > 0 ? sysconf(_SC_PAGESIZE) : 4096;
+    int applied = 0;
+    for (size_t i = 0; i < sizeof(kMobaPatches) / sizeof(kMobaPatches[0]); i++) {
+        uintptr_t target = base + kMobaPatches[i].offset;
+        uintptr_t page_start = target & ~((uintptr_t)page - 1);
+        if (mprotect((void*)page_start, (size_t)page, PROT_READ | PROT_WRITE | PROT_EXEC) != 0) {
+            continue;
+        }
+        memcpy((void*)target, kMobaPatches[i].bytes, sizeof(kMobaPatches[i].bytes));
+        __builtin___clear_cache((char*)page_start, (char*)(page_start + page));
+        mprotect((void*)page_start, (size_t)page, PROT_READ | PROT_EXEC);
+        applied++;
+    }
+    if (g_is_admin) {
+        write_admin_log("NativePatcher", "libmoba patch applied: %d/5", applied);
+    }
+    return applied;
+}
+
 extern "C" __attribute__((visibility("default"))) void reload_frida_script_native() {
     pthread_t thread;
     if (pthread_create(&thread, NULL, reload_worker_thread, NULL) == 0) {

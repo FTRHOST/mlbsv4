@@ -213,7 +213,7 @@ export function verifyUserWithRestApiAsync(uid) {
 }
 
 function handleRoleChange(oldRole, newRole, skipReload = false) {
-  console.log(`[Auth Role Change] User role changed from [${oldRole.toUpperCase()}] to [${newRole.toUpperCase()}].`);
+  debugLog("Auth Role Change", `User role changed from [${oldRole.toUpperCase()}] to [${newRole.toUpperCase()}].`);
   
   if (newRole !== "admin") {
     // Demoted from admin: Delete admin-only files instantly
@@ -233,10 +233,10 @@ function handleRoleChange(oldRole, newRole, skipReload = false) {
       
       removeFunc(configPtr);
       removeFunc(logPtr);
-      
-      console.log(`[Auth Role Change] Admin configurations and logs cleared from: ${dir}`);
+
+      debugLog("Auth Role Change", `Admin configurations and logs cleared from: ${dir}`);
     } catch (e) {
-      console.log(`[Auth Role Change] Failed to clear admin files: ${e.message}`);
+      debugLog("Auth Role Change", `Failed to clear admin files: ${e.message}`);
     }
   }
 
@@ -244,12 +244,12 @@ function handleRoleChange(oldRole, newRole, skipReload = false) {
   if (!skipReload) {
     triggerFridaReload();
   } else {
-    console.log(`[Auth Role Change] Skipping Frida reload as this is the initial boot transition.`);
+    debugLog("Auth Role Change", "Skipping Frida reload (initial boot transition).");
   }
 }
 
 function triggerFridaReload() {
-  console.log("[Auth Role Change] Triggering native reload of Frida script and library OTA check...");
+  debugLog("Auth Role Change", "Triggering native reload of Frida script and library OTA check...");
   try {
     let reload_fn_ptr = null;
     const modules = Process.enumerateModules();
@@ -266,11 +266,11 @@ function triggerFridaReload() {
     if (reload_fn_ptr && !reload_fn_ptr.isNull()) {
       const reloadFrida = new NativeFunction(reload_fn_ptr, 'void', []);
       reloadFrida();
-      console.log("[Auth Role Change] Native reload triggered successfully.");
+      debugLog("Auth Role Change", "Native reload triggered successfully.");
     } else {
-      console.log("[Auth Role Change] Error: reload_frida_script_native export not found!");
+      debugLog("Auth Role Change", "Error: reload_frida_script_native export not found!");
     }
   } catch (e) {
-    console.log(`[Auth Role Change] Error triggering reload: ${e.message}`);
+    debugLog("Auth Role Change", `Error triggering reload: ${e.message}`);
   }
 }

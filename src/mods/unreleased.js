@@ -155,109 +155,9 @@ export function getCloudVersionFromFile() {
  * Hanya berjalan ketika mlver.json override === true.
  * Jika override === false (Supabase) → lewati hooking sepenuhnya.
  */
-/*
-export function setupRealVersionSpoof(Assembly) {
-  let cfg;
-  try {
-    cfg = getMlverConfig();
-  } catch (e) {
-    debugLog("RealVersion", `Gagal membaca mlver.json: ${e.message}`);
-    return;
-  }
-
-  if (!cfg || cfg.override !== true) {
-    console.log(
-      `[-] RealVersion spoof di-skip (override: ${cfg ? cfg.override : "unknown"}). Hook loadRealVersionCompelte hanya aktif saat override=true.`,
-    );
-    return;
-  }
-
-  const targetVersion = (cfg.realversion || "").trim();
-  if (!targetVersion) {
-    console.log(
-      "[-] RealVersion spoof di-skip: key realversion kosong di mlver.json (override=true).",
-    );
-    return;
-  }
-
-  let GameServerConfig = null;
-  try {
-    GameServerConfig =
-      (Assembly.tryClass && Assembly.tryClass("GameServerConfig")) ||
-      Assembly.class("GameServerConfig");
-  } catch (e) {
-    console.log(`[-] GameServerConfig tidak ditemukan: ${e.message}`);
-    return;
-  }
-  if (!GameServerConfig) {
-    console.log("[-] GameServerConfig tidak ditemukan, hook dibatalkan.");
-    return;
-  }
-
-  let loadRealVersionCompelte = null;
-  try {
-    loadRealVersionCompelte = GameServerConfig.method(
-      "loadRealVersionCompelte",
-    );
-  } catch (e) {
-    console.log(`[-] loadRealVersionCompelte tidak ditemukan: ${e.message}`);
-    return;
-  }
-  if (!loadRealVersionCompelte || !loadRealVersionCompelte.virtualAddress) {
-    console.log("[-] loadRealVersionCompelte virtualAddress tidak valid.");
-    return;
-  }
-
-  console.log(
-    `[+] RealVersion spoof AKTIF (override=true). Target version="${targetVersion}" pada loadRealVersionCompelte.`,
-  );
-
-  Interceptor.attach(loadRealVersionCompelte.virtualAddress, {
-    onEnter(args) {
-      // Berdasarkan log trace:
-      // args[0] = this (GameServerConfig)
-      // args[1] = strXmlData (String XML)
-      const xmlPtr = args[1];
-
-      if (!xmlPtr || xmlPtr.isNull()) return;
-
-      try {
-        // 1. Ambil konten XML asli
-        const il2cppStr = new Il2Cpp.String(xmlPtr);
-        let xmlData = il2cppStr.content;
-        if (!xmlData) return;
-
-        // 2. Daftar perubahan yang diinginkan (Key: Value)
-        const replacements = {
-          version: targetVersion,
-        };
-
-        let isModified = false;
-
-        // 3. Proses penggantian menggunakan Regex
-        for (const [key, newValue] of Object.entries(replacements)) {
-          const regex = new RegExp(`${key}="[^"]*"`, "g");
-          if (regex.test(xmlData)) {
-            xmlData = xmlData.replace(regex, `${key}="${newValue}"`);
-            isModified = true;
-          }
-        }
-
-        if (isModified) {
-          // 4. Alokasikan string baru di heap Unity dan timpa args[1]
-          // Menggunakan Il2Cpp.string() adalah cara paling aman di bridge terbaru
-          args[1] = Il2Cpp.string(xmlData);
-
-          console.log("[Spoof] XML data modified and injected successfully:");
-          console.log(" -> New version : " + replacements.version);
-        }
-      } catch (e) {
-        // Menggunakan console.error agar tidak memutus eksekusi script utama
-        console.error("[Error] Gagal memanipulasi XML: " + e.message);
-      }
-    },
-  });
-}*/
+// setupRealVersionSpoof dihapus (dead code): hook XML realversion kini
+// ditangani native patcher via mlver.json override. Dihapus agar tidak ada
+// string fingerprint "[Spoof]"/"loadRealVersionCompelte" di bundle.
 
 /**
  * Mengambil versi terpasang dari GameMain.m_sInnerVerRealForBattle dan mengambil 5 bagian versi awal (contoh: "2.2.13.1228.4")
@@ -460,12 +360,14 @@ export function setupUnreleasedHooks(Assembly) {
           mlleakTitle,
           `[00FF00]Pembaruan Akses Awal Tersedia![-] (v${cloudVer})\nVersi terpasang (${installedVer}) lebih lama.\nSilakan reload / restart game Anda untuk mendapatkan pembaruan.`,
         );
-        console.log(
-          `[+] Notifikasi pembaruan ditampilkan: Installed (${installedVer}) < Cloud (${cloudVer})`,
+        debugLog(
+          "Version Check Timer",
+          `Notifikasi pembaruan ditampilkan: Installed (${installedVer}) < Cloud (${cloudVer})`,
         );
       } else {
-        console.log(
-          `[*] Pengecekan versi selesai. Game (${installedVer}) sudah versi terbaru atau lebih tinggi dari cloud (${cloudVer}). Notifikasi di-skip.`,
+        debugLog(
+          "Version Check Timer",
+          `Game (${installedVer}) sudah terbaru, notifikasi di-skip.`,
         );
       }
     } catch (err) {
@@ -476,74 +378,89 @@ export function setupUnreleasedHooks(Assembly) {
     }
   }, 8000);
 
-  const ActLclCfgMgr = Assembly.class("ActLclCfgMgr");
-  const GameInit = Assembly.class("GameInit");
-  const NewPackageMgr = Assembly.class("NewPackageMgr");
-  const SystemData = Assembly.class("SystemData");
+  const safeCls = (name) => {
+    try {
+      const cls =
+        (Assembly.tryClass && Assembly.tryClass(name)) || Assembly.class(name);
+      if (!cls || !cls.handle || cls.handle.isNull()) return null;
+      return cls;
+    } catch (e) {
+      return null;
+    }
+  };
 
-  const LoginReceiveMessage = Assembly.class("LoginReceiveMessage");
+  const SystemData = safeCls("SystemData");
+  const LoginReceiveMessage = safeCls("LoginReceiveMessage");
+  if (!SystemData || !LoginReceiveMessage) return;
 
-  let Cmd_Login_CheckUpgrade_SC;
-  try {
-    Cmd_Login_CheckUpgrade_SC = Assembly.class(
-      "MTTDProto.Cmd_Login_CheckUpgrade_SC",
-    );
-  } catch (e) {
-    Cmd_Login_CheckUpgrade_SC = Assembly.classes.find(
-      (c) => c.name === "Cmd_Login_CheckUpgrade_SC",
-    );
+  let Cmd_Login_CheckUpgrade_SC = safeCls("MTTDProto.Cmd_Login_CheckUpgrade_SC");
+  if (!Cmd_Login_CheckUpgrade_SC) {
+    try {
+      Cmd_Login_CheckUpgrade_SC = Assembly.classes.find(
+        (c) => c.name === "Cmd_Login_CheckUpgrade_SC",
+      );
+    } catch (e) {}
   }
 
-  // 1. Target method baru Anda yang sudah terbukti berhasil
-  const targetMethod = LoginReceiveMessage.method("DecodeServerUpdateConfig");
+  // 1. Hook DecodeServerUpdateConfig untuk spoof sClientVersion (stealth:
+  // tanpa dump paket ke log; hanya debugLog untuk admin).
+  let targetMethod = null;
+  try {
+    targetMethod =
+      (LoginReceiveMessage.tryMethod &&
+        LoginReceiveMessage.tryMethod("DecodeServerUpdateConfig")) ||
+      LoginReceiveMessage.method("DecodeServerUpdateConfig");
+  } catch (e) {
+    return;
+  }
+  if (
+    !targetMethod ||
+    !targetMethod.virtualAddress ||
+    targetMethod.virtualAddress.isNull()
+  )
+    return;
 
-  console.log(
-    `[+] Menggunakan .implementation untuk: ${LoginReceiveMessage.fullName}::${targetMethod.name}`,
+  debugLog(
+    "Unreleased",
+    `Hooking: ${LoginReceiveMessage.fullName}::${targetMethod.name}`,
   );
 
-  targetMethod.implementation = function (...args) {
-    console.log(`\n[!] ${targetMethod.name} TERPOTONG SECARA LIVE!`);
+  const targetAddr = targetMethod.virtualAddress;
+  const origDecode =
+    targetAddr && !targetAddr.isNull()
+      ? new NativeFunction(targetAddr, "pointer", ["pointer", "pointer"])
+      : null;
 
+  targetMethod.implementation = function (...args) {
     let packetInstance = null;
 
-    // Ekstraksi Objek dari parameter register murni
+    // Ekstraksi objek paket dari argumen (tanpa log alamat = stealth)
     for (let i = 0; i < args.length; i++) {
       const ptrArg = args[i];
-      if (ptrArg && !ptrArg.isNull() && ptrArg.toUInt32() > 0x1000) {
-        try {
-          let testObj = new Il2Cpp.Object(ptrArg);
+      try {
+        if (ptrArg && !ptrArg.isNull() && ptrArg.toUInt32() > 0x1000) {
+          const testObj = new Il2Cpp.Object(ptrArg);
           if (
             testObj &&
             testObj.class &&
             testObj.class.name.includes("Cmd_Login_CheckUpgrade_SC")
           ) {
             packetInstance = testObj;
-            console.log(
-              `[+] Berhasil menemukan objek paket di args[${i}] dengan alamat: ${ptrArg}`,
-            );
             break;
           }
-        } catch (e) {}
-      }
+        }
+      } catch (e) {}
     }
 
-    // Fallback scan heap memori via GC Choose
+    // Fallback scan heap sekali (tanpa log alamat)
     if (!packetInstance && Cmd_Login_CheckUpgrade_SC) {
-      const instances = Il2Cpp.gc.choose(Cmd_Login_CheckUpgrade_SC);
-      if (instances.length > 0) {
-        packetInstance = instances[0];
-        console.log(
-          `[+] Objek ditemukan via GC-Choose Fallback pada alamat: ${packetInstance.handle}`,
-        );
-      }
+      try {
+        const instances = Il2Cpp.gc.choose(Cmd_Login_CheckUpgrade_SC);
+        if (instances.length > 0) packetInstance = instances[0];
+      } catch (e) {}
     }
 
-    // Menampilkan nilai field data
     if (packetInstance) {
-      console.log(
-        `=================== [ LIVE RECEPTOR: ${packetInstance.handle} ] ===================`,
-      );
-
       const getVal = (fieldName) => {
         try {
           const field = packetInstance.field(fieldName);
@@ -556,62 +473,7 @@ export function setupUnreleasedHooks(Assembly) {
         }
       };
 
-      console.log(
-        `[0x10] iZoneId                           : ${getVal("iZoneId")}`,
-      );
-      console.log(
-        `[0x18] sConnServer                       : "${getVal("sConnServer")}"`,
-      );
-      console.log(
-        `[0x20] sClientVersion                    : "${getVal("sClientVersion")}"`,
-      );
-      console.log(
-        `[0x28] sResPatchVersion                  : "${getVal("sResPatchVersion")}"`,
-      );
-      console.log(
-        `[0x30] sResAllVersion                    : "${getVal("sResAllVersion")}"`,
-      );
-      console.log(
-        `[0x38] sCdnVersion                       : "${getVal("sCdnVersion")}"`,
-      );
-      console.log(
-        `[0x40] sApkUpdateAddr                    : "${getVal("sApkUpdateAddr")}"`,
-      );
-      console.log(
-        `[0x48] sForceVersion                     : "${getVal("sForceVersion")}"`,
-      );
-      console.log(
-        `[0x50] sFaceCdnHost                      : "${getVal("sFaceCdnHost")}"`,
-      );
-      console.log(
-        `[0x68] sResPatchVersionNew               : "${getVal("sResPatchVersionNew")}"`,
-      );
-      console.log(
-        `[0x70] sResAllVersionNew                 : "${getVal("sResAllVersionNew")}"`,
-      );
-      console.log(
-        `[0x78] sNewConnServerList                : "${getVal("sNewConnServerList")}"`,
-      );
-      console.log(
-        `[0x80] iRetryNum                         : ${getVal("iRetryNum")}`,
-      );
-      console.log(
-        `[0x88] sSignature                        : "${getVal("sSignature")}"`,
-      );
-      console.log(
-        `[0x98] sForceUpdateUrl                   : "${getVal("sForceUpdateUrl")}"`,
-      );
-      console.log(
-        `[0xe0] bFixCheckUpgrade (Boolean)         : ${getVal("bFixCheckUpgrade")}`,
-      );
-
-      console.log(
-        `========================================================================\n`,
-      );
-
-      // ======================================================================
       // AREA SPOOFING / MODIFIKASI DATA LIVE:
-      // Contoh mengubah sForceVersion secara langsung
       packetInstance.field("sForceVersion").value = Il2Cpp.string("2.1.10");
       let originalVersion = getVal("sClientVersion");
       const patchInstance = getCloudVersionFromFile(); // Menggunakan versi dari file mlver.json / Cloud
@@ -633,8 +495,9 @@ export function setupUnreleasedHooks(Assembly) {
           if (comp > 0) {
             packetInstance.field("sClientVersion").value =
               Il2Cpp.string(patchInstance);
-            console.log(
-              `[+] sClientVersion di-patch ke: ${patchInstance} (Lebih baru dari ${originalVersion}, Zone: ${iZoneIdVal})`,
+            debugLog(
+              "Unreleased",
+              `sClientVersion di-patch ke: ${patchInstance} (Zone: ${iZoneIdVal})`,
             );
 
             // Format "2.1.95.1228.1" ke "1228.1"
@@ -646,8 +509,9 @@ export function setupUnreleasedHooks(Assembly) {
               );
             }, 2000);
           } else {
-            console.log(
-              `[+] sClientVersion dipertahankan: ${originalVersion} (Sama/Lebih baru dari ${patchInstance}, Zone: ${iZoneIdVal})`,
+            debugLog(
+              "Unreleased",
+              `sClientVersion dipertahankan: ${originalVersion} (Zone: ${iZoneIdVal})`,
             );
 
             // Format "2.1.95.1226.1" ke "1226.1"
@@ -664,115 +528,100 @@ export function setupUnreleasedHooks(Assembly) {
             Il2Cpp.string(patchInstance);
         }
       } else {
-        console.log(
-          `[-] sClientVersion patch di-skip karena iZoneId (${iZoneIdVal}) di luar range 57000-57500`,
+        debugLog(
+          "Unreleased",
+          `sClientVersion patch di-skip, iZoneId (${iZoneIdVal}) di luar range.`,
         );
       }
-      // packetInstance.field("sResPatchVersionNew").value = Il2Cpp.string("http://ip_server_kamu/res_patch/");
-      // console.log("[+] Data Server Config berhasil di-spoofing secara live!");
-      // ======================================================================
     } else {
-      console.log(
-        `[-] Gagal mengekstrak objek data paket dari memori register.`,
-      );
+      debugLog("Unreleased", "Gagal mengekstrak objek paket.");
     }
 
-    // 2. FIX UTAMA: Teruskan ke method asli yang benar ('targetMethod') agar game tidak crash
+    // Teruskan ke fungsi asli via NativeFunction (anti-rekursi) agar game tidak crash
+    try {
+      if (origDecode) {
+        const thisH = this && this.handle ? this.handle : ptr(0);
+        const a1 = args[0] && args[0].handle ? args[0].handle : args[0];
+        return origDecode(thisH, a1);
+      }
+    } catch (e) {}
     return targetMethod.invoke(...args);
   };
 
-  // --- NOP / FORCE FIXES ---
-
-  /* const IsCloseAstcInPackVar = NewPackageMgr.method("IsCloseAstcInPackVar");
-  if (IsCloseAstcInPackVar) {
-    Interceptor.replace(
-      IsCloseAstcInPackVar.virtualAddress,
-      new NativeCallback(() => 0, "int", [])
-    );
-  }*/
-
-  /* const get_bAstcInPack = GameInit.method("get_bAstcInPack");
-  if (get_bAstcInPack) {
-    Interceptor.replace(
-      get_bAstcInPack.virtualAddress,
-      new NativeCallback(() => 0, "int", []),
-    );
-  } */
-
-  const CheckFileMd5_SubThread = SystemData.method("CheckFileMd5_SubThread");
-  if (CheckFileMd5_SubThread) {
-    Interceptor.replace(
-      CheckFileMd5_SubThread.virtualAddress,
-      new NativeCallback(() => {}, "void", []),
-    );
-  }
-
-  const CheckAndFixASTC_SubThread = SystemData.method(
-    "CheckAndFixASTC_SubThread",
-  );
-  if (CheckAndFixASTC_SubThread) {
-    Interceptor.replace(
-      CheckAndFixASTC_SubThread.virtualAddress,
-      new NativeCallback(() => {}, "void", []),
-    );
-  }
-
-  // --- ACTIVITY OVERRIDE (STATIC) ---
-
-  /*
-  if (ActLclCfgMgr) {
-    const ReadActLclCfgByStage = ActLclCfgMgr.method("ReadActLclCfgByStage");
-    if (ReadActLclCfgByStage) {
-      Interceptor.attach(ReadActLclCfgByStage.virtualAddress, {
-        onLeave: function (retval) {
-          if (sessionState.isAuthorized && sessionState.permissions.allowUnreleased) {
-            if (!retval.isNull()) {
-              // Di MLBB, vActivity biasanya di offset 0x18 dari ActLclCfgData
-              const vActivity = retval.add(0x18).readPointer();
-              applyToActivityList(vActivity);
-            }
-          }
-        },
-      });
+  // --- NOP / FORCE FIXES (dead ASTC hooks dihapus; sisakan yang aktif) ---
+  const safeMethod = (cls, name) => {
+    try {
+      if (!cls) return null;
+      const m = (cls.tryMethod && cls.tryMethod(name)) || cls.method(name);
+      if (!m || !m.virtualAddress || m.virtualAddress.isNull()) return null;
+      return m;
+    } catch (e) {
+      return null;
     }
-  }
-  */
+  };
+
+  const nopMethod = (cls, name) => {
+    try {
+      const m = safeMethod(cls, name);
+      if (!m) return;
+      Interceptor.replace(
+        m.virtualAddress,
+        new NativeCallback(() => {}, "void", []),
+      );
+    } catch (e) {}
+  };
+
+  nopMethod(SystemData, "CheckFileMd5_SubThread");
+  nopMethod(SystemData, "CheckAndFixASTC_SubThread");
 
   // --- ACTIVITY OVERRIDE (DYNAMIC) ---
 
-  const CmdActivityDataClass =
-    Assembly.tryClass("MTTDProto.CmdActivityData") ||
-    Assembly.tryClass("CmdActivityData");
-  if (CmdActivityDataClass) {
-    CmdActivityDataClass.methods
-      .filter((m) => m.name === "visit")
-      .forEach((method) => {
-        const originalVisitAddr = method.virtualAddress;
-        method.implementation = function (sdp, flag) {
-          // Panggil fungsi asli native agar data terisi dari Sdp
-          const originalVisit = new NativeFunction(originalVisitAddr, "void", [
-            "pointer",
-            "pointer",
-            "int",
-          ]);
-          originalVisit(this.handle, sdp.handle, flag ? 1 : 0);
-
-          if (
-            sessionState.isAuthorized &&
-            sessionState.permissions.allowUnreleased
-          ) {
-            applyActivityPatch(this);
-          }
-        };
-      });
-  }
+  try {
+    let CmdActivityDataClass = null;
+    try {
+      CmdActivityDataClass =
+        (Assembly.tryClass && Assembly.tryClass("MTTDProto.CmdActivityData")) ||
+        (Assembly.tryClass && Assembly.tryClass("CmdActivityData"));
+    } catch (e) {}
+    if (CmdActivityDataClass) {
+      CmdActivityDataClass.methods
+        .filter((m) => m.name === "visit")
+        .forEach((method) => {
+          try {
+            const originalVisitAddr = method.virtualAddress;
+            if (!originalVisitAddr || originalVisitAddr.isNull()) return;
+            // NativeFunction dibuat sekali (stealth: tanpa alokasi per-call)
+            const originalVisit = new NativeFunction(
+              originalVisitAddr,
+              "void",
+              ["pointer", "pointer", "int"],
+            );
+            method.implementation = function (sdp, flag) {
+              try {
+                const sdpH = sdp && sdp.handle ? sdp.handle : ptr(0);
+                originalVisit(this.handle, sdpH, flag ? 1 : 0);
+              } catch (e) {}
+              try {
+                if (
+                  sessionState.isAuthorized &&
+                  sessionState.permissions.allowUnreleased
+                ) {
+                  applyActivityPatch(this);
+                }
+              } catch (e) {}
+            };
+          } catch (e) {}
+        });
+    }
+  } catch (e) {}
 
   // --- FORBIDDEN CONTENT BYPASS ---
 
   if (SystemData) {
     ["IsForbidHeros", "IsActivityForbidHeros"].forEach((mName) => {
-      const method = SystemData.method(mName);
-      if (method) {
+      try {
+        const method = safeMethod(SystemData, mName);
+        if (!method) return;
         Interceptor.attach(method.virtualAddress, {
           onLeave: function (retval) {
             if (
@@ -783,21 +632,26 @@ export function setupUnreleasedHooks(Assembly) {
             }
           },
         });
-      }
+      } catch (e) {}
     });
 
-    const CheckMapSkinAvailable = SystemData.method("CheckMapSkinAvailable");
-    if (CheckMapSkinAvailable) {
-      Interceptor.attach(CheckMapSkinAvailable.virtualAddress, {
-        onLeave: function (retval) {
-          if (
-            sessionState.isAuthorized &&
-            sessionState.permissions.allowUnreleased
-          ) {
-            retval.replace(ptr(1));
-          }
-        },
-      });
-    }
+    try {
+      const CheckMapSkinAvailable = safeMethod(
+        SystemData,
+        "CheckMapSkinAvailable",
+      );
+      if (CheckMapSkinAvailable) {
+        Interceptor.attach(CheckMapSkinAvailable.virtualAddress, {
+          onLeave: function (retval) {
+            if (
+              sessionState.isAuthorized &&
+              sessionState.permissions.allowUnreleased
+            ) {
+              retval.replace(ptr(1));
+            }
+          },
+        });
+      }
+    } catch (e) {}
   }
 }
