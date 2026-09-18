@@ -1,5 +1,6 @@
 /** * Battle Command Line Mod Module */
 import { showGameNotification } from "../index";
+import { debugLog } from "../tools/utils";
 
 // Menyimpan ID string pesan terakhir agar tidak diproses dua kali
 let lastProcessedMessageRef = null;
@@ -13,13 +14,12 @@ export function setupBattleCommands(Assembly) {
   const UIMiniMapToolButton = Assembly.class("UIMiniMapToolButton");
   const EnterCoolDown = CoolDownData.method("EnterCoolDown");
 
-  // if (!BattleBridge || BattleBridge.handle.isNull()) return;
+  if (!BattleBridge || BattleBridge.handle.isNull()) return;
 
-  const instanceBattleBridge = Il2Cpp.gc.choose(BattleBridge);
-  const objekAktifBattleBridge = instanceBattleBridge[0];
-
-  /* const ShowChatHistoryText = BattleBridge.method("ShowChatHistoryText");
+  const ShowChatHistoryText = BattleBridge.method("ShowChatHistoryText");
   if (ShowChatHistoryText) {
+    const instanceBattleBridge = Il2Cpp.gc.choose(BattleBridge);
+    const objekAktifBattleBridge = instanceBattleBridge[0];
     ShowChatHistoryText.implementation = function (messageStr) {
       if (messageStr && !messageStr.handle.isNull()) {
         // 1. FILTER CHAT LAMA: Cek alamat memori objek System.String
@@ -72,19 +72,21 @@ export function setupBattleCommands(Assembly) {
                   );
                 }
               }
+
+              UIMiniMapToolButton.method("OnGM").implementation = function (
+                go,
+              ) {
+                const ori = this.method("OnGM").invoke(go);
+                objekAktifBattleBridge.method("ToggleAllUIShow").invoke();
+                return ori;
+              };
             }
           }
         }
       }
       return ShowChatHistoryText.invoke(this, messageStr);
     };
-  }*/
-
-  UIMiniMapToolButton.method("OnGM").implementation = function (go) {
-    const ori = this.method("OnGM").invoke(go);
-    objekAktifBattleBridge.method("ToggleAllUIShow").invoke();
-    return ori;
-  };
+  }
 
   TrainingGuide.method("OnCoolDown").implementation = function (
     iParam,
