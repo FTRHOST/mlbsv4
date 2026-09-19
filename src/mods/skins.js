@@ -292,12 +292,13 @@ export function setupSkinHooks(Assembly) {
     return pairs;
   };
 
-  // ===== Grant massal seluruh katalog (batched, anti-hitch) ===== //
-  // batched=false: sekaligus (cepat tapi bisa hitch untuk n~1724).
-  // batched=true: 20 entri per 500ms (~43 dtk untuk n=1724), single-flight
-  // via grantTimer. Hanya pasangan yang belum granted yang dikerjakan,
-  // sehingga run parsial (mis. n=205 saat tabel belum penuh) otomatis
-  // dilanjutkan di entry berikutnya sampai katalog penuh (n=1724).
+  // ===== Grant massal dua fase (hero tampil + skin unlock, anti-hitch) ===== //
+  // Fase 1 — hero (sinkron, cepat): grant distinct hero ID ke dict sehingga
+  // semua hero termasuk yang tersembunyi tampil (sumber: katalog 1724).
+  // Fase 2 — skin (batched 20/500ms): unlock distinct skin ID ke hero-nya
+  // (sumber: katalog skin unik, mis. 1478).
+  // grantedKeys membuat semuanya idempoten: run parsial otomatis
+  // dilanjutkan (delta) di entry berikutnya, tidak mengulang dari nol.
   let grantTimer = null;
 
   const grantAllSkinsFromCatalog = function (batched, heroIds) {
@@ -307,21 +308,62 @@ export function setupSkinHooks(Assembly) {
         debugLog("Skin", "katalog kosong (tabel belum siap), grant ditunda.");
         return;
       }
-      const todo = [];
+      // Kunci katalog untuk batch ini.
+      lockedCatalog = true;
+      catalogCache = pairs;
+
+      // ---- Fase 1: hero tampil ----
+      const seenH = {};
+      const heroList = [];
       for (let k = 0; k < pairs.length; k++) {
-        const key = pairs[k][0] + ":" + pairs[k][1];
-        if (!grantedKeys[key]) todo.push(pairs[k]);
+        const hid = pairs[k][0];
+        if (!seenH[hid]) {
+          seenH[hid] = 1;
+          heroList.push(hid);
+        }
+      }
+      let heroesGranted = 0;
+      for (let h = 0; h < heroList.length; h++) {
+        try {
+          const key = "hero:" + heroList[h];
+          if (!grantedKeys[key]) {
+            grantHeroToDict(heroList[h]);
+            grantedKeys[key] = 1;
+            heroesGranted++;
+          }
+        } catch (e) {}
+      }
+      debugLog(
+        "Skin",
+        "hero unik=" +
+          heroList.length +
+          " granted=" +
+          heroesGranted +
+          (lockedCatalog ? " (TERKUNCI)" : ""),
+      );
+
+      // ---- Fase 2: skin unlock (distinct sid) ----
+      const seenS = {};
+      const skinList = [];
+      for (let k = 0; k < pairs.length; k++) {
+        const sid = pairs[k][1];
+        if (!seenS[sid]) {
+          seenS[sid] = 1;
+          skinList.push(pairs[k]);
+        }
+      }
+      const todo = [];
+      for (let k = 0; k < skinList.length; k++) {
+        const key = skinList[k][0] + ":" + skinList[k][1];
+        if (!grantedKeys[key]) todo.push(skinList[k]);
       }
       if (!todo.length) {
         debugLog(
           "Skin",
-          "katalog sudah granted semua (" + pairs.length + ").",
+          "skin sudah granted semua (" + skinList.length + ").",
         );
         return;
       }
-      // Kunci katalog untuk batch ini.
-      lockedCatalog = true;
-      catalogCache = pairs;
       if (!batched) {
         let granted = 0;
         for (const [hid, sid] of todo) {
@@ -335,7 +377,7 @@ export function setupSkinHooks(Assembly) {
         debugLog(
           "Skin",
           "katalog unik=" +
-            pairs.length +
+            skinList.length +
             " granted=" +
             granted +
             (lockedCatalog ? " (TERKUNCI)" : ""),
@@ -350,7 +392,13 @@ export function setupSkinHooks(Assembly) {
       let granted = 0;
       debugLog(
         "Skin",
-        "mulai grant batch n=" + todo.length + " (katalog " + pairs.length + ")",
+        "mulai grant batch n=" +
+          todo.length +
+          " (skin unik " +
+          skinList.length +
+          " dari katalog " +
+          pairs.length +
+          ")",
       );
       const step = function () {
         try {
@@ -371,7 +419,7 @@ export function setupSkinHooks(Assembly) {
             debugLog(
               "Skin",
               "katalog unik=" +
-                pairs.length +
+                skinList.length +
                 " granted=" +
                 granted +
                 (lockedCatalog ? " (TERKUNCI)" : "") +
@@ -470,110 +518,5 @@ export function setupSkinHooks(Assembly) {
     if (!allowed()) return ret;
     return fakeStatue(statueid);
   });
-  // ===== Top-up NewbieOffLineMgr.GetFakeHeroList (jalur offline/newbie) ===== //
-  // Setiap ack diperkaya: hero yang belum ada ditambah (CmdHeroData) dan
-  // semua skin katalog ditambah ke vSkinList (bSmartMagicUnlock=true).
-  // Dedupe ganda: heroSeen untuk vHeroList, skinSeen untuk vSkinList —
-  // tanpa ini ack yang dipakai ulang akan membengkak tiap panggilan.
-  // Tanpa izin: teruskan asli (no-op, stealth untuk banned).
-  try {
-    const NOM = safeClass("NewbieOffLineMgr");
-    const HeroDataCls = safeClass("MTTDProto.CmdHeroData");
-    if (!NOM || !HeroDataCls) throw new Error("NewbieOffLineMgr missing");
-    const ok = hookMethod(NOM, "GetFakeHeroList", function (...args) {
-      const ack = this.method("GetFakeHeroList").invoke(...args);
-      if (!allowed()) return ack;
-      try {
-        if (ack && !ack.isNull()) {
-          let vHero = null;
-          let vSkin = null;
-          try {
-            vHero = ack.field("vHeroList").value;
-          } catch (e) {}
-          try {
-            vSkin = ack.field("vSkinList").value;
-          } catch (e) {}
-
-          const heroSeen = {};
-          const ackHeroIds = [];
-          if (vHero && !vHero.isNull()) {
-            try {
-              const hc = vHero.method("get_Count").invoke();
-              for (let i = 0; i < hc; i++) {
-                try {
-                  const hid =
-                    Number(
-                      vHero.method("get_Item").invoke(i).field("iHeroId").value,
-                    ) | 0;
-                  if (hid) {
-                    heroSeen[hid] = 1;
-                    ackHeroIds.push(hid);
-                  }
-                } catch (e) {}
-              }
-            } catch (e) {}
-          }
-          const skinSeen = {};
-          if (vSkin && !vSkin.isNull()) {
-            try {
-              const sc = vSkin.method("get_Count").invoke();
-              for (let i = 0; i < sc; i++) {
-                try {
-                  const sid =
-                    Number(
-                      vSkin.method("get_Item").invoke(i).field("iId").value,
-                    ) | 0;
-                  if (sid) skinSeen[sid] = 1;
-                } catch (e) {}
-              }
-            } catch (e) {}
-          }
-
-          // Katalog terkunci (penuh dari lobby) diutamakan; bila belum ada,
-          // bangun dari universe hero ack ini; fallback terakhir 205.
-          const pairs =
-            lockedCatalog && catalogCache && catalogCache.length
-              ? catalogCache
-              : getCatalogPairs(ackHeroIds);
-
-          for (const [hid, sid] of pairs) {
-            try {
-              if (vHero && !vHero.isNull() && !heroSeen[hid]) {
-                heroSeen[hid] = 1;
-                const hd = HeroDataCls.alloc();
-                hd.method(".ctor").invoke();
-                hd.field("iHeroId").value = hid;
-                vHero.method("Add").invoke(hd);
-              }
-              if (vSkin && !vSkin.isNull() && !skinSeen[sid]) {
-                skinSeen[sid] = 1;
-                const sk = fakeSkin(sid);
-                try {
-                  sk.field("bSmartMagicUnlock").value = true;
-                } catch (e) {}
-                vSkin.method("Add").invoke(sk);
-              }
-            } catch (e) {}
-          }
-          debugLog(
-            "PSRV",
-            "GetFakeHeroList top-up skins=" +
-              pairs.length +
-              (lockedCatalog ? " (TERKUNCI)" : ""),
-          );
-        }
-      } catch (e) {
-        debugLog("PSRV", "top-up fakeherolist gagal: " + e.message);
-      }
-      return ack;
-    });
-    debugLog(
-      "PSRV",
-      ok ? "hook GetFakeHeroList ok" : "hook GetFakeHeroList gagal",
-    );
-  } catch (e) {
-    debugLog("PSRV", "hook GetFakeHeroList gagal: " + e.message);
-  }
-
   debugLog("Skin", "Skin & Statue hooks installed.");
 }
