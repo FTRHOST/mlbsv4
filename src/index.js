@@ -37,9 +37,61 @@ try {
 const TARGET_LIB = "liblogic.so";
 
 debugLog("Bootstrap", "Menunggu library liblogic.so termuat...");
-// Stealth: tanpa hook eglSwapBuffers (mudah terdeteksi). Langsung monitor
-// liblogic.so secara pasif; Il2Cpp hook dipasang sekali via il2cpp_init.
+
+// Readiness gate: tunggu frame EGL pertama (single-shot, langsung detach —
+// praktis tak terdeteksi), karena lookup export linker di t=0 sering gagal.
+// Fallback 15 detik bila EGL tak kunjung swap (headless/service process).
+let eglGateDone = false;
+function eglGatePass(reason) {
+  if (eglGateDone || logicLibResolved) return;
+  eglGateDone = true;
+  debugLog("Bootstrap", "EGL gate passed (" + reason + ").");
+  waitForLogicLib();
+}
+
 function main() {
+  let eglSwapBuffers = null;
+  try {
+    const libEGL =
+      Process.findModuleByName("libEGL.so") ||
+      Process.findModuleByName("libGLESv2.so");
+    if (libEGL) {
+      try {
+        eglSwapBuffers = libEGL.getExportByName("eglSwapBuffers");
+      } catch (e) {
+        eglSwapBuffers = null;
+      }
+    }
+    if (!eglSwapBuffers) {
+      try {
+        eglSwapBuffers = Module.findExportByName(null, "eglSwapBuffers");
+      } catch (e) {
+        eglSwapBuffers = null;
+      }
+    }
+  } catch (e) {
+    eglSwapBuffers = null;
+  }
+
+  if (eglSwapBuffers) {
+    try {
+      const eglHook = Interceptor.attach(eglSwapBuffers, {
+        onEnter: function (args) {
+          try {
+            eglHook.detach();
+          } catch (e) {}
+          eglGatePass("first-frame");
+        },
+      });
+    } catch (e) {
+      eglGatePass("egl-attach-fail");
+    }
+  } else {
+    eglGatePass("no-egl-export");
+  }
+  // Fallback: jangan tergantung selamanya pada frame pertama.
+  setTimeout(() => eglGatePass("timeout"), 15000);
+  // Jalur cepat: bila lib sudah ter-map sejak awal, langsung resolve.
   waitForLogicLib();
 }
 
@@ -72,82 +124,119 @@ function resolveLogicLib() {
 let logicLibMonitor = null;
 let logicLibPoll = null;
 
-function waitForLogicLib() {
-  debugLog("Bootstrap", `Monitoring for ${TARGET_LIB}...`);
+// Diagnostik (admin-only): daftar .so ter-map yang relevan agar dari logcat
+// ketahuan nama lib sebenarnya bila TARGET_LIB tak kunjung muncul.
+function dumpInterestingModules() {
+  try {
+    const names = [];
+    const mods = Process.enumerateModules();
+    for (let i = 0; i < mods.length; i++) {
+      const n = mods[i].name;
+      if (
+        n.indexOf(".so") !== -1 &&
+        (n.indexOf("logic") !== -1 ||
+          n.indexOf("unity") !== -1 ||
+          n.indexOf("Unity") !== -1 ||
+          n.indexOf("il2cpp") !== -1 ||
+          n.indexOf("moba") !== -1 ||
+          n.indexOf("game") !== -1 ||
+          n.indexOf("GLES") !== -1 ||
+          n.indexOf("EGL") !== -1)
+      ) {
+        names.push(n);
+      }
+    }
+    return names.join(",");
+  } catch (e) {
+    return "enum-fail:" + e.message;
+  }
+}
 
-  resolveLogicLib();
-  if (logicLibResolved) return;
-
+function ensureDlopenMonitor() {
+  if (logicLibMonitor || logicLibResolved) return true;
   let dlopen = null;
   try {
     dlopen =
       Module.findExportByName(null, "android_dlopen_ext") ||
       Module.findExportByName(null, "dlopen");
   } catch (e) {
-    const libc = Process.findModuleByName("libc.so");
-    if (libc) {
-      try {
-        dlopen =
-          libc.getExportByName("android_dlopen_ext") ||
-          libc.getExportByName("dlopen");
-      } catch (e2) {
-        dlopen = null;
-      }
-    }
-  }
-
-  if (dlopen) {
     try {
-      logicLibMonitor = Interceptor.attach(dlopen, {
-        onEnter: function (args) {
-          try {
-            if (args[0]) {
-              this.path = Memory.readCString(args[0]);
-            }
-          } catch (e) {
-            this.path = null;
-          }
-        },
-        onLeave: function (retval) {
-          try {
-            if (
-              this.path &&
-              typeof this.path === "string" &&
-              this.path.indexOf(TARGET_LIB) !== -1
-            ) {
-              // Modul mungkin belum terdaftar saat onLeave; resolve + poll yang
-              // akan memastikan. Coba langsung, aman karena once-guard.
-              try {
-                const targetMod = Process.getModuleByName(TARGET_LIB);
-                if (targetMod) {
-                  resolveLogicLib();
-                  return;
-                }
-              } catch (e) {}
-              resolveLogicLib();
-            }
-          } catch (e) {
-            // ignore
-          }
-        },
-      });
-    } catch (e) {
-      logicLibMonitor = null;
-    }
-  } else {
-    debugLog("Bootstrap", "Error: Could not find dlopen to monitor.");
+      const libc = Process.findModuleByName("libc.so");
+      if (libc) {
+        try {
+          dlopen =
+            libc.getExportByName("android_dlopen_ext") ||
+            libc.getExportByName("dlopen");
+        } catch (e2) {
+          dlopen = null;
+        }
+      }
+    } catch (e3) {}
   }
 
-  // Anti-race fallback: bila event dlopen terlewat (lib dimuat di sela cek
-  // awal dan attach monitor, atau via linker path lain), poll pasif tiap 2
-  // detik sampai ketemu. Tanpa log per-tick (stealth).
+  if (!dlopen) return false;
+  try {
+    logicLibMonitor = Interceptor.attach(dlopen, {
+      onEnter: function (args) {
+        try {
+          if (args[0]) {
+            this.path = Memory.readCString(args[0]);
+          }
+        } catch (e) {
+          this.path = null;
+        }
+      },
+      onLeave: function (retval) {
+        try {
+          if (
+            this.path &&
+            typeof this.path === "string" &&
+            this.path.indexOf(TARGET_LIB) !== -1
+          ) {
+            resolveLogicLib();
+          }
+        } catch (e) {
+          // ignore
+        }
+      },
+    });
+    return true;
+  } catch (e) {
+    logicLibMonitor = null;
+    return false;
+  }
+}
+
+function waitForLogicLib() {
+  if (logicLibResolved) return;
+  debugLog("Bootstrap", `Monitoring for ${TARGET_LIB}...`);
+
+  resolveLogicLib();
+  if (logicLibResolved) return;
+
+  const monOk = ensureDlopenMonitor();
+  debugLog(
+    "Bootstrap",
+    `dlopen monitor: ${monOk ? "attached" : "NOT-FOUND"} | mapped: [${dumpInterestingModules()}]`,
+  );
+
+  // Anti-race fallback: poll pasif tiap 2 detik + coba ulang attach monitor
+  // (lookup export di t=0 bisa gagal, sukses belakangan). Tiap ~10 detik
+  // log sekali (admin-only) agar progres terpantau dari logcat.
   if (!logicLibPoll) {
     let tries = 0;
     logicLibPoll = setInterval(() => {
       tries++;
       try {
         resolveLogicLib();
+        if (!logicLibResolved && !logicLibMonitor) ensureDlopenMonitor();
       } catch (e) {}
+      if (tries % 5 === 0 && !logicLibResolved) {
+        debugLog(
+          "Bootstrap",
+          `still waiting ${TARGET_LIB} (t=${tries * 2}s) mon=${logicLibMonitor ? "on" : "off"} mapped: [${dumpInterestingModules()}]`,
+        );
+      }
       if (logicLibResolved || tries >= 90) {
         try {
           clearInterval(logicLibPoll);
