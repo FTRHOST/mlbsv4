@@ -118,24 +118,39 @@ function executeSimpleHooks(Assembly) {
 
   // Setup Modular Mod Functions — tiap modul dibungkus agar satu modul
   // yang gagal tidak membunuh modul lain (kasus Assembly-CSharp kemarin).
-  const safeSetup = (name, fn) => {
+  // Stealth: pemasangan di-stagger berjitter (300-1200ms antar modul) agar
+  // tidak ada burst hook + komputasi di satu tick init yang mudah di-deteksi
+  // via anomali timing. Urutan prioritas tetap: GM paling awal.
+  const queue = [
+    ["setupGMHooks", setupGMHooks],
+    ["patchLibMoba", patchLibMoba],
+    ["setupSkinHooks", setupSkinHooks],
+    ["setupUnreleasedHooks", setupUnreleasedHooks],
+    ["setupBattleCommands", setupBattleCommands],
+    // Auth-only (poll operator ID untuk lisensi; tanpa hook/pengiriman data)
+    ["setupTelemetryHooks", setupTelemetryHooks],
+    // setupUIHooks(Assembly); // Dinonaktifkan karena tidak work
+  ];
+  const runNext = (idx) => {
+    if (idx >= queue.length) {
+      debugLog("Bootstrap", "All hook modules installed.");
+      return;
+    }
     try {
-      fn(Assembly);
+      queue[idx][1](Assembly);
     } catch (e) {
-      debugLog("Bootstrap", `${name} skipped: ${e.message}`);
+      debugLog("Bootstrap", `${queue[idx][0]} skipped: ${e.message}`);
+    }
+    if (idx + 1 < queue.length) {
+      setTimeout(
+        () => runNext(idx + 1),
+        300 + Math.floor(Math.random() * 900),
+      );
+    } else {
+      debugLog("Bootstrap", "All hook modules installed.");
     }
   };
-  // Prioritas utama: GM hooks WAJIB paling awal — modul lain tidak boleh
-  // mendahuluinya agar kontrol GM selalu terpasang duluan.
-  safeSetup("setupGMHooks", setupGMHooks);
-  safeSetup("patchLibMoba", patchLibMoba);
-  safeSetup("setupSkinHooks", setupSkinHooks);
-  safeSetup("setupUnreleasedHooks", setupUnreleasedHooks);
-  safeSetup("setupBattleCommands", setupBattleCommands);
-  // Auth-only (poll operator ID untuk lisensi; tanpa hook/pengiriman data)
-  safeSetup("setupTelemetryHooks", setupTelemetryHooks);
-  // setupUIHooks(Assembly); // Dinonaktifkan karena tidak work
-  debugLog("Bootstrap", "All hook modules installed.");
+  runNext(0);
 }
 
 function setupGameStartDelay(Assembly) {
