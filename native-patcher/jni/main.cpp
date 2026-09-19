@@ -2064,6 +2064,14 @@ const MobaPatch kMobaPatches[] = {
     { 0x558fc, { 0x00, 0x00, 0x80, 0xd2, 0xc0, 0x03, 0x5f, 0xd6 } },
 };
 
+// SAFETY KILL-SWITCH (2026-09-19): offset di atas TIDAK cocok dengan libmoba
+// taptest 2.2.05 di device — terbukti via tombstone: crash deterministik
+// SIGSEGV_ACCERR di UnityMain pada libmoba+0xe5024, 20 byte setelah patch #4
+// (0xe5010), selalu beberapa detik setelah rc=5. Patch DIMATIKAN sampai
+// offset di-rebase per versi via disassembly libmoba yang benar.
+// Jangan re-enable tanpa verifikasi tombstone bersih di device.
+static const bool kMobaPatchEnabled = false;
+
 uintptr_t find_libmoba_base() {
     const std::string needle = stealth_str::deobf(stealth_str::kS_libmoba, stealth_str::kS_libmoba_len);
     FILE* maps = fopen("/proc/self/maps", "r");
@@ -2106,6 +2114,7 @@ extern "C" __attribute__((visibility("default"))) int cfg_probe(const char* lib_
 }
 
 extern "C" __attribute__((visibility("default"))) int cfg_patch() {
+    if (!kMobaPatchEnabled) return 0; // kill-switch aktif, lihat di atas
     const uintptr_t base = find_libmoba_base();
     if (!base) return 0; // lib belum dimuat; JS akan retry pasif
     const long page = sysconf(_SC_PAGESIZE) > 0 ? sysconf(_SC_PAGESIZE) : 4096;
