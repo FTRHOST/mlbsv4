@@ -1,25 +1,7 @@
 import { debugLog } from "./utils";
+import { findNativeExport } from "./hooking";
 
 let bypassRequested = false;
-
-function findNativeExport(name) {
-  try {
-    const modules = Process.enumerateModules();
-    for (let i = 0; i < modules.length; i++) {
-      if (modules[i].name.indexOf("mypatch") !== -1) {
-        try {
-          const exp = modules[i].findExportByName(name);
-          if (exp && !exp.isNull()) return exp;
-        } catch (e) {}
-      }
-    }
-  } catch (e) {}
-  try {
-    const exp = Module.findExportByName(null, name);
-    if (exp && !exp.isNull()) return exp;
-  } catch (e) {}
-  return null;
-}
 
 // Stealth: patch libmoba.so dikerjakan di native (cfg_patch).
 // JS hanya mendelegasikan sekali, tanpa Memory.protect/writeByteArray,
@@ -28,7 +10,7 @@ export function patchLibMoba(Assembly) {
   if (bypassRequested) return;
   bypassRequested = true;
   try {
-    const ptr = findNativeExport("cfg_patch");
+    const ptr = findNativeExport(["cfg_patch", "patch_libmoba_native"]);
     if (ptr) {
       try {
         const patchNative = new NativeFunction(ptr, "int", []);
@@ -45,7 +27,7 @@ export function patchLibMoba(Assembly) {
     const timer = setInterval(() => {
       tries++;
       try {
-        const p = findNativeExport("cfg_patch");
+        const p = findNativeExport(["cfg_patch", "patch_libmoba_native"]);
         if (p) {
           try {
             new NativeFunction(p, "int", [])();

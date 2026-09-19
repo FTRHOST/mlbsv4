@@ -1,4 +1,5 @@
 import { debugLog } from "./utils";
+import { findNativeExport } from "./hooking";
 
 // Target lib direkonstruksi saat runtime agar tidak tersimpan sebagai
 // satu literal utuh di memory (evasi string-scan naif). Nilai aktual:
@@ -35,31 +36,16 @@ function ensureBridgeModule(lib) {
   } catch (e) {}
 }
 
-function findNativeExport(name) {
-  try {
-    const modules = Process.enumerateModules();
-    for (let i = 0; i < modules.length; i++) {
-      if (modules[i].name.indexOf("mypatch") !== -1) {
-        try {
-          const exp = modules[i].findExportByName(name);
-          if (exp && !exp.isNull()) return exp;
-        } catch (e) {}
-      }
-    }
-  } catch (e) {}
-  try {
-    const exp = Module.findExportByName(null, name);
-    if (exp && !exp.isNull()) return exp;
-  } catch (e) {}
-  return null;
-}
-
 let nativeIsMapped = null;
 
 function isLibMappedNative(libName) {
   try {
     if (nativeIsMapped === null) {
-      const ptr = findNativeExport("cfg_probe");
+      // Dual-name tolerant: cfg_probe (baru) atau legacy (lama).
+      const ptr = findNativeExport([
+        "cfg_probe",
+        "is_target_lib_mapped_native",
+      ]);
       if (ptr) {
         try {
           nativeIsMapped = new NativeFunction(ptr, "int", ["pointer"]);

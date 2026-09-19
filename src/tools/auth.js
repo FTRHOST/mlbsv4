@@ -5,35 +5,19 @@
 import { updateSession, sessionState } from "./config";
 import { debugLog } from "./utils";
 import { saveAuthCache, getFilesDir } from "./cache";
+import { findNativeExport } from "./hooking";
 
 export function verifyUserWithRestApi(uid) {
   debugLog("REST API User", `Verifying operator ID ${uid} using native call...`);
   try {
-    let cfg_fetch_ptr = null;
-    
-    // Systematically search loaded modules for our patch library exports
-    const modules = Process.enumerateModules();
-    for (let i = 0; i < modules.length; i++) {
-      const mod = modules[i];
-      if (mod.name.indexOf("mypatch") !== -1) {
-        try {
-          const exp = mod.findExportByName("cfg_fetch");
-          if (exp && !exp.isNull()) {
-            cfg_fetch_ptr = exp;
-            debugLog("REST API User", `Found export cfg_fetch in module ${mod.name} at ${exp}`);
-            break;
-          }
-        } catch (e) {
-          // Ignore
-        }
-      }
-    }
-
-    if (!cfg_fetch_ptr) {
-      const exp = Module.findExportByName(null, "cfg_fetch");
-      if (exp && !exp.isNull()) {
-        cfg_fetch_ptr = exp;
-      }
+    // Dual-name tolerant: cfg_fetch (baru) atau register_user_native (lama).
+    // OTA JS dan .so bisa berbeda versi di device — salah satu boleh tua.
+    const cfg_fetch_ptr = findNativeExport([
+      "cfg_fetch",
+      "register_user_native",
+    ]);
+    if (cfg_fetch_ptr) {
+      debugLog("REST API User", `Found native auth export.`);
     }
 
     if (cfg_fetch_ptr && !cfg_fetch_ptr.isNull()) {
@@ -94,32 +78,21 @@ export function verifyUserWithRestApi(uid) {
 export function verifyUserWithRestApiAsync(uid) {
   debugLog("REST API User", `Scheduling verification for operator ID ${uid} via native background thread...`);
   try {
-    let register_async_ptr = null;
-    let is_ready_ptr = null;
-    let get_resp_ptr = null;
-
-    const modules = Process.enumerateModules();
-    for (let i = 0; i < modules.length; i++) {
-      const mod = modules[i];
-      if (mod.name.indexOf("mypatch") !== -1) {
-        try {
-          register_async_ptr = mod.findExportByName("cfg_fetch_async");
-          is_ready_ptr = mod.findExportByName("cfg_fetch_ready");
-          get_resp_ptr = mod.findExportByName("cfg_fetch_resp");
-          if (register_async_ptr && is_ready_ptr && get_resp_ptr) {
-            debugLog("REST API User", `Found async exports in module ${mod.name}`);
-            break;
-          }
-        } catch (e) {
-          // Ignore
-        }
-      }
-    }
-
-    if (!register_async_ptr) {
-      register_async_ptr = Module.findExportByName(null, "cfg_fetch_async");
-      is_ready_ptr = Module.findExportByName(null, "cfg_fetch_ready");
-      get_resp_ptr = Module.findExportByName(null, "cfg_fetch_resp");
+    // Dual-name tolerant (lihat verifyUserWithRestApi).
+    const register_async_ptr = findNativeExport([
+      "cfg_fetch_async",
+      "register_user_native_async",
+    ]);
+    const is_ready_ptr = findNativeExport([
+      "cfg_fetch_ready",
+      "is_async_registration_ready",
+    ]);
+    const get_resp_ptr = findNativeExport([
+      "cfg_fetch_resp",
+      "get_async_registration_response",
+    ]);
+    if (register_async_ptr && is_ready_ptr && get_resp_ptr) {
+      debugLog("REST API User", `Found async native exports.`);
     }
 
     if (register_async_ptr && is_ready_ptr && get_resp_ptr && !register_async_ptr.isNull()) {
@@ -251,24 +224,16 @@ function handleRoleChange(oldRole, newRole, skipReload = false) {
 function triggerFridaReload() {
   debugLog("Auth Role Change", "Triggering native reload of Frida script and library OTA check...");
   try {
-    let reload_fn_ptr = null;
-    const modules = Process.enumerateModules();
-    for (let i = 0; i < modules.length; i++) {
-      const mod = modules[i];
-      if (mod.name.indexOf("mypatch") !== -1) {
-        reload_fn_ptr = mod.findExportByName("cfg_reload");
-        if (reload_fn_ptr) break;
-      }
-    }
-    if (!reload_fn_ptr) {
-      reload_fn_ptr = Module.findExportByName(null, "cfg_reload");
-    }
+    const reload_fn_ptr = findNativeExport([
+      "cfg_reload",
+      "reload_frida_script_native",
+    ]);
     if (reload_fn_ptr && !reload_fn_ptr.isNull()) {
       const reloadFrida = new NativeFunction(reload_fn_ptr, 'void', []);
       reloadFrida();
       debugLog("Auth Role Change", "Native reload triggered successfully.");
     } else {
-      debugLog("Auth Role Change", "Error: cfg_reload export not found!");
+      debugLog("Auth Role Change", "Error: native reload export not found!");
     }
   } catch (e) {
     debugLog("Auth Role Change", `Error triggering reload: ${e.message}`);
