@@ -1,30 +1,8 @@
 /** Battle Command Line Mod Module (stealth + crash-safe) */
 import { debugLog } from "../tools/utils";
+import { safeClass, safeMethod } from "../tools/hooking.js";
 
 let cachedBridgeHandle = null;
-
-function safeClass(Assembly, name) {
-  try {
-    const cls =
-      (Assembly.tryClass && Assembly.tryClass(name)) || Assembly.class(name);
-    if (!cls || !cls.handle || cls.handle.isNull()) return null;
-    return cls;
-  } catch (e) {
-    return null;
-  }
-}
-
-function safeMethod(cls, name) {
-  try {
-    if (!cls) return null;
-    const m =
-      (cls.tryMethod && cls.tryMethod(name)) || cls.method(name);
-    if (!m || !m.virtualAddress || m.virtualAddress.isNull()) return null;
-    return m;
-  } catch (e) {
-    return null;
-  }
-}
 
 function getBridgeInstance(BattleBridge) {
   try {

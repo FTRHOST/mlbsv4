@@ -4,22 +4,13 @@
 
 import { sessionState } from "../tools/config";
 import { debugLog } from "../tools/utils";
+import { safeClass } from "../tools/hooking.js";
 
 export function setupGMHooks(Assembly) {
-  const safeClass = (name) => {
-    try {
-      const cls =
-        (Assembly.tryClass && Assembly.tryClass(name)) || Assembly.class(name);
-      if (!cls || !cls.handle || cls.handle.isNull()) return null;
-      return cls;
-    } catch (e) {
-      return null;
-    }
-  };
 
   const hookSandboxMethod = (className, methodName) => {
     try {
-      const cls = safeClass(className);
+      const cls = safeClass(Assembly, className);
       if (!cls) return;
       const method =
         (cls.tryMethod && cls.tryMethod(methodName)) || cls.method(methodName);

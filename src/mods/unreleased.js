@@ -7,6 +7,7 @@ import { debugLog } from "../tools/utils";
 import { showGameNotification } from "../index";
 import { getExternalFilesDir } from "../tools/cache";
 import { GIT_BRANCH, GIT_HASH, LATEST_CLOUD_VERSION } from "../env";
+import { safeClass as safeCls, safeMethod } from "../tools/hooking.js";
 
 /**
  * Membaca versi terupdate dari file lokal `mlver.json` di external user directory (/sdcard/Android/data/<package_name>/files/mlver.json).
@@ -378,22 +379,14 @@ export function setupUnreleasedHooks(Assembly) {
     }
   }, 8000);
 
-  const safeCls = (name) => {
-    try {
-      const cls =
-        (Assembly.tryClass && Assembly.tryClass(name)) || Assembly.class(name);
-      if (!cls || !cls.handle || cls.handle.isNull()) return null;
-      return cls;
-    } catch (e) {
-      return null;
-    }
-  };
-
-  const SystemData = safeCls("SystemData");
-  const LoginReceiveMessage = safeCls("LoginReceiveMessage");
+  const SystemData = safeCls(Assembly, "SystemData");
+  const LoginReceiveMessage = safeCls(Assembly, "LoginReceiveMessage");
   if (!SystemData || !LoginReceiveMessage) return;
 
-  let Cmd_Login_CheckUpgrade_SC = safeCls("MTTDProto.Cmd_Login_CheckUpgrade_SC");
+  let Cmd_Login_CheckUpgrade_SC = safeCls(
+    Assembly,
+    "MTTDProto.Cmd_Login_CheckUpgrade_SC",
+  );
   if (!Cmd_Login_CheckUpgrade_SC) {
     try {
       Cmd_Login_CheckUpgrade_SC = Assembly.classes.find(
@@ -549,16 +542,7 @@ export function setupUnreleasedHooks(Assembly) {
   };
 
   // --- NOP / FORCE FIXES (dead ASTC hooks dihapus; sisakan yang aktif) ---
-  const safeMethod = (cls, name) => {
-    try {
-      if (!cls) return null;
-      const m = (cls.tryMethod && cls.tryMethod(name)) || cls.method(name);
-      if (!m || !m.virtualAddress || m.virtualAddress.isNull()) return null;
-      return m;
-    } catch (e) {
-      return null;
-    }
-  };
+  // safeMethod dipakai dari tools/hooking.js (impor di atas).
 
   const nopMethod = (cls, name) => {
     try {
