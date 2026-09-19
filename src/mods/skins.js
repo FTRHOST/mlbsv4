@@ -306,7 +306,7 @@ export function setupSkinHooks(Assembly) {
       const pairs = getCatalogPairs(heroIds);
       if (!pairs.length) {
         debugLog("Skin", "katalog kosong (tabel belum siap), grant ditunda.");
-        return;
+        return false;
       }
       // Kunci katalog untuk batch ini.
       lockedCatalog = true;
@@ -362,7 +362,7 @@ export function setupSkinHooks(Assembly) {
           "Skin",
           "skin sudah granted semua (" + skinList.length + ").",
         );
-        return;
+        return true;
       }
       if (!batched) {
         let granted = 0;
@@ -382,11 +382,11 @@ export function setupSkinHooks(Assembly) {
             granted +
             (lockedCatalog ? " (TERKUNCI)" : ""),
         );
-        return;
+        return true;
       }
       if (grantTimer) {
         debugLog("Skin", "grant batch sudah berjalan, skip");
-        return;
+        return true;
       }
       let i = 0;
       let granted = 0;
@@ -432,26 +432,59 @@ export function setupSkinHooks(Assembly) {
         }
       };
       step();
+      return true;
     } catch (e) {
       debugLog("Skin", "grant all skins gagal: " + e);
+      return false;
     }
   };
 
   // Pemicu saat memasuki game: hook UIFuncs.GetHeroKeyInfoList di atas
   // fired tiap daftar hero dibangun (lobby). Universe hero dari daftar
   // tersebut diteruskan agar katalog per-hero lengkap. Throttle 10 dtk agar
-  // rebuild tabel tidak terlalu sering; bila katalog masih kosong/tumbuh,
-  // entry berikutnya otomatis mencoba/melanjutkan.
+  // rebuild tabel tidak terlalu sering.
+  //
+  // Berbeda dengan skrip live-inject (perform langsung jalan karena runtime
+  // sudah siap), di sini ada rantai gate: lobby event -> allowed() (auth
+  // async) -> throttle -> batch. Event lobby bisa fired SEKALI saat auth
+  // belum siap, atau tabel belum termuat — maka kick yang tertunda TIDAK
+  // hilang diam-diam: dijadwalkan ulang tiap 15 dtk (maks 20x) sampai batch
+  // benar-benar jalan, plus log alasan skip (throttled) agar terbaca logcat.
   let lastKickTime = 0;
-  const kickCatalogGrant = function (heroIds) {
+  let lastSkipLog = 0;
+  let lastHeroIds = [];
+  let pendingRetry = null;
+  let retryCount = 0;
+  const scheduleRetry = function () {
     try {
-      if (!allowed() || grantTimer) return;
+      if (pendingRetry || retryCount >= 20) return;
+      retryCount++;
+      pendingRetry = setTimeout(() => {
+        pendingRetry = null;
+        kickCatalogGrant(lastHeroIds, true);
+      }, 15000);
+    } catch (e) {}
+  };
+  const kickCatalogGrant = function (heroIds, isRetry) {
+    try {
+      if (heroIds && heroIds.length) lastHeroIds = heroIds;
+      if (grantTimer) return;
+      if (!allowed()) {
+        const now = Date.now();
+        if (now - lastSkipLog > 30000) {
+          lastSkipLog = now;
+          debugLog("Skin", "kick ditunda (auth belum siap), retry terjadwal.");
+        }
+        scheduleRetry();
+        return;
+      }
       const now = Date.now();
-      if (now - lastKickTime < 10000) return;
+      if (!isRetry && now - lastKickTime < 10000) return;
       lastKickTime = now;
-      grantAllSkinsFromCatalog(true, heroIds);
-      // Bila katalog masih kosong (grant ditunda) atau baru ter-grant
-      // sebagian, entry lobby berikutnya otomatis mencoba/melanjutkan.
+      const started = grantAllSkinsFromCatalog(true, lastHeroIds);
+      // Katalog kosong (grant ditunda) -> coba lagi terjadwal; bila batch
+      // sudah jalan/selesai, tidak ada retry lanjutan.
+      if (!started) scheduleRetry();
     } catch (e) {}
   };
   const fakeSkin = (skinid) => {
