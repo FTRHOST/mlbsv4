@@ -89,6 +89,7 @@ export function setupSkinHooks(Assembly) {
         let hidList = [];
         try {
           const count = heros.method("get_Count").invoke();
+          debugLog("Skin", "GetHeroKeyInfoList fired heros=" + count);
           for (let i = 0; i < count; i++) {
             try {
               const el = heros.method("get_Item").invoke(i);
@@ -153,8 +154,9 @@ export function setupSkinHooks(Assembly) {
   };
 
   // ===== Grant skin ke HeroKeyInfo.m_heroskins (satu hero) ===== //
-  // Menulis CmdHeroSkin{iId, iLimitTime:0, iSource:0} ke list milik hero.
-  // Idempoten: skin yang sudah ada di-skip.
+  // Menulis CmdHeroSkin{iId, bSmartMagicUnlock:true} ke list milik hero.
+  // Idempoten: skin yang sudah ada di-skip TAPI flag unlock-nya dipastikan
+  // true (menyamai perilaku snippet terbukti).
   const grantSkinToHero = function (heroid, skinid) {
     try {
       const dict = SystemData.field("m_heroInfos").value;
@@ -207,13 +209,22 @@ export function setupSkinHooks(Assembly) {
           try {
             const el = skins.method("get_Item").invoke(i);
             if (!el || el.isNull()) continue;
-            if (Number(el.field("iId").value) === Number(skinid)) return;
+            if (Number(el.field("iId").value) === Number(skinid)) {
+              try {
+                el.field("bSmartMagicUnlock").value = true;
+              } catch (e) {}
+              return;
+            }
           } catch (e) {}
         }
       } catch (e) {}
 
       try {
-        skins.method("Add").invoke(fakeSkin(skinid));
+        const inst = fakeSkin(skinid);
+        try {
+          inst.field("bSmartMagicUnlock").value = true;
+        } catch (e) {}
+        skins.method("Add").invoke(inst);
       } catch (e) {}
     } catch (e) {}
   };
@@ -324,7 +335,7 @@ export function setupSkinHooks(Assembly) {
   // dilanjutkan (delta) di entry berikutnya, tidak mengulang dari nol.
   let grantTimer = null;
 
-  const grantAllSkinsFromCatalog = function (batched, heroIds) {
+  const grantAllSkinsFromCatalog = function (batched, heroIds, forceVerify) {
     try {
       const pairs = getCatalogPairs(heroIds);
       if (!pairs.length) {
@@ -335,7 +346,10 @@ export function setupSkinHooks(Assembly) {
       lockedCatalog = true;
       catalogCache = pairs;
 
-      // ---- Fase 1: hero tampil ----
+      // ---- Fase 1: hero tampil (live re-grant tiap panggilan) ----
+      // grantHeroToDict mengecek ContainsKey live: entri yang di-wipe sync
+      // server otomatis ditambah lagi di sini. grantedKeys hanya telemetri,
+      // bukan gate — re-grant 156 ContainsKey murah, ketinggalan lebih mahal.
       const seenH = {};
       const heroList = [];
       for (let k = 0; k < pairs.length; k++) {
@@ -348,12 +362,16 @@ export function setupSkinHooks(Assembly) {
       let heroesGranted = 0;
       for (let h = 0; h < heroList.length; h++) {
         try {
-          const key = "hero:" + heroList[h];
-          if (!grantedKeys[key]) {
-            grantHeroToDict(heroList[h]);
-            grantedKeys[key] = 1;
-            heroesGranted++;
-          }
+          let has = false;
+          try {
+            const dict = SystemData.field("m_heroInfos").value;
+            if (dict && !dict.isNull()) {
+              has = dict.method("ContainsKey").invoke(heroList[h]);
+            }
+          } catch (e) {}
+          grantHeroToDict(heroList[h]);
+          grantedKeys["hero:" + heroList[h]] = 1;
+          if (!has) heroesGranted++;
         } catch (e) {}
       }
       debugLog(
@@ -378,7 +396,9 @@ export function setupSkinHooks(Assembly) {
       const todo = [];
       for (let k = 0; k < skinList.length; k++) {
         const key = skinList[k][0] + ":" + skinList[k][1];
-        if (!grantedKeys[key]) todo.push(skinList[k]);
+        // forceVerify (mis. pasca-snapshot server): abaikan grantedKeys,
+        // grantSkinToHero tetap dedupe live via isi m_heroskins.
+        if (forceVerify || !grantedKeys[key]) todo.push(skinList[k]);
       }
       if (!todo.length) {
         debugLog(
@@ -488,7 +508,7 @@ export function setupSkinHooks(Assembly) {
       }, 15000);
     } catch (e) {}
   };
-  const kickCatalogGrant = function (heroIds, isRetry) {
+  const kickCatalogGrant = function (heroIds, isRetry, force) {
     try {
       if (heroIds && heroIds.length) lastHeroIds = heroIds;
       if (grantTimer) return;
@@ -504,18 +524,49 @@ export function setupSkinHooks(Assembly) {
       const now = Date.now();
       if (!isRetry && now - lastKickTime < 10000) return;
       lastKickTime = now;
-      const started = grantAllSkinsFromCatalog(true, lastHeroIds);
+      const started = grantAllSkinsFromCatalog(true, lastHeroIds, !!force);
       // Katalog kosong (grant ditunda) -> coba lagi terjadwal; bila batch
       // sudah jalan/selesai, tidak ada retry lanjutan.
       if (!started) scheduleRetry();
     } catch (e) {}
   };
+
+  // ===== Pemicu pasca-snapshot server (anti-race sync) ===== //
+  // GameReceiveMessage.on_Role_Init_SC fired saat snapshot init server
+  // diterapkan — momen ketika grant yang terlalu dini berisiko tertimpa.
+  // Setelah original return, jadwalkan verifikasi penuh (+3 dtk, menunggu
+  // Framing2/3 selesai). Throttle via grantTimer + kick 10 dtk.
+  try {
+    const GRM = safeClass("GameReceiveMessage");
+    if (!GRM) throw new Error("GameReceiveMessage missing");
+    const okInit = hookMethod(GRM, "on_Role_Init_SC", function (retMsg) {
+      const r = this.method("on_Role_Init_SC").invoke(retMsg);
+      try {
+        debugLog("Skin", "on_Role_Init_SC selesai -> grant terjadwal.");
+        setTimeout(() => {
+          try {
+            kickCatalogGrant(lastHeroIds, true, true);
+          } catch (e) {}
+        }, 3000);
+      } catch (e) {}
+      return r;
+    });
+    debugLog(
+      "Skin",
+      okInit ? "hook on_Role_Init_SC ok" : "hook on_Role_Init_SC gagal",
+    );
+  } catch (e) {
+    debugLog("Skin", "hook on_Role_Init_SC gagal: " + e.message);
+  }
   const fakeSkin = (skinid) => {
     const instance = CmdHeroSkin.alloc();
     instance.method(".ctor").invoke();
     instance.field("iId").value = skinid;
     instance.field("iLimitTime").value = 0;
     instance.field("iSource").value = 0;
+    try {
+      instance.field("bSmartMagicUnlock").value = true;
+    } catch (e) {}
     return instance;
   };
   const fakeStatue = (statueid) => {
