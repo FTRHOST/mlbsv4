@@ -22,6 +22,19 @@ let started = false;
 let fired = false;
 let timer = null;
 
+// WAJIB sebelum akses bridge apa pun: tanpa ini frida-il2cpp-bridge
+// mencari modul default "libil2cpp.so" (getExpectedModuleNames) yang tidak
+// ada di proses ini, sehingga Il2Cpp.domain.assembly() selalu melempar
+// "Could not find IL2CPP module" dan readiness tak pernah true.
+// Idempoten — aman dipanggil tiap tick.
+function ensureBridgeModule(lib) {
+  try {
+    if (Il2Cpp.$config.moduleName !== lib) {
+      Il2Cpp.$config.moduleName = lib;
+    }
+  } catch (e) {}
+}
+
 function findNativeExport(name) {
   try {
     const modules = Process.enumerateModules();
@@ -68,14 +81,7 @@ function isLibMappedNative(libName) {
   return null; // unknown -> fallback ke JS check
 }
 
-function isLibMapped(libName) {
-  const viaNative = isLibMappedNative(libName);
-  if (viaNative === true) return true;
-  if (viaNative === false) {
-    // Native bilang belum ada — percaya (hasil /proc/self/maps),
-    // tapi tetap verifikasi ringan via Frida sebagai fallback agar tidak
-    // miss bila native belum siap.
-  }
+function isLibMappedFrida(libName) {
   try {
     const mod = Process.findModuleByName(libName);
     return !!(mod && !mod.isNull());
@@ -84,14 +90,16 @@ function isLibMapped(libName) {
   }
 }
 
-function isAssemblyReady() {
+function probeAssembly() {
   // Domain non-null BELUM berarti init selesai (Assembly-CSharp dibuat
-  // belakangan). Cek langsung assembly-nya.
+  // belakangan). Cek langsung assembly-nya; kembalikan error agar
+  // diagnostik admin bisa menunjukkan penyebab pasti.
   try {
     const asm = Il2Cpp.domain.assembly(assemblyName());
-    return !!(asm && asm.image);
+    if (asm && asm.image) return { ok: true, err: "" };
+    return { ok: false, err: "assembly-null" };
   } catch (e) {
-    return false;
+    return { ok: false, err: String((e && e.message) || e).slice(0, 120) };
   }
 }
 
@@ -112,17 +120,24 @@ function stop() {
  * serta enumerateModules diagnostik.
  *
  * Sebagai gantinya hanya polling ringan dengan jitter:
- *  1. cek lib ter-map (prefer native /proc/self/maps check)
- *  2. cek Assembly-CSharp tersedia
- *  3. Il2Cpp.perform(execute) tepat sekali, lalu timer berhenti total.
+ *  1. pin Il2Cpp.$config.moduleName ke lib game (wajib sebelum bridge dipakai)
+ *  2. cek lib ter-map (prefer native /proc/self/maps check)
+ *  3. cek Assembly-CSharp tersedia
+ *  4. Il2Cpp.perform(execute) tepat sekali, lalu timer berhenti total.
  */
 export function startStealthBootstrap(onReady) {
   if (started) return;
   started = true;
   const lib = targetLib();
+  ensureBridgeModule(lib);
   debugLog("Bootstrap", "Stealth init: passive wait (no hooks).");
 
   let tries = 0;
+
+  const scheduleNext = () => {
+    const delay = BASE_INTERVAL_MS + Math.floor(Math.random() * JITTER_MS);
+    timer = setTimeout(tick, delay);
+  };
 
   const tick = () => {
     if (fired) {
@@ -130,13 +145,24 @@ export function startStealthBootstrap(onReady) {
       return;
     }
     tries++;
+    ensureBridgeModule(lib);
 
+    let libNative = null;
+    let libFrida = false;
+    let asmErr = "";
     let ready = false;
     try {
-      if (isLibMapped(lib) && isAssemblyReady()) {
-        ready = true;
+      libNative = isLibMappedNative(lib);
+      libFrida = libNative === true ? true : isLibMappedFrida(lib);
+      if (libNative === true || libFrida) {
+        const probe = probeAssembly();
+        asmErr = probe.err;
+        ready = probe.ok;
+      } else {
+        asmErr = "lib-not-mapped";
       }
     } catch (e) {
+      asmErr = String((e && e.message) || e).slice(0, 120);
       ready = false;
     }
 
@@ -145,7 +171,6 @@ export function startStealthBootstrap(onReady) {
       stop();
       debugLog("Bootstrap", "Runtime ready. Executing hooks...");
       try {
-        Il2Cpp.$config.moduleName = lib;
         Il2Cpp.perform(() => {
           try {
             onReady(Il2Cpp.domain.assembly(assemblyName()).image);
@@ -154,25 +179,45 @@ export function startStealthBootstrap(onReady) {
           }
         });
       } catch (e) {
+        // Gagal sync: buka lagi agar polling lanjut (jangan mati diam-diam).
         fired = false;
         debugLog("Bootstrap", "Il2Cpp.perform failed: " + e.message);
+        scheduleNext();
       }
       return;
     }
 
     if (tries >= MAX_TRIES) {
       stop();
-      debugLog("Bootstrap", "Runtime never appeared, hooks skipped.");
+      debugLog(
+        "Bootstrap",
+        "Runtime never appeared, hooks skipped. diag libN=" +
+          libNative +
+          " libF=" +
+          (libFrida ? 1 : 0) +
+          " asm=" +
+          asmErr,
+      );
       return;
     }
 
-    // Log progres hemat: tiap ~20 detik sekali (admin-only).
+    // Log progres hemat: tiap ~20 detik sekali (admin-only), sertakan
+    // status nyata agar kegagalan di device bisa didiagnosis dari logcat.
     if (tries % 10 === 0) {
-      debugLog("Bootstrap", "still waiting (t~" + tries * 2 + "s).");
+      debugLog(
+        "Bootstrap",
+        "still waiting (t~" +
+          tries * 2 +
+          "s) diag libN=" +
+          libNative +
+          " libF=" +
+          (libFrida ? 1 : 0) +
+          " asm=" +
+          asmErr,
+      );
     }
 
-    const delay = BASE_INTERVAL_MS + Math.floor(Math.random() * JITTER_MS);
-    timer = setTimeout(tick, delay);
+    scheduleNext();
   };
 
   // Tick pertama sedikit ditunda + jitter agar tidak berpola di t=0.
