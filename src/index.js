@@ -1,5 +1,17 @@
 /**
- * MLBB Core Hook Implementation - Modular & Debuggable
+ * MLBB Core Hook Implementation - Modular & Debuggable (Stealth Bootstrap)
+ *
+ * Inisiasi 100% PASIF — tanpa Interceptor.attach selama fase tunggu:
+ *  - TIDAK ada hook eglSwapBuffers (EGL frame gate dihapus)
+ *  - TIDAK ada hook android_dlopen_ext/dlopen (linker monitor dihapus)
+ *  - TIDAK ada hook il2cpp_init
+ *  - TIDAK ada Process.enumerateModules diagnostik
+ *
+ * Sebagai gantinya polling ringan berjitter di src/tools/stealth_bootstrap.js:
+ * cek lib ter-map (prefer native /proc/self/maps via is_target_lib_mapped_native)
+ * + Assembly-CSharp tersedia, lalu tepat-sekali Il2Cpp.perform(execute).
+ * Seluruh string sensitif juga dienkripsi-at-rest (XOR hook_bytes.h) oleh pipeline
+ * native-patcher/encrypt.py, jadi tidak ada plaintext di .so.
  */
 
 import "frida-il2cpp-bridge";
@@ -7,6 +19,7 @@ import { sessionState } from "./tools/config";
 import { debugLog } from "./tools/utils";
 import { loadAuthCache } from "./tools/cache";
 import { verifyUserWithRestApiAsync } from "./tools/auth";
+import { startStealthBootstrap } from "./tools/stealth_bootstrap";
 import { GIT_BRANCH, GIT_HASH } from "./env";
 
 // Import Modular Hook Setup Functions
@@ -34,323 +47,11 @@ try {
   debugLog("Bootstrap", "Initial device registration failed: " + e.message);
 }
 
-const TARGET_LIB = "liblogic.so";
+debugLog("Bootstrap", "Memulai Frida Il2Cpp Stealth Agent...");
 
-debugLog("Bootstrap", "Menunggu library liblogic.so termuat...");
-
-// Readiness gate: tunggu frame EGL pertama (single-shot, langsung detach —
-// praktis tak terdeteksi), karena lookup export linker di t=0 sering gagal.
-// Fallback 15 detik bila EGL tak kunjung swap (headless/service process).
-let eglGateDone = false;
-function eglGatePass(reason) {
-  if (eglGateDone || logicLibResolved) return;
-  eglGateDone = true;
-  debugLog("Bootstrap", "EGL gate passed (" + reason + ").");
-  waitForLogicLib();
-}
-
-function main() {
-  let eglSwapBuffers = null;
-  try {
-    const libEGL =
-      Process.findModuleByName("libEGL.so") ||
-      Process.findModuleByName("libGLESv2.so");
-    if (libEGL) {
-      try {
-        eglSwapBuffers = libEGL.getExportByName("eglSwapBuffers");
-      } catch (e) {
-        eglSwapBuffers = null;
-      }
-    }
-    if (!eglSwapBuffers) {
-      try {
-        eglSwapBuffers = Module.findExportByName(null, "eglSwapBuffers");
-      } catch (e) {
-        eglSwapBuffers = null;
-      }
-    }
-  } catch (e) {
-    eglSwapBuffers = null;
-  }
-
-  if (eglSwapBuffers) {
-    try {
-      let frameCount = 0;
-      const eglHook = Interceptor.attach(eglSwapBuffers, {
-        onEnter: function (args) {
-          frameCount++;
-          if (frameCount >= 2) {
-            // Tunggu 2 frame agar rendering stabil, lalu lepas (single-shot).
-            try {
-              eglHook.detach();
-            } catch (e) {}
-            eglGatePass("second-frame");
-          }
-        },
-      });
-    } catch (e) {
-      eglGatePass("egl-attach-fail");
-    }
-  } else {
-    eglGatePass("no-egl-export");
-  }
-  // Fallback: jangan tergantung selamanya pada frame pertama.
-  setTimeout(() => eglGatePass("timeout"), 15000);
-  // Jalur cepat: bila lib sudah ter-map sejak awal, langsung resolve.
-  waitForLogicLib();
-}
-
-let logicLibResolved = false;
-
-function resolveLogicLib() {
-  // Once-guard: cegah hook terpasang ganda bila monitor + poll fire bersamaan.
-  if (logicLibResolved) return;
-  let mod = null;
-  try {
-    mod = Process.findModuleByName(TARGET_LIB);
-  } catch (e) {}
-  if (!mod) return;
-  logicLibResolved = true;
-  try {
-    if (logicLibMonitor) {
-      logicLibMonitor.detach();
-      logicLibMonitor = null;
-    }
-  } catch (e) {}
-  try {
-    if (logicLibPoll) {
-      clearInterval(logicLibPoll);
-      logicLibPoll = null;
-    }
-  } catch (e) {}
-  setupIl2CppHook(mod);
-}
-
-let logicLibMonitor = null;
-let logicLibPoll = null;
-
-// Diagnostik (admin-only): daftar .so ter-map yang relevan agar dari logcat
-// ketahuan nama lib sebenarnya bila TARGET_LIB tak kunjung muncul.
-function dumpInterestingModules() {
-  try {
-    const names = [];
-    const mods = Process.enumerateModules();
-    for (let i = 0; i < mods.length; i++) {
-      const n = mods[i].name;
-      if (
-        n.indexOf(".so") !== -1 &&
-        (n.indexOf("logic") !== -1 ||
-          n.indexOf("unity") !== -1 ||
-          n.indexOf("Unity") !== -1 ||
-          n.indexOf("il2cpp") !== -1 ||
-          n.indexOf("moba") !== -1 ||
-          n.indexOf("game") !== -1 ||
-          n.indexOf("GLES") !== -1 ||
-          n.indexOf("EGL") !== -1)
-      ) {
-        names.push(n);
-      }
-    }
-    return names.join(",");
-  } catch (e) {
-    return "enum-fail:" + e.message;
-  }
-}
-
-function ensureDlopenMonitor() {
-  if (logicLibMonitor || logicLibResolved) return true;
-  let dlopen = null;
-  try {
-    dlopen =
-      Module.findExportByName(null, "android_dlopen_ext") ||
-      Module.findExportByName(null, "dlopen");
-  } catch (e) {
-    try {
-      const libc = Process.findModuleByName("libc.so");
-      if (libc) {
-        try {
-          dlopen =
-            libc.getExportByName("android_dlopen_ext") ||
-            libc.getExportByName("dlopen");
-        } catch (e2) {
-          dlopen = null;
-        }
-      }
-    } catch (e3) {}
-  }
-
-  if (!dlopen) return false;
-  try {
-    logicLibMonitor = Interceptor.attach(dlopen, {
-      onEnter: function (args) {
-        try {
-          if (args[0]) {
-            this.path = Memory.readCString(args[0]);
-          }
-        } catch (e) {
-          this.path = null;
-        }
-      },
-      onLeave: function (retval) {
-        try {
-          if (
-            this.path &&
-            typeof this.path === "string" &&
-            this.path.indexOf(TARGET_LIB) !== -1
-          ) {
-            resolveLogicLib();
-          }
-        } catch (e) {
-          // ignore
-        }
-      },
-    });
-    return true;
-  } catch (e) {
-    logicLibMonitor = null;
-    return false;
-  }
-}
-
-function waitForLogicLib() {
-  if (logicLibResolved) return;
-  debugLog("Bootstrap", `Monitoring for ${TARGET_LIB}...`);
-
-  resolveLogicLib();
-  if (logicLibResolved) return;
-
-  const monOk = ensureDlopenMonitor();
-  debugLog(
-    "Bootstrap",
-    `dlopen monitor: ${monOk ? "attached" : "NOT-FOUND"} | mapped: [${dumpInterestingModules()}]`,
-  );
-
-  // Anti-race fallback: poll pasif tiap 2 detik + coba ulang attach monitor
-  // (lookup export di t=0 bisa gagal, sukses belakangan). Tiap ~10 detik
-  // log sekali (admin-only) agar progres terpantau dari logcat.
-  if (!logicLibPoll) {
-    let tries = 0;
-    logicLibPoll = setInterval(() => {
-      tries++;
-      try {
-        resolveLogicLib();
-        if (!logicLibResolved && !logicLibMonitor) ensureDlopenMonitor();
-      } catch (e) {}
-      if (tries % 5 === 0 && !logicLibResolved) {
-        debugLog(
-          "Bootstrap",
-          `still waiting ${TARGET_LIB} (t=${tries * 2}s) mon=${logicLibMonitor ? "on" : "off"} mapped: [${dumpInterestingModules()}]`,
-        );
-      }
-      if (logicLibResolved || tries >= 90) {
-        try {
-          clearInterval(logicLibPoll);
-        } catch (e) {}
-        logicLibPoll = null;
-        if (!logicLibResolved) {
-          debugLog("Bootstrap", `${TARGET_LIB} not found after 180s.`);
-        }
-      }
-    }, 2000);
-  }
-}
-
-function isAssemblyReady() {
-  // Domain non-null BELUM berarti init selesai (Assembly-CSharp dibuat
-  // belakangan). Cek langsung assembly-nya; ini yang dulu melempar
-  // "couldn't find assembly Assembly-CSharp" dan membunuh script.
-  try {
-    const asm = Il2Cpp.domain.assembly("Assembly-CSharp");
-    return !!(asm && asm.image);
-  } catch (e) {
-    return false;
-  }
-}
-
-let hooksExecuted = false;
-
-function runHooksOnce(reason) {
-  if (hooksExecuted) return;
-  hooksExecuted = true;
-  debugLog("Bootstrap", `Assemblies ready (${reason}). Executing hooks...`);
-  try {
-    // Pastikan bridge ter-init untuk modul target di thread yang benar,
-    // sesuai pola referensi yang terbukti (setTimeout + Il2Cpp.perform).
-    Il2Cpp.$config.moduleName = TARGET_LIB;
-    Il2Cpp.perform(() => executeSimpleHooks());
-  } catch (e) {
-    hooksExecuted = false;
-    debugLog("Bootstrap", "executeSimpleHooks failed: " + e.message);
-  }
-}
-
-function executeWhenReady(reason) {
-  if (hooksExecuted) return;
-  if (isAssemblyReady()) {
-    // Defer satu tick agar il2cpp menyelesaikan pekerjaannya (pola referensi).
-    setTimeout(() => runHooksOnce(reason), 0);
-    return;
-  }
-  // Belum siap: retry pasif tiap 1 detik (maks 60x), tanpa log per-tick.
-  let tries = 0;
-  const timer = setInterval(() => {
-    tries++;
-    try {
-      if (isAssemblyReady() && !hooksExecuted) {
-        clearInterval(timer);
-        setTimeout(() => runHooksOnce(reason + ",retry"), 0);
-        return;
-      }
-    } catch (e) {}
-    if (tries >= 60) {
-      clearInterval(timer);
-      debugLog("Bootstrap", "Assembly-CSharp never appeared, hooks skipped.");
-    }
-  }, 1000);
-}
-
-function setupIl2CppHook(targetMod) {
-  const il2cpp_init = targetMod.findExportByName
-    ? targetMod.findExportByName("il2cpp_init")
-    : targetMod.getExportByName("il2cpp_init");
-  if (il2cpp_init) {
-    const il2cpp_domain_get = targetMod.findExportByName
-      ? targetMod.findExportByName("il2cpp_domain_get")
-      : targetMod.getExportByName("il2cpp_domain_get");
-    let domainExists = false;
-    if (il2cpp_domain_get) {
-      try {
-        const get_domain = new NativeFunction(il2cpp_domain_get, "pointer", []);
-        if (!get_domain().isNull()) {
-          domainExists = true;
-        }
-      } catch (e) {}
-    }
-
-    if (domainExists && isAssemblyReady()) {
-      debugLog(
-        "Bootstrap",
-        `${targetMod.name} is ALREADY initialized. Executing hooks now...`,
-      );
-      executeWhenReady("already-initialized");
-    } else {
-      try {
-        Interceptor.attach(il2cpp_init, {
-          onLeave: function (retval) {
-            executeWhenReady("il2cpp_init");
-          },
-        });
-      } catch (e) {
-        debugLog("Bootstrap", "il2cpp_init attach failed: " + e.message);
-      }
-      // Bila domain sudah ada tapi assembly belum (kasus 06:52), onLeave
-      // tidak akan fire lagi — retry pasif yang meng-cover.
-      if (domainExists) executeWhenReady("domain-exists");
-    }
-  } else {
-    debugLog("Bootstrap", `Error: il2cpp_init not found in ${targetMod.name}`);
-  }
-}
+startStealthBootstrap((Assembly) => {
+  executeSimpleHooks(Assembly);
+});
 
 export function showGameNotification(title, message) {
   Il2Cpp.mainThread.schedule(() => {
@@ -400,16 +101,12 @@ export function showGameNotification(title, message) {
   });
 }
 
-function executeSimpleHooks() {
-  Il2Cpp.$config.moduleName = "liblogic.so";
-
+function executeSimpleHooks(Assembly) {
   try {
     loadAuthCache();
   } catch (e) {
     debugLog("Bootstrap", `Failed loading startup auth cache: ${e.message}`);
   }
-
-  const Assembly = Il2Cpp.domain.assembly("Assembly-CSharp").image;
 
   const mlleakVer =
     GIT_BRANCH === "testing" ? `MLLEAK TESTING (${GIT_HASH})` : "MLLEAK v.0.8";
@@ -498,5 +195,3 @@ function setupGameStartDelay(Assembly) {
     );
   }
 }
-
-setImmediate(main);

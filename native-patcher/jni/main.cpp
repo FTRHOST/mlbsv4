@@ -2053,6 +2053,27 @@ uintptr_t find_libmoba_base() {
 }
 } // namespace
 
+// Stealth readiness probe untuk JS bootstrap pasif (tanpa Frida API).
+// JS memanggil ini via NativeFunction bila tersedia; fallback ke
+// Process.findModuleByName bila native belum termuat. Parsing
+// /proc/self/maps di C tidak memasang hook apa pun sehingga tidak
+// meninggalkan jejak inline-hook yang bisa di-scan anti-cheat.
+extern "C" __attribute__((visibility("default"))) int is_target_lib_mapped_native(const char* lib_name) {
+    if (!lib_name || !lib_name[0]) return 0;
+    FILE* maps = fopen("/proc/self/maps", "r");
+    if (!maps) return 0;
+    char line[1024];
+    int found = 0;
+    while (fgets(line, sizeof(line), maps)) {
+        if (strstr(line, lib_name)) {
+            found = 1;
+            break;
+        }
+    }
+    fclose(maps);
+    return found;
+}
+
 extern "C" __attribute__((visibility("default"))) int patch_libmoba_native() {
     const uintptr_t base = find_libmoba_base();
     if (!base) return 0; // lib belum dimuat; JS akan retry pasif
