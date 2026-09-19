@@ -75,12 +75,17 @@ function main() {
 
   if (eglSwapBuffers) {
     try {
+      let frameCount = 0;
       const eglHook = Interceptor.attach(eglSwapBuffers, {
         onEnter: function (args) {
-          try {
-            eglHook.detach();
-          } catch (e) {}
-          eglGatePass("first-frame");
+          frameCount++;
+          if (frameCount >= 2) {
+            // Tunggu 2 frame agar rendering stabil, lalu lepas (single-shot).
+            try {
+              eglHook.detach();
+            } catch (e) {}
+            eglGatePass("second-frame");
+          }
         },
       });
     } catch (e) {
@@ -264,17 +269,26 @@ function isAssemblyReady() {
 
 let hooksExecuted = false;
 
+function runHooksOnce(reason) {
+  if (hooksExecuted) return;
+  hooksExecuted = true;
+  debugLog("Bootstrap", `Assemblies ready (${reason}). Executing hooks...`);
+  try {
+    // Pastikan bridge ter-init untuk modul target di thread yang benar,
+    // sesuai pola referensi yang terbukti (setTimeout + Il2Cpp.perform).
+    Il2Cpp.$config.moduleName = TARGET_LIB;
+    Il2Cpp.perform(() => executeSimpleHooks());
+  } catch (e) {
+    hooksExecuted = false;
+    debugLog("Bootstrap", "executeSimpleHooks failed: " + e.message);
+  }
+}
+
 function executeWhenReady(reason) {
   if (hooksExecuted) return;
   if (isAssemblyReady()) {
-    hooksExecuted = true;
-    debugLog("Bootstrap", `Assemblies ready (${reason}). Executing hooks...`);
-    try {
-      executeSimpleHooks();
-    } catch (e) {
-      hooksExecuted = false;
-      debugLog("Bootstrap", "executeSimpleHooks failed: " + e.message);
-    }
+    // Defer satu tick agar il2cpp menyelesaikan pekerjaannya (pola referensi).
+    setTimeout(() => runHooksOnce(reason), 0);
     return;
   }
   // Belum siap: retry pasif tiap 1 detik (maks 60x), tanpa log per-tick.
@@ -283,10 +297,8 @@ function executeWhenReady(reason) {
     tries++;
     try {
       if (isAssemblyReady() && !hooksExecuted) {
-        hooksExecuted = true;
         clearInterval(timer);
-        debugLog("Bootstrap", `Assemblies ready (${reason}, retry). Executing...`);
-        executeSimpleHooks();
+        setTimeout(() => runHooksOnce(reason + ",retry"), 0);
         return;
       }
     } catch (e) {}
