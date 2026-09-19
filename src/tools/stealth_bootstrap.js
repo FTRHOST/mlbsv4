@@ -110,20 +110,93 @@ function stop() {
   timer = null;
 }
 
+// Frame gate: tunggu swap-buffer ke-2 SETELAH runtime ready, agar eksekusi
+// hook tidak terlalu dini (rendering belum stabil). Hook dipasang telat dan
+// langsung detach — jendela keterdeteksiannya hanya milidetik, tidak seperti
+// pola lama yang attach sejak t=0. Selalu selesai via fallback bila EGL
+// tidak ada / attach gagal / timeout.
+function waitForSecondFrame(onDone) {
+  let done = false;
+  let hook = null;
+  const finish = (reason) => {
+    if (done) return;
+    done = true;
+    try {
+      if (hook) hook.detach();
+    } catch (e) {}
+    hook = null;
+    debugLog("Bootstrap", "Frame gate passed (" + reason + ").");
+    try {
+      onDone();
+    } catch (e) {
+      debugLog("Bootstrap", "Frame gate onDone failed: " + e.message);
+    }
+  };
+
+  let addr = null;
+  try {
+    try {
+      const libEGL =
+        Process.findModuleByName("libEGL.so") ||
+        Process.findModuleByName("libGLESv2.so");
+      if (libEGL) {
+        try {
+          addr = libEGL.getExportByName("eglSwapBuffers");
+        } catch (e) {
+          addr = null;
+        }
+      }
+    } catch (e) {
+      addr = null;
+    }
+    if (!addr) {
+      try {
+        addr = Module.findExportByName(null, "eglSwapBuffers");
+      } catch (e) {
+        addr = null;
+      }
+    }
+  } catch (e) {
+    addr = null;
+  }
+
+  if (addr && !addr.isNull()) {
+    try {
+      let frames = 0;
+      hook = Interceptor.attach(addr, {
+        onEnter() {
+          frames++;
+          if (frames >= 2) finish("second-frame");
+        },
+      });
+      // Fallback: jangan tergantung selamanya pada frame.
+      setTimeout(() => finish("timeout"), 15000);
+      return;
+    } catch (e) {
+      finish("attach-fail");
+      return;
+    }
+  }
+  finish("no-egl");
+}
+
 /**
- * Stealth bootstrap: 100% pasif, NOL Interceptor.attach selama inisiasi.
+ * Stealth bootstrap: pasif selama inisiasi, 1 single-shot hook setelah ready.
  *
- * Menggantikan 3 vektor deteksi lama:
- *  - hook eglSwapBuffers (EGL frame gate)
- *  - hook android_dlopen_ext/dlopen (linker monitor)
- *  - hook il2cpp_init (onLeave)
- * serta enumerateModules diagnostik.
- *
- * Sebagai gantinya hanya polling ringan dengan jitter:
+ * Fase tunggu (tanpa hook apa pun):
+ *  - TIDAK ada monitor android_dlopen_ext/dlopen
+ *  - TIDAK ada hook il2cpp_init
+ *  - TIDAK ada enumerateModules diagnostik
+ *  Hanya polling ringan berjitter:
  *  1. pin Il2Cpp.$config.moduleName ke lib game (wajib sebelum bridge dipakai)
  *  2. cek lib ter-map (prefer native /proc/self/maps check)
  *  3. cek Assembly-CSharp tersedia
- *  4. Il2Cpp.perform(execute) tepat sekali, lalu timer berhenti total.
+ *
+ * Fase gate (setelah runtime ready): SATU single-shot hook eglSwapBuffers
+ * yang langsung detach setelah frame ke-2, agar hook terpasang hanya
+ * milidetik saat rendering sudah berjalan (bukan sejak t=0 seperti dulu).
+ * Fallback timeout 15 dtk bila EGL tak kunjung swap (headless/service).
+ * Terakhir: Il2Cpp.perform(execute) tepat sekali, timer berhenti total.
  */
 export function startStealthBootstrap(onReady) {
   if (started) return;
@@ -169,21 +242,24 @@ export function startStealthBootstrap(onReady) {
     if (ready) {
       fired = true;
       stop();
-      debugLog("Bootstrap", "Runtime ready. Executing hooks...");
-      try {
-        Il2Cpp.perform(() => {
-          try {
-            onReady(Il2Cpp.domain.assembly(assemblyName()).image);
-          } catch (e) {
-            debugLog("Bootstrap", "onReady failed: " + e.message);
-          }
-        });
-      } catch (e) {
-        // Gagal sync: buka lagi agar polling lanjut (jangan mati diam-diam).
-        fired = false;
-        debugLog("Bootstrap", "Il2Cpp.perform failed: " + e.message);
-        scheduleNext();
-      }
+      debugLog("Bootstrap", "Runtime ready. Waiting for 2nd frame...");
+      waitForSecondFrame(() => {
+        debugLog("Bootstrap", "Executing hooks...");
+        try {
+          Il2Cpp.perform(() => {
+            try {
+              onReady(Il2Cpp.domain.assembly(assemblyName()).image);
+            } catch (e) {
+              debugLog("Bootstrap", "onReady failed: " + e.message);
+            }
+          });
+        } catch (e) {
+          // Gagal sync: buka lagi agar polling lanjut (jangan mati diam-diam).
+          fired = false;
+          debugLog("Bootstrap", "Il2Cpp.perform failed: " + e.message);
+          scheduleNext();
+        }
+      });
       return;
     }
 

@@ -1,11 +1,13 @@
 /**
  * MLBB Core Hook Implementation - Modular & Debuggable (Stealth Bootstrap)
  *
- * Inisiasi 100% PASIF — tanpa Interceptor.attach selama fase tunggu:
- *  - TIDAK ada hook eglSwapBuffers (EGL frame gate dihapus)
+ * Inisiasi PASIF + single-shot frame gate:
  *  - TIDAK ada hook android_dlopen_ext/dlopen (linker monitor dihapus)
  *  - TIDAK ada hook il2cpp_init
  *  - TIDAK ada Process.enumerateModules diagnostik
+ *  - SATU hook eglSwapBuffers single-shot yang dipasang TELAT (hanya setelah
+ *    runtime ready) dan langsung detach setelah frame ke-2, agar eksekusi
+ *    tidak terlalu dini saat rendering belum stabil.
  *
  * Sebagai gantinya polling ringan berjitter di src/tools/stealth_bootstrap.js:
  * cek lib ter-map (prefer native /proc/self/maps via is_target_lib_mapped_native)
