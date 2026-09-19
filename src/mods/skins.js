@@ -470,5 +470,110 @@ export function setupSkinHooks(Assembly) {
     if (!allowed()) return ret;
     return fakeStatue(statueid);
   });
+  // ===== Top-up NewbieOffLineMgr.GetFakeHeroList (jalur offline/newbie) ===== //
+  // Setiap ack diperkaya: hero yang belum ada ditambah (CmdHeroData) dan
+  // semua skin katalog ditambah ke vSkinList (bSmartMagicUnlock=true).
+  // Dedupe ganda: heroSeen untuk vHeroList, skinSeen untuk vSkinList —
+  // tanpa ini ack yang dipakai ulang akan membengkak tiap panggilan.
+  // Tanpa izin: teruskan asli (no-op, stealth untuk banned).
+  try {
+    const NOM = safeClass("NewbieOffLineMgr");
+    const HeroDataCls = safeClass("MTTDProto.CmdHeroData");
+    if (!NOM || !HeroDataCls) throw new Error("NewbieOffLineMgr missing");
+    const ok = hookMethod(NOM, "GetFakeHeroList", function (...args) {
+      const ack = this.method("GetFakeHeroList").invoke(...args);
+      if (!allowed()) return ack;
+      try {
+        if (ack && !ack.isNull()) {
+          let vHero = null;
+          let vSkin = null;
+          try {
+            vHero = ack.field("vHeroList").value;
+          } catch (e) {}
+          try {
+            vSkin = ack.field("vSkinList").value;
+          } catch (e) {}
+
+          const heroSeen = {};
+          const ackHeroIds = [];
+          if (vHero && !vHero.isNull()) {
+            try {
+              const hc = vHero.method("get_Count").invoke();
+              for (let i = 0; i < hc; i++) {
+                try {
+                  const hid =
+                    Number(
+                      vHero.method("get_Item").invoke(i).field("iHeroId").value,
+                    ) | 0;
+                  if (hid) {
+                    heroSeen[hid] = 1;
+                    ackHeroIds.push(hid);
+                  }
+                } catch (e) {}
+              }
+            } catch (e) {}
+          }
+          const skinSeen = {};
+          if (vSkin && !vSkin.isNull()) {
+            try {
+              const sc = vSkin.method("get_Count").invoke();
+              for (let i = 0; i < sc; i++) {
+                try {
+                  const sid =
+                    Number(
+                      vSkin.method("get_Item").invoke(i).field("iId").value,
+                    ) | 0;
+                  if (sid) skinSeen[sid] = 1;
+                } catch (e) {}
+              }
+            } catch (e) {}
+          }
+
+          // Katalog terkunci (penuh dari lobby) diutamakan; bila belum ada,
+          // bangun dari universe hero ack ini; fallback terakhir 205.
+          const pairs =
+            lockedCatalog && catalogCache && catalogCache.length
+              ? catalogCache
+              : getCatalogPairs(ackHeroIds);
+
+          for (const [hid, sid] of pairs) {
+            try {
+              if (vHero && !vHero.isNull() && !heroSeen[hid]) {
+                heroSeen[hid] = 1;
+                const hd = HeroDataCls.alloc();
+                hd.method(".ctor").invoke();
+                hd.field("iHeroId").value = hid;
+                vHero.method("Add").invoke(hd);
+              }
+              if (vSkin && !vSkin.isNull() && !skinSeen[sid]) {
+                skinSeen[sid] = 1;
+                const sk = fakeSkin(sid);
+                try {
+                  sk.field("bSmartMagicUnlock").value = true;
+                } catch (e) {}
+                vSkin.method("Add").invoke(sk);
+              }
+            } catch (e) {}
+          }
+          debugLog(
+            "PSRV",
+            "GetFakeHeroList top-up skins=" +
+              pairs.length +
+              (lockedCatalog ? " (TERKUNCI)" : ""),
+          );
+        }
+      } catch (e) {
+        debugLog("PSRV", "top-up fakeherolist gagal: " + e.message);
+      }
+      return ack;
+    });
+    debugLog(
+      "PSRV",
+      ok ? "hook GetFakeHeroList ok" : "hook GetFakeHeroList gagal",
+    );
+  } catch (e) {
+    debugLog("PSRV", "hook GetFakeHeroList gagal: " + e.message);
+  }
+
   debugLog("Skin", "Skin & Statue hooks installed.");
 }
