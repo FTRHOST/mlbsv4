@@ -125,8 +125,10 @@ function executeSimpleHooks(Assembly) {
       debugLog("Bootstrap", `${name} skipped: ${e.message}`);
     }
   };
-  safeSetup("patchLibMoba", patchLibMoba);
+  // Prioritas utama: GM hooks WAJIB paling awal — modul lain tidak boleh
+  // mendahuluinya agar kontrol GM selalu terpasang duluan.
   safeSetup("setupGMHooks", setupGMHooks);
+  safeSetup("patchLibMoba", patchLibMoba);
   safeSetup("setupSkinHooks", setupSkinHooks);
   safeSetup("setupUnreleasedHooks", setupUnreleasedHooks);
   safeSetup("setupBattleCommands", setupBattleCommands);

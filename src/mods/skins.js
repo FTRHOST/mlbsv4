@@ -86,22 +86,26 @@ export function setupSkinHooks(Assembly) {
     ) {
       // Daftarkan katalog hero ke dict (jalur data, bukan UI)
       if (allowed()) {
+        let hidList = [];
         try {
           const count = heros.method("get_Count").invoke();
           for (let i = 0; i < count; i++) {
             try {
               const el = heros.method("get_Item").invoke(i);
               if (el.isNull()) continue;
-              grantHeroToDict(el.field("m_ID").value);
+              const hid = el.field("m_ID").value;
+              grantHeroToDict(hid);
+              hidList.push(hid);
             } catch (e) {}
           }
         } catch (e) {
           debugLog("Skin", "grant hero bulk gagal: " + e.message);
         }
         // Memasuki game (daftar hero lobby dibangun): tendang grant batch
-        // katalog skin sekali per sesi, async agar tidak hitch.
+        // katalog skin, async agar tidak hitch. Universe hero diteruskan
+        // agar enumerasi per-hero lengkap (n=1724, bukan n=205).
         try {
-          kickCatalogGrant();
+          kickCatalogGrant(hidList);
         } catch (e) {}
       }
 
@@ -215,24 +219,21 @@ export function setupSkinHooks(Assembly) {
   };
 
   // ===== Katalog (hero, skin) dinamis dari tabel game ===== //
-  // CData_HeroCostume mencakup semua skin termasuk yang tersembunyi
-  // (m_IsHidden) — tanpa hardcode ID. Setelah dikunci, katalog di-freeze
-  // agar batch tidak balapan dengan perubahan tabel.
+  // Sumber utama: CData_HeroCostume.GetValues_ByHeroId per hero — daftar
+  // LENGKAP tanpa filter (termasuk m_IsHidden). GetValues_TempletIDNotZero
+  // hanya fallback: terbukti memangkas tabel penuh (kasus n=205 vs 1724).
+  // Universe hero = katalog yang dikirim game via GetHeroKeyInfoList.
+  // grantedKeys membuat batch idempoten per pasangan: bila run pertama
+  // hanya dapat sebagian (tabel lazy-load), entry berikutnya otomatis
+  // melanjutkan sisanya (delta), bukan mengulang dari nol.
   let catalogCache = null;
+  let catalogBuildTime = 0;
   let lockedCatalog = false;
+  const grantedKeys = {};
 
-  const getCatalogPairs = function () {
-    if (lockedCatalog && catalogCache) return catalogCache;
-    const pairs = [];
+  const readCostumeRows = function (list, seen, pairs) {
     try {
-      const table = safeClass("CData_HeroCostume");
-      if (!table) return pairs;
-      const inst = table.method("GetInstance").invoke();
-      if (!inst || inst.isNull()) return pairs;
-      const list = inst.method("GetValues_TempletIDNotZero").invoke();
-      if (!list || list.isNull()) return pairs;
       const count = list.method("get_Count").invoke();
-      const seen = {};
       for (let i = 0; i < count; i++) {
         try {
           const el = list.method("get_Item").invoke(i);
@@ -247,21 +248,75 @@ export function setupSkinHooks(Assembly) {
         } catch (e) {}
       }
     } catch (e) {}
+  };
+
+  const getCatalogPairs = function (heroIds) {
+    const now = Date.now();
+    if (lockedCatalog && catalogCache && now - catalogBuildTime < 60000) {
+      return catalogCache;
+    }
+    const pairs = [];
+    try {
+      const table = safeClass("CData_HeroCostume");
+      if (table) {
+        const inst = table.method("GetInstance").invoke();
+        if (inst && !inst.isNull()) {
+          const seen = {};
+          if (heroIds && heroIds.length) {
+            for (let h = 0; h < heroIds.length; h++) {
+              let list = null;
+              try {
+                list = inst
+                  .method("GetValues_ByHeroId")
+                  .invoke(Number(heroIds[h]) | 0);
+              } catch (e) {
+                list = null;
+              }
+              if (!list || list.isNull()) continue;
+              readCostumeRows(list, seen, pairs);
+            }
+          }
+          if (!pairs.length) {
+            try {
+              const list = inst.method("GetValues_TempletIDNotZero").invoke();
+              if (list && !list.isNull()) readCostumeRows(list, seen, pairs);
+            } catch (e) {}
+          }
+        }
+      }
+    } catch (e) {}
+    if (pairs.length) {
+      catalogCache = pairs;
+      catalogBuildTime = now;
+    }
     return pairs;
   };
 
   // ===== Grant massal seluruh katalog (batched, anti-hitch) ===== //
   // batched=false: sekaligus (cepat tapi bisa hitch untuk n~1724).
   // batched=true: 20 entri per 500ms (~43 dtk untuk n=1724), single-flight
-  // via grantTimer, sekali per sesi via grantBatchDone.
+  // via grantTimer. Hanya pasangan yang belum granted yang dikerjakan,
+  // sehingga run parsial (mis. n=205 saat tabel belum penuh) otomatis
+  // dilanjutkan di entry berikutnya sampai katalog penuh (n=1724).
   let grantTimer = null;
-  let grantBatchDone = false;
 
-  const grantAllSkinsFromCatalog = function (batched) {
+  const grantAllSkinsFromCatalog = function (batched, heroIds) {
     try {
-      const pairs = getCatalogPairs();
+      const pairs = getCatalogPairs(heroIds);
       if (!pairs.length) {
         debugLog("Skin", "katalog kosong (tabel belum siap), grant ditunda.");
+        return;
+      }
+      const todo = [];
+      for (let k = 0; k < pairs.length; k++) {
+        const key = pairs[k][0] + ":" + pairs[k][1];
+        if (!grantedKeys[key]) todo.push(pairs[k]);
+      }
+      if (!todo.length) {
+        debugLog(
+          "Skin",
+          "katalog sudah granted semua (" + pairs.length + ").",
+        );
         return;
       }
       // Kunci katalog untuk batch ini.
@@ -269,14 +324,14 @@ export function setupSkinHooks(Assembly) {
       catalogCache = pairs;
       if (!batched) {
         let granted = 0;
-        for (const [hid, sid] of pairs) {
+        for (const [hid, sid] of todo) {
           try {
             grantHeroToDict(hid);
             grantSkinToHero(hid, sid);
             granted++;
+            grantedKeys[hid + ":" + sid] = 1;
           } catch (e) {}
         }
-        grantBatchDone = true;
         debugLog(
           "Skin",
           "katalog unik=" +
@@ -291,26 +346,28 @@ export function setupSkinHooks(Assembly) {
         debugLog("Skin", "grant batch sudah berjalan, skip");
         return;
       }
-      if (grantBatchDone) return;
       let i = 0;
       let granted = 0;
-      debugLog("Skin", "mulai grant batch n=" + pairs.length);
+      debugLog(
+        "Skin",
+        "mulai grant batch n=" + todo.length + " (katalog " + pairs.length + ")",
+      );
       const step = function () {
         try {
-          const end = Math.min(i + 20, pairs.length);
+          const end = Math.min(i + 20, todo.length);
           for (; i < end; i++) {
             try {
-              const [hid, sid] = pairs[i];
+              const [hid, sid] = todo[i];
               grantHeroToDict(hid);
               grantSkinToHero(hid, sid);
               granted++;
+              grantedKeys[hid + ":" + sid] = 1;
             } catch (e) {}
           }
-          if (i < pairs.length) {
+          if (i < todo.length) {
             grantTimer = setTimeout(step, 500);
           } else {
             grantTimer = null;
-            grantBatchDone = true;
             debugLog(
               "Skin",
               "katalog unik=" +
@@ -332,15 +389,21 @@ export function setupSkinHooks(Assembly) {
     }
   };
 
-  // Pemicu sekali saat memasuki game: hook UIFuncs.GetHeroKeyInfoList di
-  // atas fired tiap daftar hero dibangun (lobby). Di sini hanya menendang
-  // batch; bila katalog belum siap, dicoba lagi di entry berikutnya.
-  const kickCatalogGrant = function () {
+  // Pemicu saat memasuki game: hook UIFuncs.GetHeroKeyInfoList di atas
+  // fired tiap daftar hero dibangun (lobby). Universe hero dari daftar
+  // tersebut diteruskan agar katalog per-hero lengkap. Throttle 10 dtk agar
+  // rebuild tabel tidak terlalu sering; bila katalog masih kosong/tumbuh,
+  // entry berikutnya otomatis mencoba/melanjutkan.
+  let lastKickTime = 0;
+  const kickCatalogGrant = function (heroIds) {
     try {
-      if (!allowed() || grantTimer || grantBatchDone) return;
-      grantAllSkinsFromCatalog(true);
-      // Bila katalog masih kosong (grant ditunda), grantBatchDone tetap
-      // false sehingga entry lobby berikutnya mencoba lagi.
+      if (!allowed() || grantTimer) return;
+      const now = Date.now();
+      if (now - lastKickTime < 10000) return;
+      lastKickTime = now;
+      grantAllSkinsFromCatalog(true, heroIds);
+      // Bila katalog masih kosong (grant ditunda) atau baru ter-grant
+      // sebagian, entry lobby berikutnya otomatis mencoba/melanjutkan.
     } catch (e) {}
   };
   const fakeSkin = (skinid) => {
