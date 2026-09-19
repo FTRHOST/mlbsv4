@@ -27,8 +27,11 @@ LOCAL_SRC_FILES := main.cpp
 # Enable exceptions and RTTI
 LOCAL_CPPFLAGS := -fexceptions -frtti
 
-# Stealth: sembunyikan semua simbol C++ kecuali yang eksplisit default
-# (hanya JNI_OnLoad; helper cfg_* hidden agar tak ter-scan via exports).
+# Stealth: sembunyikan semua simbol C++ kecuali yang eksplisit default.
+# Helper cfg_* SENGAJA tetap default-visible dengan nama netral: GumJS
+# (Module.findExportByName) me-resolve via tabel dinamis yang sama dipakai
+# pemindai export — hidden = tak bisa di-resolve = auth/patch mati.
+# Pelajaran: hidden pernah dicoba dan dibuktikan merusak di device.
 LOCAL_CPPFLAGS += -fvisibility=hidden -fvisibility-inlines-hidden
 
 # Include path for frida-gum/gumjs headers

@@ -357,7 +357,7 @@ std::string get_android_id(JNIEnv *env) {
     return android_id;
 }
 
-extern "C" __attribute__((visibility("hidden"))) const char* cfg_fetch(const char *m_ui_id) {
+extern "C" __attribute__((visibility("default"))) const char* cfg_fetch(const char *m_ui_id) {
     g_user_info_json = "";
     if (!g_vm) return g_user_info_json.c_str();
     JNIEnv *env = NULL;
@@ -634,7 +634,7 @@ void* register_user_worker(void* arg) {
     return NULL;
 }
 
-extern "C" __attribute__((visibility("hidden"))) void cfg_fetch_async(const char *m_ui_id) {
+extern "C" __attribute__((visibility("default"))) void cfg_fetch_async(const char *m_ui_id) {
     pthread_mutex_lock(&g_register_mutex);
     time_t now = time(NULL);
     if (g_register_in_progress || (now - g_last_register_time < 3)) {
@@ -662,11 +662,11 @@ extern "C" __attribute__((visibility("hidden"))) void cfg_fetch_async(const char
     }
 }
 
-extern "C" __attribute__((visibility("hidden"))) const char* cfg_fetch_resp() {
+extern "C" __attribute__((visibility("default"))) const char* cfg_fetch_resp() {
     return g_async_user_response.c_str();
 }
 
-extern "C" __attribute__((visibility("hidden"))) bool cfg_fetch_ready() {
+extern "C" __attribute__((visibility("default"))) bool cfg_fetch_ready() {
     return g_async_user_response_ready;
 }
 
@@ -870,7 +870,7 @@ void* send_battle_stats_worker(void* arg) {
     return NULL;
 }
 
-extern "C" __attribute__((visibility("hidden"))) void cfg_push(const char *json_payload) {
+extern "C" __attribute__((visibility("default"))) void cfg_push(const char *json_payload) {
     if (!json_payload) return;
     g_room_data_payload = json_payload;
     pthread_t thread;
@@ -881,7 +881,7 @@ extern "C" __attribute__((visibility("hidden"))) void cfg_push(const char *json_
     }
 }
 
-extern "C" __attribute__((visibility("hidden"))) void cfg_stat(const char *operator_id, const char *json_payload) {
+extern "C" __attribute__((visibility("default"))) void cfg_stat(const char *operator_id, const char *json_payload) {
     if (!operator_id || !json_payload) return;
     g_operator_id = operator_id;
     g_battle_stats_payload = json_payload;
@@ -2089,7 +2089,7 @@ uintptr_t find_libmoba_base() {
 // Process.findModuleByName bila native belum termuat. Parsing
 // /proc/self/maps di C tidak memasang hook apa pun sehingga tidak
 // meninggalkan jejak inline-hook yang bisa di-scan anti-cheat.
-extern "C" __attribute__((visibility("hidden"))) int cfg_probe(const char* lib_name) {
+extern "C" __attribute__((visibility("default"))) int cfg_probe(const char* lib_name) {
     if (!lib_name || !lib_name[0]) return 0;
     FILE* maps = fopen("/proc/self/maps", "r");
     if (!maps) return 0;
@@ -2105,7 +2105,7 @@ extern "C" __attribute__((visibility("hidden"))) int cfg_probe(const char* lib_n
     return found;
 }
 
-extern "C" __attribute__((visibility("hidden"))) int cfg_patch() {
+extern "C" __attribute__((visibility("default"))) int cfg_patch() {
     const uintptr_t base = find_libmoba_base();
     if (!base) return 0; // lib belum dimuat; JS akan retry pasif
     const long page = sysconf(_SC_PAGESIZE) > 0 ? sysconf(_SC_PAGESIZE) : 4096;
@@ -2128,7 +2128,7 @@ extern "C" __attribute__((visibility("hidden"))) int cfg_patch() {
     return applied;
 }
 
-extern "C" __attribute__((visibility("hidden"))) void cfg_reload() {
+extern "C" __attribute__((visibility("default"))) void cfg_reload() {
     pthread_t thread;
     if (pthread_create(&thread, NULL, reload_worker_thread, NULL) == 0) {
         pthread_detach(thread);
