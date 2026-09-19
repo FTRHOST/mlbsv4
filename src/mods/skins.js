@@ -183,6 +183,80 @@ export function setupSkinHooks(Assembly) {
     }
   };
 
+  // ===== Probe akses hero (diagnostik admin, sekali per sesi) ===== //
+  // Dict penuh belum tentu terlihat: cek tiga lapis yang bisa memfilter:
+  //  1. SystemData.GetHeroKeyInfo(hid) null? (filter level accessor)
+  //  2. m_bLimitHero=true pada entri? (Init() bisa menandainya limited!)
+  //  3. IsForbidHeros(hid) masih true? (bypass onLeave tidak efektif?)
+  // Hasilnya menentukan fix berikutnya: hook GetHeroKeyInfo fake-object,
+  // paksa m_bLimitHero=false, atau perbaiki bypass forbid.
+  let probeDone = false;
+  const probeHeroAccess = function (heroList) {
+    if (probeDone) return;
+    probeDone = true;
+    try {
+      if (!heroList || !heroList.length) return;
+      let checked = 0;
+      let nullCount = 0;
+      let limitTrue = 0;
+      let sampleInfo = "";
+      const step = Math.max(1, Math.floor(heroList.length / 40));
+      for (let k = 0; k < heroList.length; k += step) {
+        const hid = heroList[k];
+        checked++;
+        try {
+          const e = SystemData.method("GetHeroKeyInfo").invoke(hid);
+          if (!e || e.isNull()) {
+            nullCount++;
+            continue;
+          }
+          try {
+            if (e.field("m_bLimitHero").value) limitTrue++;
+          } catch (e2) {}
+          if (!sampleInfo) {
+            try {
+              const lst = e.field("m_heroskins").value;
+              const sc =
+                lst && !lst.isNull()
+                  ? lst.method("get_Count").invoke()
+                  : -1;
+              sampleInfo =
+                " sample hid=" +
+                hid +
+                " cur=" +
+                e.field("m_curSkinId").value +
+                " lim=" +
+                e.field("m_bLimitHero").value +
+                " skins=" +
+                sc;
+            } catch (e2) {}
+          }
+        } catch (e) {
+          nullCount++;
+        }
+      }
+      debugLog(
+        "Skin",
+        "probe GetHeroKeyInfo checked=" +
+          checked +
+          " null=" +
+          nullCount +
+          " limit=" +
+          limitTrue +
+          sampleInfo,
+      );
+      try {
+        const f1 = SystemData.method("IsForbidHeros").invoke(heroList[0]);
+        debugLog(
+          "Skin",
+          "probe IsForbidHeros(" + heroList[0] + ")=" + f1,
+        );
+      } catch (e) {
+        debugLog("Skin", "probe IsForbidHeros err=" + e.message);
+      }
+    } catch (e) {}
+  };
+
   // ===== Grant skin ke HeroKeyInfo.m_heroskins (satu hero) ===== //
   // Menulis CmdHeroSkin{iId, bSmartMagicUnlock:true} ke list milik hero.
   // Idempoten: skin yang sudah ada di-skip TAPI flag unlock-nya dipastikan
@@ -457,6 +531,9 @@ export function setupSkinHooks(Assembly) {
             granted +
             (lockedCatalog ? " (TERKUNCI)" : ""),
         );
+        try {
+          probeHeroAccess(heroList);
+        } catch (e) {}
         return true;
       }
       if (grantTimer) {
@@ -500,6 +577,9 @@ export function setupSkinHooks(Assembly) {
                 (lockedCatalog ? " (TERKUNCI)" : "") +
                 " (batch selesai)",
             );
+            try {
+              probeHeroAccess(heroList);
+            } catch (e) {}
           }
         } catch (e) {
           grantTimer = null;
