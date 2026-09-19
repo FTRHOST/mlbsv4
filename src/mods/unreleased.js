@@ -635,6 +635,31 @@ export function setupUnreleasedHooks(Assembly) {
       } catch (e) {}
     });
 
+    // Filter disable hero jalur Lua (LuaHelper.CheckDisableHeros, baca
+    // SystemData.m_DisableHeros): paksa false agar hero tersembunyi tampil.
+    // Bool-safe seperti IsForbidHeros di atas.
+    try {
+      const LuaHelper =
+        (Assembly.tryClass && Assembly.tryClass("LuaHelper")) ||
+        Assembly.class("LuaHelper");
+      if (LuaHelper) {
+        const method = safeMethod(LuaHelper, "CheckDisableHeros");
+        if (method) {
+          Interceptor.attach(method.virtualAddress, {
+            onLeave: function (retval) {
+              if (
+                sessionState.isAuthorized &&
+                sessionState.permissions.allowUnreleased
+              ) {
+                retval.replace(ptr(0));
+              }
+            },
+          });
+          debugLog("Unreleased", "bypass CheckDisableHeros installed.");
+        }
+      }
+    } catch (e) {}
+
     try {
       const CheckMapSkinAvailable = safeMethod(
         SystemData,

@@ -60,6 +60,16 @@ export function setupSkinHooks(Assembly) {
     return true;
   });
 
+  // ===== Filter forbid skin => tidak pernah di-forbid ===== //
+  // Pola dari snippet terbukti (bool-safe): filter Lua/UI yang menyembunyikan
+  // skin selalu lolos agar skin grant terlihat.
+  hookMethod(SystemData, "IsForbidSkin", function (skinid, filterLuaCheck) {
+    if (!allowed()) {
+      return this.method("IsForbidSkin").invoke(skinid, filterLuaCheck);
+    }
+    return false;
+  });
+
   // ===== Hero object-model (mirip pola skin: kembalikan objek palsu bila null) ===== //
   // GetHeroKeyInfo / GetHeroInfo mengembalikan SystemData.HeroKeyInfo (objek,
   // bukan bool) — pola fake-object sama seperti CmdHeroSkin pada skin.
@@ -127,7 +137,10 @@ export function setupSkinHooks(Assembly) {
   // ===== Grant hero ke m_heroInfos (jalur baca game yang sebenarnya) ===== //
   // Terbukti di device: AddOwnHero TIDAK menulis ke dict, set_Item ya.
   // Daftar ID berasal dari katalog yang dikirim game via GetHeroKeyInfoList
-  // (dinamis, tanpa hardcode).
+  // (dinamis, tanpa hardcode). Init() dipanggil agar field turunan
+  // (m_curSkinId/default/list) terisi default game, bukan nol mentah —
+  // entri setengah-jadi diduga alasan hero tersembunyi tak tampil walau
+  // sudah di dict. m_heroID di-set ulang setelah Init (Init bisa me-reset).
   const grantHeroToDict = function (heroid) {
     try {
       const dict = SystemData.field("m_heroInfos").value;
@@ -148,9 +161,26 @@ export function setupSkinHooks(Assembly) {
         inst.field("m_heroID").value = heroid;
       } catch (e) {}
       try {
+        inst.method("Init").invoke();
+      } catch (e) {}
+      try {
+        inst.field("m_heroID").value = heroid;
+      } catch (e) {}
+      try {
         dict.method("set_Item").invoke(heroid, inst);
       } catch (e) {}
     } catch (e) {}
+  };
+
+  // Ukuran dict live (diagnostik admin: bandingkan dengan hero unik katalog).
+  const dictHeroCount = function () {
+    try {
+      const dict = SystemData.field("m_heroInfos").value;
+      if (!dict || dict.isNull()) return -1;
+      return dict.method("get_Count").invoke();
+    } catch (e) {
+      return -1;
+    }
   };
 
   // ===== Grant skin ke HeroKeyInfo.m_heroskins (satu hero) ===== //
@@ -380,6 +410,8 @@ export function setupSkinHooks(Assembly) {
           heroList.length +
           " granted=" +
           heroesGranted +
+          " dict=" +
+          dictHeroCount() +
           (lockedCatalog ? " (TERKUNCI)" : ""),
       );
 
