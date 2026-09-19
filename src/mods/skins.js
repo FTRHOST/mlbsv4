@@ -282,6 +282,29 @@ export function setupSkinHooks(Assembly) {
               if (list && !list.isNull()) readCostumeRows(list, seen, pairs);
             } catch (e) {}
           }
+          // Union dengan heap-scan gc.choose (konsep snippet yang terbukti):
+          // tabel query hanya mengembalikan baris kanonis (1478), sedangkan
+          // heap memuat instance live tambahan (duplikat/varian/unreleased)
+          // yang menggenapkan ke 1724. Dedupe via seen agar tetap unik.
+          try {
+            const elemCls = safeClass("CData_HeroCostume_Element");
+            if (elemCls) {
+              const objs = Il2Cpp.gc.choose(elemCls);
+              for (let k = 0; k < objs.length; k++) {
+                try {
+                  const o = objs[k];
+                  if (!o || o.isNull()) continue;
+                  const hid = Number(o.field("m_HeroId").value) | 0;
+                  const sid = Number(o.field("m_ID").value) | 0;
+                  if (!hid || !sid) continue;
+                  const key = hid + ":" + sid;
+                  if (seen[key]) continue;
+                  seen[key] = 1;
+                  pairs.push([hid, sid]);
+                } catch (e) {}
+              }
+            }
+          } catch (e) {}
         }
       }
     } catch (e) {}
