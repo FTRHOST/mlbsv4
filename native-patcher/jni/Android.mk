@@ -12,6 +12,11 @@ LOCAL_MODULE := frida-gumjs
 LOCAL_SRC_FILES := dummy.cpp
 LOCAL_WHOLE_STATIC_LIBRARIES := frida-gumjs-static
 LOCAL_LDLIBS := -llog -landroid -lz -lm -ldl
+# dummy.cpp only exists to materialize libc++ iostream symbols needed by the
+# prebuilt archive. They are unreferenced, so --gc-sections would discard
+# them and the link fails with undefined std::__ndk1::basic_filebuf etc.
+# Keep everything in this repackaging module (size impact is negligible).
+LOCAL_LDFLAGS := -Wl,--no-gc-sections
 include $(BUILD_SHARED_LIBRARY)
 
 # 3. Build our shared library (libmypatch.so)

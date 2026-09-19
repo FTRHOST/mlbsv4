@@ -14,6 +14,10 @@ public/*/
 native-patcher/libs/
 native-patcher/obj/
 native-patcher/assets/
+# Prebuilt Frida devkit archives (~340MB) stay local-only.
+# CI downloads them itself (see .github/workflows/build-and-deploy.yml).
+native-patcher/jni/sdk/*.a
+native-patcher/jni/sdk/*/*.a
 build/
 *.so
 *.sig

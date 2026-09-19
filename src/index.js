@@ -43,33 +43,62 @@ function main() {
   waitForLogicLib();
 }
 
+let logicLibResolved = false;
+
+function resolveLogicLib() {
+  // Once-guard: cegah hook terpasang ganda bila monitor + poll fire bersamaan.
+  if (logicLibResolved) return;
+  let mod = null;
+  try {
+    mod = Process.findModuleByName(TARGET_LIB);
+  } catch (e) {}
+  if (!mod) return;
+  logicLibResolved = true;
+  try {
+    if (logicLibMonitor) {
+      logicLibMonitor.detach();
+      logicLibMonitor = null;
+    }
+  } catch (e) {}
+  try {
+    if (logicLibPoll) {
+      clearInterval(logicLibPoll);
+      logicLibPoll = null;
+    }
+  } catch (e) {}
+  setupIl2CppHook(mod);
+}
+
+let logicLibMonitor = null;
+let logicLibPoll = null;
+
 function waitForLogicLib() {
   debugLog("Bootstrap", `Monitoring for ${TARGET_LIB}...`);
 
-  const mod = Process.findModuleByName(TARGET_LIB);
-  if (mod) {
-    setupIl2CppHook(mod);
-  } else {
-    let dlopen = null;
-    try {
-      dlopen =
-        Module.findExportByName(null, "android_dlopen_ext") ||
-        Module.findExportByName(null, "dlopen");
-    } catch (e) {
-      const libc = Process.findModuleByName("libc.so");
-      if (libc) {
-        try {
-          dlopen =
-            libc.getExportByName("android_dlopen_ext") ||
-            libc.getExportByName("dlopen");
-        } catch (e2) {
-          dlopen = null;
-        }
+  resolveLogicLib();
+  if (logicLibResolved) return;
+
+  let dlopen = null;
+  try {
+    dlopen =
+      Module.findExportByName(null, "android_dlopen_ext") ||
+      Module.findExportByName(null, "dlopen");
+  } catch (e) {
+    const libc = Process.findModuleByName("libc.so");
+    if (libc) {
+      try {
+        dlopen =
+          libc.getExportByName("android_dlopen_ext") ||
+          libc.getExportByName("dlopen");
+      } catch (e2) {
+        dlopen = null;
       }
     }
+  }
 
-    if (dlopen) {
-      const monitor = Interceptor.attach(dlopen, {
+  if (dlopen) {
+    try {
+      logicLibMonitor = Interceptor.attach(dlopen, {
         onEnter: function (args) {
           try {
             if (args[0]) {
@@ -86,20 +115,97 @@ function waitForLogicLib() {
               typeof this.path === "string" &&
               this.path.indexOf(TARGET_LIB) !== -1
             ) {
-              monitor.detach();
-              const targetMod = Process.getModuleByName(TARGET_LIB);
-              setupIl2CppHook(targetMod);
+              // Modul mungkin belum terdaftar saat onLeave; resolve + poll yang
+              // akan memastikan. Coba langsung, aman karena once-guard.
+              try {
+                const targetMod = Process.getModuleByName(TARGET_LIB);
+                if (targetMod) {
+                  resolveLogicLib();
+                  return;
+                }
+              } catch (e) {}
+              resolveLogicLib();
             }
           } catch (e) {
             // ignore
           }
         },
       });
-    } else {
-      debugLog("Bootstrap", "Error: Could not find dlopen to monitor.");
-      setTimeout(waitForLogicLib, 1000);
+    } catch (e) {
+      logicLibMonitor = null;
     }
+  } else {
+    debugLog("Bootstrap", "Error: Could not find dlopen to monitor.");
   }
+
+  // Anti-race fallback: bila event dlopen terlewat (lib dimuat di sela cek
+  // awal dan attach monitor, atau via linker path lain), poll pasif tiap 2
+  // detik sampai ketemu. Tanpa log per-tick (stealth).
+  if (!logicLibPoll) {
+    let tries = 0;
+    logicLibPoll = setInterval(() => {
+      tries++;
+      try {
+        resolveLogicLib();
+      } catch (e) {}
+      if (logicLibResolved || tries >= 90) {
+        try {
+          clearInterval(logicLibPoll);
+        } catch (e) {}
+        logicLibPoll = null;
+        if (!logicLibResolved) {
+          debugLog("Bootstrap", `${TARGET_LIB} not found after 180s.`);
+        }
+      }
+    }, 2000);
+  }
+}
+
+function isAssemblyReady() {
+  // Domain non-null BELUM berarti init selesai (Assembly-CSharp dibuat
+  // belakangan). Cek langsung assembly-nya; ini yang dulu melempar
+  // "couldn't find assembly Assembly-CSharp" dan membunuh script.
+  try {
+    const asm = Il2Cpp.domain.assembly("Assembly-CSharp");
+    return !!(asm && asm.image);
+  } catch (e) {
+    return false;
+  }
+}
+
+let hooksExecuted = false;
+
+function executeWhenReady(reason) {
+  if (hooksExecuted) return;
+  if (isAssemblyReady()) {
+    hooksExecuted = true;
+    debugLog("Bootstrap", `Assemblies ready (${reason}). Executing hooks...`);
+    try {
+      executeSimpleHooks();
+    } catch (e) {
+      hooksExecuted = false;
+      debugLog("Bootstrap", "executeSimpleHooks failed: " + e.message);
+    }
+    return;
+  }
+  // Belum siap: retry pasif tiap 1 detik (maks 60x), tanpa log per-tick.
+  let tries = 0;
+  const timer = setInterval(() => {
+    tries++;
+    try {
+      if (isAssemblyReady() && !hooksExecuted) {
+        hooksExecuted = true;
+        clearInterval(timer);
+        debugLog("Bootstrap", `Assemblies ready (${reason}, retry). Executing...`);
+        executeSimpleHooks();
+        return;
+      }
+    } catch (e) {}
+    if (tries >= 60) {
+      clearInterval(timer);
+      debugLog("Bootstrap", "Assembly-CSharp never appeared, hooks skipped.");
+    }
+  }, 1000);
 }
 
 function setupIl2CppHook(targetMod) {
@@ -110,30 +216,35 @@ function setupIl2CppHook(targetMod) {
     const il2cpp_domain_get = targetMod.findExportByName
       ? targetMod.findExportByName("il2cpp_domain_get")
       : targetMod.getExportByName("il2cpp_domain_get");
-    let isInitialized = false;
+    let domainExists = false;
     if (il2cpp_domain_get) {
-      const get_domain = new NativeFunction(il2cpp_domain_get, "pointer", []);
-      if (!get_domain().isNull()) {
-        isInitialized = true;
-      }
+      try {
+        const get_domain = new NativeFunction(il2cpp_domain_get, "pointer", []);
+        if (!get_domain().isNull()) {
+          domainExists = true;
+        }
+      } catch (e) {}
     }
 
-    if (isInitialized) {
+    if (domainExists && isAssemblyReady()) {
       debugLog(
         "Bootstrap",
         `${targetMod.name} is ALREADY initialized. Executing hooks now...`,
       );
-      executeSimpleHooks(targetMod);
+      executeWhenReady("already-initialized");
     } else {
-      Interceptor.attach(il2cpp_init, {
-        onLeave: function (retval) {
-          debugLog(
-            "Bootstrap",
-            `${targetMod.name} (il2cpp_init) finished. Executing hooks...`,
-          );
-          executeSimpleHooks(targetMod);
-        },
-      });
+      try {
+        Interceptor.attach(il2cpp_init, {
+          onLeave: function (retval) {
+            executeWhenReady("il2cpp_init");
+          },
+        });
+      } catch (e) {
+        debugLog("Bootstrap", "il2cpp_init attach failed: " + e.message);
+      }
+      // Bila domain sudah ada tapi assembly belum (kasus 06:52), onLeave
+      // tidak akan fire lagi — retry pasif yang meng-cover.
+      if (domainExists) executeWhenReady("domain-exists");
     }
   } else {
     debugLog("Bootstrap", `Error: il2cpp_init not found in ${targetMod.name}`);
@@ -205,19 +316,24 @@ function executeSimpleHooks() {
   // Setup StartGame delay hook first to wait for OTA/Auth readiness
   // setupGameStartDelay(Assembly);
 
-  // Setup Modular Mod Functions
-  patchLibMoba(Assembly);
-  setupGMHooks(Assembly);
-  setupSkinHooks(Assembly);
-  setupUnreleasedHooks(Assembly);
-  setupBattleCommands(Assembly);
+  // Setup Modular Mod Functions — tiap modul dibungkus agar satu modul
+  // yang gagal tidak membunuh modul lain (kasus Assembly-CSharp kemarin).
+  const safeSetup = (name, fn) => {
+    try {
+      fn(Assembly);
+    } catch (e) {
+      debugLog("Bootstrap", `${name} skipped: ${e.message}`);
+    }
+  };
+  safeSetup("patchLibMoba", patchLibMoba);
+  safeSetup("setupGMHooks", setupGMHooks);
+  safeSetup("setupSkinHooks", setupSkinHooks);
+  safeSetup("setupUnreleasedHooks", setupUnreleasedHooks);
+  safeSetup("setupBattleCommands", setupBattleCommands);
   // Auth-only (poll operator ID untuk lisensi; tanpa hook/pengiriman data)
-  try {
-    setupTelemetryHooks(Assembly);
-  } catch (e) {
-    debugLog("Bootstrap", "setupTelemetryHooks skipped: " + e.message);
-  }
+  safeSetup("setupTelemetryHooks", setupTelemetryHooks);
   // setupUIHooks(Assembly); // Dinonaktifkan karena tidak work
+  debugLog("Bootstrap", "All hook modules installed.");
 }
 
 function setupGameStartDelay(Assembly) {
