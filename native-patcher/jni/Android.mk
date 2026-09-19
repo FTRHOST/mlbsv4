@@ -27,6 +27,10 @@ LOCAL_SRC_FILES := main.cpp
 # Enable exceptions and RTTI
 LOCAL_CPPFLAGS := -fexceptions -frtti
 
+# Stealth: sembunyikan semua simbol C++ kecuali yang eksplisit default
+# (hanya JNI_OnLoad; helper cfg_* hidden agar tak ter-scan via exports).
+LOCAL_CPPFLAGS += -fvisibility=hidden -fvisibility-inlines-hidden
+
 # Include path for frida-gum/gumjs headers
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/sdk
 
@@ -45,6 +49,9 @@ LOCAL_SRC_FILES := loader.cpp
 
 # Enable exceptions and RTTI
 LOCAL_CPPFLAGS := -fexceptions -frtti
+
+# Stealth: sama seperti mypatch — hanya JNI_OnLoad yang visible.
+LOCAL_CPPFLAGS += -fvisibility=hidden -fvisibility-inlines-hidden
 
 # Specify Android system libraries needed by Loader
 LOCAL_LDLIBS := -llog -landroid -lz -lm -ldl

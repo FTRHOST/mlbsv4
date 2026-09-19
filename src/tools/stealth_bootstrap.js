@@ -59,7 +59,7 @@ let nativeIsMapped = null;
 function isLibMappedNative(libName) {
   try {
     if (nativeIsMapped === null) {
-      const ptr = findNativeExport("is_target_lib_mapped_native");
+      const ptr = findNativeExport("cfg_probe");
       if (ptr) {
         try {
           nativeIsMapped = new NativeFunction(ptr, "int", ["pointer"]);

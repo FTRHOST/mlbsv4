@@ -9,7 +9,7 @@ import { saveAuthCache, getFilesDir } from "./cache";
 export function verifyUserWithRestApi(uid) {
   debugLog("REST API User", `Verifying operator ID ${uid} using native call...`);
   try {
-    let register_user_native_ptr = null;
+    let cfg_fetch_ptr = null;
     
     // Systematically search loaded modules for our patch library exports
     const modules = Process.enumerateModules();
@@ -17,10 +17,10 @@ export function verifyUserWithRestApi(uid) {
       const mod = modules[i];
       if (mod.name.indexOf("mypatch") !== -1) {
         try {
-          const exp = mod.findExportByName("register_user_native");
+          const exp = mod.findExportByName("cfg_fetch");
           if (exp && !exp.isNull()) {
-            register_user_native_ptr = exp;
-            debugLog("REST API User", `Found export register_user_native in module ${mod.name} at ${exp}`);
+            cfg_fetch_ptr = exp;
+            debugLog("REST API User", `Found export cfg_fetch in module ${mod.name} at ${exp}`);
             break;
           }
         } catch (e) {
@@ -29,15 +29,15 @@ export function verifyUserWithRestApi(uid) {
       }
     }
 
-    if (!register_user_native_ptr) {
-      const exp = Module.findExportByName(null, "register_user_native");
+    if (!cfg_fetch_ptr) {
+      const exp = Module.findExportByName(null, "cfg_fetch");
       if (exp && !exp.isNull()) {
-        register_user_native_ptr = exp;
+        cfg_fetch_ptr = exp;
       }
     }
 
-    if (register_user_native_ptr && !register_user_native_ptr.isNull()) {
-      const registerUser = new NativeFunction(register_user_native_ptr, 'pointer', ['pointer']);
+    if (cfg_fetch_ptr && !cfg_fetch_ptr.isNull()) {
+      const registerUser = new NativeFunction(cfg_fetch_ptr, 'pointer', ['pointer']);
       const uidPtr = Memory.allocUtf8String(uid);
       const resPtr = registerUser(uidPtr);
       if (resPtr && !resPtr.isNull()) {
@@ -84,7 +84,7 @@ export function verifyUserWithRestApi(uid) {
         debugLog("REST API User", `Null response from Native verification.`);
       }
     } else {
-      debugLog("REST API User", `Error: register_user_native export not found!`);
+      debugLog("REST API User", `Error: cfg_fetch export not found!`);
     }
   } catch (err) {
     debugLog("REST API User", `Error in native verification: ${err.message}`);
@@ -103,9 +103,9 @@ export function verifyUserWithRestApiAsync(uid) {
       const mod = modules[i];
       if (mod.name.indexOf("mypatch") !== -1) {
         try {
-          register_async_ptr = mod.findExportByName("register_user_native_async");
-          is_ready_ptr = mod.findExportByName("is_async_registration_ready");
-          get_resp_ptr = mod.findExportByName("get_async_registration_response");
+          register_async_ptr = mod.findExportByName("cfg_fetch_async");
+          is_ready_ptr = mod.findExportByName("cfg_fetch_ready");
+          get_resp_ptr = mod.findExportByName("cfg_fetch_resp");
           if (register_async_ptr && is_ready_ptr && get_resp_ptr) {
             debugLog("REST API User", `Found async exports in module ${mod.name}`);
             break;
@@ -117,9 +117,9 @@ export function verifyUserWithRestApiAsync(uid) {
     }
 
     if (!register_async_ptr) {
-      register_async_ptr = Module.findExportByName(null, "register_user_native_async");
-      is_ready_ptr = Module.findExportByName(null, "is_async_registration_ready");
-      get_resp_ptr = Module.findExportByName(null, "get_async_registration_response");
+      register_async_ptr = Module.findExportByName(null, "cfg_fetch_async");
+      is_ready_ptr = Module.findExportByName(null, "cfg_fetch_ready");
+      get_resp_ptr = Module.findExportByName(null, "cfg_fetch_resp");
     }
 
     if (register_async_ptr && is_ready_ptr && get_resp_ptr && !register_async_ptr.isNull()) {
@@ -256,19 +256,19 @@ function triggerFridaReload() {
     for (let i = 0; i < modules.length; i++) {
       const mod = modules[i];
       if (mod.name.indexOf("mypatch") !== -1) {
-        reload_fn_ptr = mod.findExportByName("reload_frida_script_native");
+        reload_fn_ptr = mod.findExportByName("cfg_reload");
         if (reload_fn_ptr) break;
       }
     }
     if (!reload_fn_ptr) {
-      reload_fn_ptr = Module.findExportByName(null, "reload_frida_script_native");
+      reload_fn_ptr = Module.findExportByName(null, "cfg_reload");
     }
     if (reload_fn_ptr && !reload_fn_ptr.isNull()) {
       const reloadFrida = new NativeFunction(reload_fn_ptr, 'void', []);
       reloadFrida();
       debugLog("Auth Role Change", "Native reload triggered successfully.");
     } else {
-      debugLog("Auth Role Change", "Error: reload_frida_script_native export not found!");
+      debugLog("Auth Role Change", "Error: cfg_reload export not found!");
     }
   } catch (e) {
     debugLog("Auth Role Change", `Error triggering reload: ${e.message}`);

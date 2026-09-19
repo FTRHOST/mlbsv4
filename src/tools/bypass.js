@@ -21,14 +21,14 @@ function findNativeExport(name) {
   return null;
 }
 
-// Stealth: patch libmoba.so dikerjakan di native (patch_libmoba_native).
+// Stealth: patch libmoba.so dikerjakan di native (cfg_patch).
 // JS hanya mendelegasikan sekali, tanpa Memory.protect/writeByteArray,
 // tanpa console.log, tanpa interval agresif.
 export function patchLibMoba(Assembly) {
   if (bypassRequested) return;
   bypassRequested = true;
   try {
-    const ptr = findNativeExport("patch_libmoba_native");
+    const ptr = findNativeExport("cfg_patch");
     if (ptr) {
       try {
         const patchNative = new NativeFunction(ptr, "int", []);
@@ -45,7 +45,7 @@ export function patchLibMoba(Assembly) {
     const timer = setInterval(() => {
       tries++;
       try {
-        const p = findNativeExport("patch_libmoba_native");
+        const p = findNativeExport("cfg_patch");
         if (p) {
           try {
             new NativeFunction(p, "int", [])();

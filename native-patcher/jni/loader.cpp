@@ -24,6 +24,29 @@ bool is_user_admin_local(const std::string &working_dir);
 
 #define LOGI(...) write_ota_log(__VA_ARGS__)
 #define LOGE(...) write_ota_log(__VA_ARGS__)
+// Catatan stealth: LOGI/LOGE di file ini SUDAH admin-gated (write_ota_log
+// early-return untuk non-admin). Literal sensitif di bawah tetap di-vault
+// agar tak plaintext di .rodata — pola sama seperti main.cpp.
+namespace stealth_str {
+inline std::string deobf(const unsigned char* d, size_t n) {
+    std::string s;
+    s.reserve(n);
+    for (size_t i = 0; i < n; i++) s.push_back((char)(d[i] ^ (unsigned char)(0x5A + (i & 0x0F))));
+    return s;
+}
+static const unsigned char kS_ua[] = {0x17, 0x34, 0x26, 0x34, 0x32, 0x33, 0x1, 0x4e, 0x57, 0x4d, 0x54, 0x45, 0x4e, 0x2b, 0x1, 0x7, 0x2f, 0x23, 0x67, 0x7d, 0x1f, 0x31, 0x4, 0x13, 0xd, 0xa, 0x0, 0x45, 0x57, 0x57, 0x53, 0x49, 0x11, 0x72, 0x7c, 0x1c, 0x2e, 0x2f, 0xc, 0x4, 0x35, 0x6, 0x6, 0x2e, 0xf, 0x13, 0x47, 0x5c, 0x69, 0x6c, 0x72, 0x6e, 0x68, 0x7f, 0x48, 0x2a, 0x2a, 0x37, 0x29, 0x29, 0x4a, 0x47, 0x4, 0x0, 0x31, 0x3e, 0x7c, 0x1a, 0x3b, 0x3c, 0xb, 0xe, 0x4b, 0x43, 0x27, 0xd, 0x14, 0x8, 0x5, 0xc, 0x75, 0x6a, 0x6e, 0x69, 0x70, 0x6f, 0x4e, 0x51, 0x4c, 0x53, 0x44, 0x28, 0x9, 0x5, 0x1, 0x5, 0x3f, 0x7b, 0xf, 0x3c, 0x38, 0x3e, 0x12, 0x8, 0x4d, 0x56, 0x57, 0x52, 0x48, 0x54, 0x5e};
+static const size_t kS_ua_len = 111;
+static const unsigned char kS_libpatch[] = {0x36, 0x32, 0x3e, 0x30, 0x27, 0x2f, 0x1, 0x15, 0x1, 0xb, 0x4a, 0x16, 0x9};
+static const size_t kS_libpatch_len = 13;
+static const unsigned char kS_libgum[] = {0x36, 0x32, 0x3e, 0x3b, 0x2c, 0x36, 0x4, 0x0, 0x4f, 0x4, 0x11, 0x8, 0xc, 0x14, 0x46, 0x1a, 0x35};
+static const size_t kS_libgum_len = 17;
+static const unsigned char kS_sig[] = {0x36, 0x32, 0x3e, 0x30, 0x27, 0x2f, 0x1, 0x15, 0x1, 0xb, 0x4a, 0x16, 0x9, 0x49, 0x1b, 0x0, 0x3d};
+static const size_t kS_sig_len = 17;
+static const unsigned char kS_slash_patch[] = {0x75, 0x37, 0x35, 0x3f, 0x33, 0x26, 0x10, 0x0, 0x16, 0x0, 0xc, 0x4b, 0x15, 0x8};
+static const size_t kS_slash_patch_len = 14;
+static const unsigned char kS_slash_patch_cache[] = {0x75, 0x37, 0x35, 0x3f, 0x33, 0x26, 0x10, 0x0, 0x16, 0x0, 0xc, 0x3a, 0x5, 0x6, 0xb, 0x1, 0x3f, 0x75, 0x2f, 0x32};
+static const size_t kS_slash_patch_cache_len = 20;
+} // namespace stealth_str
 
 // Global JavaVM reference
 JavaVM *g_vm = NULL;
@@ -165,7 +188,7 @@ std::string download_url(JNIEnv *env, const std::string &url_str, int timeout_ms
     jmethodID set_req_prop = env->GetMethodID(conn_class, "setRequestProperty", "(Ljava/lang/String;Ljava/lang/String;)V");
     if (set_req_prop) {
         jstring ua_key = env->NewStringUTF("User-Agent");
-        jstring ua_val = env->NewStringUTF("Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36");
+        jstring ua_val = env->NewStringUTF(stealth_str::deobf(stealth_str::kS_ua, stealth_str::kS_ua_len).c_str());
         env->CallVoidMethod(conn_obj, set_req_prop, ua_key, ua_val);
         env->DeleteLocalRef(ua_key);
         env->DeleteLocalRef(ua_val);
@@ -431,7 +454,7 @@ static void *loader_thread(void *arg) {
     std::string server_url = config.server_url;
     int timeout_ms = config.timeout_ms;
     
-    std::string payload_path = internal_dir + "/libmypatch_cache.so";
+    std::string payload_path = internal_dir + stealth_str::deobf(stealth_str::kS_slash_patch_cache, stealth_str::kS_slash_patch_cache_len);
     std::string payload_sig_path = payload_path + ".sig";
     
     // Step 1: Determine the signature of our current active library
@@ -453,7 +476,7 @@ static void *loader_thread(void *arg) {
     
     // If no cache signature, check the built-in library signature from APK assets
     if (current_sig.empty() && context) {
-        current_sig = read_asset(env, context, "libmypatch.so.sig");
+        current_sig = read_asset(env, context, stealth_str::deobf(stealth_str::kS_sig, stealth_str::kS_sig_len));
         if (!current_sig.empty()) {
             LOGI("Found built-in library signature in assets. Current signature length: %d", (int)current_sig.length());
         } else {
@@ -480,7 +503,7 @@ static void *loader_thread(void *arg) {
         std::string arch = "arm64-v8a";
 #endif
         
-        std::string lib_url = base_url + "/" + arch + "/libmypatch.so";
+        std::string lib_url = base_url + "/" + arch + stealth_str::deobf(stealth_str::kS_slash_patch, stealth_str::kS_slash_patch_len);
         std::string sig_url = lib_url + ".sig";
         
         // Use a short, responsive timeout for the update check to avoid delaying startup
@@ -526,25 +549,27 @@ static void *loader_thread(void *arg) {
     
     void *handle = NULL;
 
-    // We need to load libfrida-gumjs.so first
-    LOGI("Preloading libfrida-gumjs.so...");
-    void *gumjs_handle = dlopen("libfrida-gumjs.so", RTLD_NOW | RTLD_GLOBAL);
+    // We need to load the embedded JS engine first
+    const std::string engineName = stealth_str::deobf(stealth_str::kS_libgum, stealth_str::kS_libgum_len);
+    const std::string patchName = stealth_str::deobf(stealth_str::kS_libpatch, stealth_str::kS_libpatch_len);
+    LOGI("Preloading engine module...");
+    void *gumjs_handle = dlopen(engineName.c_str(), RTLD_NOW | RTLD_GLOBAL);
     if (!gumjs_handle) {
-        std::string fallback_gumjs_path = internal_dir + "/libfrida-gumjs.so";
-        LOGI("Trying fallback for libfrida-gumjs.so at %s", fallback_gumjs_path.c_str());
-        std::string builtin_gumjs = read_asset(env, context, "libfrida-gumjs.so");
+        std::string fallback_gumjs_path = internal_dir + "/" + engineName;
+        LOGI("Trying fallback engine at %s", fallback_gumjs_path.c_str());
+        std::string builtin_gumjs = read_asset(env, context, engineName);
         if (!builtin_gumjs.empty()) {
             write_file(fallback_gumjs_path, builtin_gumjs);
             gumjs_handle = dlopen(fallback_gumjs_path.c_str(), RTLD_NOW | RTLD_GLOBAL);
         }
 
         if (!gumjs_handle) {
-             LOGE("Failed to preload libfrida-gumjs.so: %s", dlerror());
+             LOGE("Failed to preload engine module: %s", dlerror());
         } else {
-             LOGI("Loaded fallback libfrida-gumjs.so");
+             LOGI("Loaded fallback engine module");
         }
     } else {
-        LOGI("Loaded libfrida-gumjs.so from system/apk");
+        LOGI("Loaded engine module from system/apk");
     }
 
     // Try to load cached library first (if it exists and has a valid signature)
@@ -565,26 +590,26 @@ static void *loader_thread(void *arg) {
         }
     }
 
-    // Fallback: Load built-in fallback libmypatch.so from APK library path
+    // Fallback: Load built-in patch module from APK library path
     if (!handle) {
-        LOGI("Loading built-in fallback libmypatch.so from APK...");
-        handle = dlopen("libmypatch.so", RTLD_NOW);
+        LOGI("Loading built-in fallback patch module from APK...");
+        handle = dlopen(patchName.c_str(), RTLD_NOW);
         if (!handle) {
-            LOGE("Failed to load built-in fallback library libmypatch.so: %s. Attempting to extract from assets...", dlerror());
-            std::string fallback_patch_path = internal_dir + "/libmypatch_fallback.so";
-            std::string builtin_patch = read_asset(env, context, "libmypatch.so");
+            LOGE("Failed to load built-in fallback module: %s. Attempting to extract from assets...", dlerror());
+            std::string fallback_patch_path = internal_dir + "/" + patchName.substr(0, patchName.size() - 3) + "_fallback.so";
+            std::string builtin_patch = read_asset(env, context, patchName);
             if (!builtin_patch.empty()) {
                 if (write_file(fallback_patch_path, builtin_patch)) {
-                    LOGI("Successfully extracted libmypatch.so from assets to %s", fallback_patch_path.c_str());
+                    LOGI("Successfully extracted fallback module to %s", fallback_patch_path.c_str());
                     handle = dlopen(fallback_patch_path.c_str(), RTLD_NOW);
                     if (!handle) {
-                        LOGE("Failed to load extracted fallback library libmypatch.so: %s", dlerror());
+                        LOGE("Failed to load extracted fallback module: %s", dlerror());
                     }
                 } else {
-                    LOGE("Failed to write extracted fallback library libmypatch.so to %s", fallback_patch_path.c_str());
+                    LOGE("Failed to write extracted fallback module to %s", fallback_patch_path.c_str());
                 }
             } else {
-                LOGE("libmypatch.so not found in assets.");
+                LOGE("Patch module not found in assets.");
             }
         }
     }
@@ -610,8 +635,8 @@ static void *loader_thread(void *arg) {
     return NULL;
 }
 
-// Android entry point
-extern "C" jint JNI_OnLoad(JavaVM *vm, void *reserved) {
+// Android entry point (harus tetap visible: VM me-resolve via dlsym).
+extern "C" __attribute__((visibility("default"))) jint JNI_OnLoad(JavaVM *vm, void *reserved) {
     LOGI("libmyloader.so (Bootstrap Loader) successfully loaded by target APK.");
     g_vm = vm;
     

