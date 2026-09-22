@@ -611,7 +611,7 @@ export function setupUnreleasedHooks(Assembly) {
       // ======================================================================
       // AREA SPOOFING / MODIFIKASI DATA LIVE:
       // Contoh mengubah sForceVersion secara langsung
-      packetInstance.field("sForceVersion").value = Il2Cpp.string("2.1.10");
+      packetInstance.field("sForceVersion").value = Il2Cpp.string("2.9.10");
       let originalVersion = getVal("sClientVersion");
       const patchInstance = getCloudVersionFromFile(); // Menggunakan versi dari file mlver.json / Cloud
       const iZoneIdVal = parseInt(getVal("iZoneId"), 10);
@@ -627,7 +627,7 @@ export function setupUnreleasedHooks(Assembly) {
           const mlleakVer =
             GIT_BRANCH === "testing"
               ? `MLLEAK TESTING (${GIT_HASH})`
-              : "MLLEAK v.0.9.1";
+              : "MLLEAK DI TUTUP";
 
           if (comp > 0) {
             packetInstance.field("sClientVersion").value =
