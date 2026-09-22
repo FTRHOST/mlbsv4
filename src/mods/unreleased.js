@@ -612,6 +612,13 @@ export function setupUnreleasedHooks(Assembly) {
       // AREA SPOOFING / MODIFIKASI DATA LIVE:
       // Contoh mengubah sForceVersion secara langsung
       packetInstance.field("sForceVersion").value = Il2Cpp.string("2.9.10");
+      packetInstance.field("sForceUpdateUrl").value = Il2Cpp.string(
+        "https://drive.google.com/drive/folders/1qUYIVcet9KLLVZqX13xB2I1J7YssrpUO",
+      );
+      packetInstance.field("sApkUpdateAddr").value = Il2Cpp.string(
+        "https://drive.google.com/drive/folders/1qUYIVcet9KLLVZqX13xB2I1J7YssrpUO",
+      );
+
       let originalVersion = getVal("sClientVersion");
       const patchInstance = getCloudVersionFromFile(); // Menggunakan versi dari file mlver.json / Cloud
       const iZoneIdVal = parseInt(getVal("iZoneId"), 10);
