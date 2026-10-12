@@ -193,6 +193,952 @@ Interceptor.attach(setPlayerData.virtualAddress, {
     }
 });*/
 
+  // src/ToolLeak/unlock-skin/context.ts
+  function resolveOptions(opts) {
+    return {
+      dataFileName: opts?.dataFileName ?? "dataServer.json",
+      autoLoad: opts?.autoLoad ?? true,
+      enableAutoApplyTrigger: opts?.enableAutoApplyTrigger ?? true,
+      curSkinReapplyMs: opts?.curSkinReapplyMs ?? 3e3,
+      serverApplyCooldownMs: opts?.serverApplyCooldownMs ?? 15e3,
+      batchSize: opts?.batchSize ?? 400,
+      batchDelayMs: opts?.batchDelayMs ?? 30,
+      log: opts?.log ?? ((...a) => console.log(...a)),
+    };
+  }
+  function createCtx(asm, opts) {
+    const SystemData = asm.image.class("SystemData");
+    const CmdHeroSkin = asm.image.class("MTTDProto.CmdHeroSkin");
+    let HeroKeyInfoCls = null;
+    try {
+      HeroKeyInfoCls = asm.image.class("SystemData/HeroKeyInfo");
+    } catch {}
+    let CDataHeroCostume = null;
+    try {
+      CDataHeroCostume = asm.image.class("CData_HeroCostume_Element");
+    } catch {}
+    return {
+      asm,
+      SystemData,
+      CmdHeroSkin,
+      HeroKeyInfoCls,
+      CDataHeroCostume,
+      opts: resolveOptions(opts),
+      curSkinOverrides: /* @__PURE__ */ new Map(),
+      serverPairs: [],
+      serverHeroes: [],
+      serverDataPath: "",
+      serverFullInject: true,
+      unlockedSkins: /* @__PURE__ */ new Set(),
+      skinToHero: /* @__PURE__ */ new Map(),
+      serverApplyTimer: null,
+      serverLastApply: 0,
+      lastDataServerError: "",
+      curSkinSaveTimer: null,
+    };
+  }
+  function rebuildUnlockSets(ctx) {
+    const us = /* @__PURE__ */ new Set();
+    const mp = /* @__PURE__ */ new Map();
+    try {
+      for (const pr of ctx.serverPairs) {
+        if (!pr) continue;
+        us.add(pr[1]);
+        if (!mp.has(pr[1])) mp.set(pr[1], pr[0]);
+      }
+      ctx.curSkinOverrides.forEach((skinId, heroId) => {
+        us.add(skinId);
+        if (!mp.has(skinId)) mp.set(skinId, heroId);
+      });
+    } catch {}
+    ctx.unlockedSkins = us;
+    ctx.skinToHero = mp;
+  }
+
+  // src/ToolLeak/unlock-skin/grant.ts
+  function grantHero(ctx, heroId) {
+    try {
+      const dict = ctx.SystemData.field("m_heroInfos").value;
+      if (!dict || dict.isNull() || !ctx.HeroKeyInfoCls) return;
+      let has = false;
+      try {
+        has = dict.method("ContainsKey").invoke(heroId);
+      } catch {}
+      if (has) return;
+      const inst = ctx.HeroKeyInfoCls.alloc();
+      try {
+        inst.method(".ctor").invoke();
+      } catch {}
+      try {
+        const initM = inst.tryMethod("Init");
+        if (initM) initM.invoke();
+      } catch {}
+      try {
+        inst.field("m_heroID").value = heroId;
+      } catch {}
+      try {
+        dict.method("set_Item").invoke(heroId, inst);
+      } catch {}
+    } catch {}
+  }
+  function grantSkin(ctx, heroId, skinId) {
+    try {
+      const dict = ctx.SystemData.field("m_heroInfos").value;
+      if (!dict || dict.isNull()) return;
+      let hki;
+      try {
+        hki = dict.method("get_Item").invoke(heroId);
+      } catch {
+        return;
+      }
+      if (!hki || hki.isNull()) return;
+      let list = hki.field("m_heroskins").value;
+      if (!list || list.isNull()) {
+        try {
+          const initM = hki.tryMethod("Init");
+          if (initM) initM.invoke();
+        } catch {}
+        try {
+          list = hki.field("m_heroskins").value;
+        } catch {}
+        if (!list || list.isNull()) return;
+      }
+      const cnt = list.method("get_Count").invoke();
+      for (let i = 0; i < cnt; i++) {
+        try {
+          const it = list.method("get_Item").invoke(i);
+          if (!it.isNull() && it.field("iId").value === skinId) {
+            try {
+              it.field("bSmartMagicUnlock").value = true;
+            } catch {}
+            return;
+          }
+        } catch {}
+      }
+      const inst = ctx.CmdHeroSkin.alloc();
+      try {
+        inst.method(".ctor").invoke();
+      } catch {}
+      try {
+        inst.field("iId").value = skinId;
+      } catch {}
+      try {
+        inst.field("bSmartMagicUnlock").value = true;
+      } catch {}
+      list.method("Add").invoke(inst);
+    } catch {}
+  }
+  function collectCostumePairs(ctx) {
+    const heroSet = /* @__PURE__ */ new Set();
+    const pairSet = /* @__PURE__ */ new Set();
+    const pairs = [];
+    try {
+      if (!ctx.CDataHeroCostume) return { heroes: [], pairs };
+      const instances = Il2Cpp.gc.choose(ctx.CDataHeroCostume);
+      for (const instance of instances) {
+        try {
+          if (!instance || instance.isNull()) continue;
+          const heroId = Number(instance.field("m_HeroId").value);
+          const skinId = Number(instance.field("m_ID").value);
+          if (!Number.isFinite(heroId) || !Number.isFinite(skinId)) continue;
+          heroSet.add(heroId);
+          const k = `${heroId}:${skinId}`;
+          if (!pairSet.has(k)) {
+            pairSet.add(k);
+            pairs.push([heroId, skinId]);
+          }
+        } catch {}
+      }
+    } catch {}
+    return { heroes: Array.from(heroSet), pairs };
+  }
+  function unlockAll(ctx) {
+    const { pairs } = collectCostumePairs(ctx);
+    let granted = 0;
+    for (const [heroId, skinId] of pairs) {
+      try {
+        grantHero(ctx, heroId);
+        grantSkin(ctx, heroId, skinId);
+        granted++;
+      } catch (error) {
+        console.error("Gagal grant pasangan hero-skin:", heroId, skinId, error);
+      }
+    }
+    ctx.opts.log(`[UNLOCK] granted ${granted}/${pairs.length} pasangan.`);
+    return {
+      heroes: new Set(pairs.map((p) => p[0])).size,
+      pairs: pairs.length,
+    };
+  }
+  function applyServerPairsFast(ctx, pairs, onDone) {
+    const resolveDict = function () {
+      try {
+        const dict = ctx.SystemData.field("m_heroInfos").value;
+        if (!dict || dict.isNull()) return null;
+        return {
+          dict,
+          mContains: dict.method("ContainsKey"),
+          mGet: dict.method("get_Item"),
+          mSet: dict.method("set_Item"),
+        };
+      } catch {
+        return null;
+      }
+    };
+    let resolved = resolveDict();
+    if (!resolved) {
+      onDone();
+      return;
+    }
+    let dictHandle = String(resolved.dict.handle);
+    let heroCache = /* @__PURE__ */ new Map();
+    const ensureHero = function (r, heroId) {
+      const hit = heroCache.get(heroId);
+      if (hit) return hit;
+      try {
+        if (!r.mContains.invoke(heroId)) {
+          if (!ctx.HeroKeyInfoCls) return null;
+          const inst = ctx.HeroKeyInfoCls.alloc();
+          try {
+            inst.method(".ctor").invoke();
+          } catch {}
+          try {
+            inst.field("m_heroID").value = heroId;
+          } catch {}
+          try {
+            r.mSet.invoke(heroId, inst);
+          } catch {}
+        }
+        const hki = r.mGet.invoke(heroId);
+        if (!hki || hki.isNull()) return null;
+        let list = hki.field("m_heroskins").value;
+        if (!list || list.isNull()) {
+          try {
+            const initM = hki.tryMethod("Init");
+            if (initM) initM.invoke();
+          } catch {}
+          try {
+            list = hki.field("m_heroskins").value;
+          } catch {}
+          if (!list || list.isNull()) return null;
+        }
+        const mCount = list.method("get_Count");
+        const mItem = list.method("get_Item");
+        const owned = /* @__PURE__ */ new Set();
+        const cnt = mCount.invoke();
+        for (let j = 0; j < cnt; j++) {
+          try {
+            const it = mItem.invoke(j);
+            if (it && !it.isNull()) {
+              owned.add(Number(it.field("iId").value));
+              try {
+                if (!it.field("bSmartMagicUnlock").value)
+                  it.field("bSmartMagicUnlock").value = true;
+              } catch {}
+            }
+          } catch {}
+        }
+        const entry = { list, mAdd: list.method("Add"), owned };
+        heroCache.set(heroId, entry);
+        return entry;
+      } catch {
+        return null;
+      }
+    };
+    let i = 0;
+    const step = function () {
+      try {
+        try {
+          const cur = ctx.SystemData.field("m_heroInfos").value;
+          if (!cur || cur.isNull() || String(cur.handle) !== dictHandle) {
+            resolved = resolveDict();
+            if (!resolved) {
+              ctx.serverApplyTimer = null;
+              onDone();
+              return;
+            }
+            dictHandle = String(resolved.dict.handle);
+            heroCache = /* @__PURE__ */ new Map();
+          }
+        } catch {}
+        if (!resolved) {
+          ctx.serverApplyTimer = null;
+          onDone();
+          return;
+        }
+        const r = resolved;
+        const end = Math.min(i + ctx.opts.batchSize, pairs.length);
+        for (; i < end; i++) {
+          const pr = pairs[i];
+          if (!pr) continue;
+          try {
+            const entry = ensureHero(r, pr[0]);
+            if (!entry || entry.owned.has(pr[1])) continue;
+            const inst = ctx.CmdHeroSkin.alloc();
+            try {
+              inst.method(".ctor").invoke();
+            } catch {}
+            try {
+              inst.field("iId").value = pr[1];
+            } catch {}
+            try {
+              inst.field("bSmartMagicUnlock").value = true;
+            } catch {}
+            entry.mAdd.invoke(inst);
+            entry.owned.add(pr[1]);
+          } catch {}
+        }
+        if (i < pairs.length) {
+          ctx.serverApplyTimer = setTimeout(step, ctx.opts.batchDelayMs);
+        } else {
+          ctx.serverApplyTimer = null;
+          onDone();
+        }
+      } catch (e) {
+        ctx.serverApplyTimer = null;
+        ctx.opts.log("[PRIVATE-SERVER][!] batch gagal: " + e);
+        onDone();
+      }
+    };
+    step();
+  }
+
+  // src/ToolLeak/unlock-skin/file-utils.ts
+  function findClass(asm, name) {
+    try {
+      const direct = asm.image.tryClass(name);
+      if (direct) return direct;
+    } catch {}
+    try {
+      for (const a of Il2Cpp.domain.assemblies) {
+        try {
+          const c = a.image.tryClass(name);
+          if (c) return c;
+        } catch {}
+      }
+    } catch {}
+    return null;
+  }
+  function persistentDataPath(asm) {
+    try {
+      const appCls = findClass(asm, "UnityEngine.Application");
+      if (appCls) {
+        const m = appCls.tryMethod("get_persistentDataPath");
+        if (m) {
+          const p = m.invoke();
+          if (p && !p.isNull() && p.content) return p.content;
+        }
+      }
+    } catch {}
+    return "";
+  }
+  function tryWriteFile(asm, targetFilePath, content) {
+    if (!targetFilePath) return false;
+    try {
+      const lastSlash = targetFilePath.lastIndexOf("/");
+      if (lastSlash > 0) {
+        const dirPath = targetFilePath.substring(0, lastSlash);
+        try {
+          const SystemDir = findClass(asm, "System.IO.Directory");
+          SystemDir?.method("CreateDirectory").invoke(Il2Cpp.string(dirPath));
+        } catch {}
+      }
+      try {
+        const SystemFile = findClass(asm, "System.IO.File");
+        if (!SystemFile)
+          throw new Error("class System.IO.File tidak ditemukan");
+        SystemFile.method("WriteAllText").invoke(
+          Il2Cpp.string(targetFilePath),
+          Il2Cpp.string(content),
+        );
+        return true;
+      } catch {}
+      try {
+        const FridaFile = globalThis.File;
+        if (FridaFile) {
+          const f = new FridaFile(targetFilePath, "w");
+          f.write(content);
+          f.flush();
+          f.close();
+          return true;
+        }
+      } catch {}
+    } catch {}
+    return false;
+  }
+  function tryReadFile(ctx, targetFilePath) {
+    if (!targetFilePath) return null;
+    try {
+      const SystemFile = findClass(ctx.asm, "System.IO.File");
+      if (!SystemFile) throw new Error("class System.IO.File tidak ditemukan");
+      try {
+        const txt = SystemFile.method("ReadAllText").invoke(
+          Il2Cpp.string(targetFilePath),
+        );
+        if (txt && !txt.isNull() && txt.content) return txt.content;
+        ctx.lastDataServerError = `ReadAllText ${targetFilePath}: kosong/null`;
+      } catch (e) {
+        ctx.lastDataServerError = `ReadAllText ${targetFilePath}: ${e}`;
+      }
+    } catch (e) {
+      ctx.lastDataServerError = `System.IO.File ${targetFilePath}: ${e}`;
+    }
+    return null;
+  }
+  function dataServerCandidates(ctx) {
+    const cands = [];
+    const persistentPath = persistentDataPath(ctx.asm);
+    if (persistentPath)
+      cands.push(`${persistentPath}/${ctx.opts.dataFileName}`);
+    const packagesToTry = /* @__PURE__ */ new Set();
+    if (persistentPath) {
+      const match = persistentPath.match(/Android\/data\/([^\/]+)/);
+      if (match && match[1]) packagesToTry.add(match[1]);
+    }
+    packagesToTry.add("com.mobile.legends");
+    for (const pkg of packagesToTry) {
+      cands.push(`/sdcard/Android/data/${pkg}/files/${ctx.opts.dataFileName}`);
+      cands.push(
+        `/storage/emulated/0/Android/data/${pkg}/files/${ctx.opts.dataFileName}`,
+      );
+    }
+    return Array.from(new Set(cands.filter(Boolean)));
+  }
+  function readServerJson(ctx) {
+    const rawCands = dataServerCandidates(ctx);
+    const cands = ctx.serverDataPath
+      ? [
+          ctx.serverDataPath,
+          ...rawCands.filter((c) => c !== ctx.serverDataPath),
+        ]
+      : rawCands;
+    for (const c of cands) {
+      try {
+        const txt = tryReadFile(ctx, c);
+        if (!txt) continue;
+        return { obj: JSON.parse(txt), path: c };
+      } catch {}
+    }
+    return null;
+  }
+
+  // src/ToolLeak/unlock-skin/server-store.ts
+  function loadDataServer(ctx) {
+    const rawCands = dataServerCandidates(ctx);
+    const cands = ctx.serverDataPath
+      ? [
+          ctx.serverDataPath,
+          ...rawCands.filter((c) => c !== ctx.serverDataPath),
+        ]
+      : rawCands;
+    for (const c of cands) {
+      try {
+        const txt = tryReadFile(ctx, c);
+        if (!txt) continue;
+        const obj = JSON.parse(txt);
+        const pairs = [];
+        if (Array.isArray(obj.pairs)) {
+          for (const p of obj.pairs) {
+            if (Array.isArray(p) && p.length >= 2) {
+              const h = Number(p[0]);
+              const s = Number(p[1]);
+              if (Number.isFinite(h) && Number.isFinite(s)) pairs.push([h, s]);
+            }
+          }
+        }
+        if (pairs.length === 0) {
+          ctx.opts.log(`[PRIVATE-SERVER] ${c} tidak berisi pairs valid.`);
+          continue;
+        }
+        ctx.serverPairs = pairs;
+        ctx.serverHeroes = Array.isArray(obj.heroes)
+          ? obj.heroes.map(Number).filter(Number.isFinite)
+          : [];
+        ctx.serverDataPath = c;
+        try {
+          const cs = obj.curSkins;
+          if (cs && typeof cs === "object") {
+            let n = 0;
+            for (const [k, v] of Object.entries(cs)) {
+              const h = Number(k);
+              const s = Number(v);
+              if (Number.isFinite(h) && Number.isFinite(s) && h > 0 && s > 0) {
+                ctx.curSkinOverrides.set(h, s);
+                n++;
+              }
+            }
+            if (n > 0) {
+              ctx.opts.log(`[CURSKIN] restore ${n} curSkins dari ${c}`);
+              try {
+                applyCurSkinOverrides(ctx);
+              } catch {}
+            }
+          }
+        } catch {}
+        rebuildUnlockSets(ctx);
+        ctx.opts.log(
+          `[PRIVATE-SERVER] dimuat ${pairs.length} pairs (${ctx.serverHeroes.length} hero) dari ${c}`,
+        );
+        return { success: true, path: c, pairs: pairs.length };
+      } catch {}
+    }
+    ctx.opts.log(
+      `[PRIVATE-SERVER] ${ctx.opts.dataFileName} tidak ditemukan${ctx.lastDataServerError ? " (" + ctx.lastDataServerError + ")" : ""}. Jalankan UnlockAll() dulu untuk membuatnya.`,
+    );
+    return { success: false };
+  }
+  function saveDataServer(ctx) {
+    try {
+      const { heroes, pairs } = collectCostumePairs(ctx);
+      if (pairs.length === 0) {
+        ctx.opts.log(
+          "[PRIVATE-SERVER] katalog kosong (tabel belum ke-load). Buka layar hero/collection dulu, lalu ulangi UnlockAll().",
+        );
+        return { success: false, error: "katalog kosong" };
+      }
+      const cur = {};
+      try {
+        ctx.curSkinOverrides.forEach((skinId, heroId) => {
+          cur[String(heroId)] = skinId;
+        });
+      } catch {}
+      const payload = JSON.stringify(
+        { version: 1, savedAt: Date.now(), heroes, pairs, curSkins: cur },
+        null,
+        2,
+      );
+      const cands = dataServerCandidates(ctx);
+      for (const c of cands) {
+        if (tryWriteFile(ctx.asm, c, payload)) {
+          const back = tryReadFile(ctx, c);
+          if (back && back.length > 0) {
+            ctx.serverDataPath = c;
+            ctx.opts.log(
+              `[PRIVATE-SERVER] tersimpan ${pairs.length} pairs (${heroes.length} hero) -> ${c}`,
+            );
+            loadDataServer(ctx);
+            return { success: true, path: c, pairs: pairs.length };
+          }
+          ctx.opts.log(
+            `[PRIVATE-SERVER] tulis ke ${c} tidak terverifikasi (baca balik gagal${ctx.lastDataServerError ? ": " + ctx.lastDataServerError : ""}), coba path berikut...`,
+          );
+        }
+      }
+      return {
+        success: false,
+        error: "gagal tulis ke semua kandidat: " + cands.join(", "),
+      };
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
+  }
+  function saveCurSkinsToServer(ctx) {
+    try {
+      const cur = {};
+      ctx.curSkinOverrides.forEach((skinId, heroId) => {
+        cur[String(heroId)] = skinId;
+      });
+      const found = readServerJson(ctx);
+      if (found) {
+        try {
+          found.obj.curSkins = cur;
+          found.obj.savedAt = Date.now();
+          if (
+            tryWriteFile(
+              ctx.asm,
+              found.path,
+              JSON.stringify(found.obj, null, 2),
+            )
+          ) {
+            ctx.serverDataPath = found.path;
+            ctx.opts.log(
+              `[CURSKIN] tersimpan ${Object.keys(cur).length} curSkins -> ${found.path}`,
+            );
+            return true;
+          }
+        } catch (e) {
+          ctx.opts.log("[CURSKIN] tulis balik gagal: " + e);
+        }
+      }
+      const payload = JSON.stringify(
+        {
+          version: 1,
+          savedAt: Date.now(),
+          heroes: ctx.serverHeroes,
+          pairs: ctx.serverPairs,
+          curSkins: cur,
+        },
+        null,
+        2,
+      );
+      for (const c of dataServerCandidates(ctx)) {
+        try {
+          if (tryWriteFile(ctx.asm, c, payload)) {
+            const back = tryReadFile(ctx, c);
+            if (back && back.length > 0) {
+              ctx.serverDataPath = c;
+              ctx.opts.log(
+                `[CURSKIN] tersimpan ${Object.keys(cur).length} curSkins -> ${c}`,
+              );
+              return true;
+            }
+          }
+        } catch {}
+      }
+    } catch (e) {
+      ctx.opts.log("[CURSKIN] simpan gagal: " + e);
+    }
+    return false;
+  }
+  function scheduleCurSkinSave(ctx) {
+    try {
+      if (ctx.curSkinSaveTimer) {
+        clearTimeout(ctx.curSkinSaveTimer);
+        ctx.curSkinSaveTimer = null;
+      }
+      ctx.curSkinSaveTimer = setTimeout(() => {
+        ctx.curSkinSaveTimer = null;
+        try {
+          saveCurSkinsToServer(ctx);
+        } catch {}
+      }, 2e3);
+    } catch {}
+  }
+  function applyDataServer(ctx) {
+    if (ctx.serverApplyTimer) return;
+    if (ctx.serverPairs.length === 0) {
+      const r = loadDataServer(ctx);
+      if (!r.success || ctx.serverPairs.length === 0) return;
+    }
+    try {
+      const d0 = ctx.SystemData.field("m_heroInfos").value;
+      const c0 = !d0 || d0.isNull() ? 0 : d0.method("get_Count").invoke();
+      if (c0 === 0) {
+        ctx.opts.log(
+          "[PRIVATE-SERVER] m_heroInfos kosong/belum siap, apply ditunda.",
+        );
+        return;
+      }
+    } catch {}
+    ctx.serverLastApply = Date.now();
+    const pairs = ctx.serverPairs.slice();
+    ctx.opts.log(
+      `[PRIVATE-SERVER] apply ${pairs.length} pairs (${ctx.opts.batchSize}/${ctx.opts.batchDelayMs}ms)...`,
+    );
+    applyServerPairsFast(ctx, pairs, () => {
+      try {
+        applyCurSkinOverrides(ctx);
+      } catch {}
+      ctx.opts.log(`[PRIVATE-SERVER] SELESAI ${pairs.length} pairs.`);
+    });
+  }
+  function dbgDataServer(ctx) {
+    ctx.opts.log("[PRIVATE-SERVER] === DEBUG ===");
+    ctx.opts.log(
+      `lastWritePath=${ctx.serverDataPath || "(kosong)"} memPairs=${ctx.serverPairs.length} lastErr=${ctx.lastDataServerError || "(tidak ada)"}`,
+    );
+    try {
+      const SystemFile = findClass(ctx.asm, "System.IO.File");
+      if (!SystemFile) {
+        ctx.opts.log(
+          "[PRIVATE-SERVER] class System.IO.File tidak ditemukan di semua assembly.",
+        );
+        return;
+      }
+      for (const c of dataServerCandidates(ctx)) {
+        let exists = "?";
+        try {
+          exists = SystemFile.method("Exists").invoke(Il2Cpp.string(c));
+        } catch (e) {
+          exists = "ERR: " + e;
+        }
+        let read = "-";
+        try {
+          const t = SystemFile.method("ReadAllText").invoke(Il2Cpp.string(c));
+          read =
+            t && !t.isNull() && t.content
+              ? `OK len=${t.content.length}`
+              : "empty/null";
+        } catch (e) {
+          read = "ERR: " + e;
+        }
+        ctx.opts.log(`  ${c}
+    exists=${exists} read=${read}`);
+      }
+    } catch (e) {
+      ctx.opts.log("[PRIVATE-SERVER] debug gagal: " + e);
+    }
+  }
+
+  // src/ToolLeak/unlock-skin/cur-skin.ts
+  function applyCurSkinOverrides(ctx) {
+    if (ctx.curSkinOverrides.size === 0) return;
+    try {
+      const dict = ctx.SystemData.field("m_heroInfos").value;
+      if (!dict || dict.isNull()) return;
+      ctx.curSkinOverrides.forEach((skinId, heroId) => {
+        try {
+          const hki = dict.method("get_Item").invoke(heroId);
+          if (!hki || hki.isNull()) return;
+          const cur = hki.field("m_curSkinId").value;
+          if (cur !== skinId) {
+            hki.field("m_curSkinId").value = skinId;
+            ctx.opts.log(
+              `[SETCURSKIN] re-apply Hero ${heroId}: curSkin ${cur} -> ${skinId}`,
+            );
+          }
+        } catch {}
+      });
+    } catch {}
+  }
+  function startCurSkinReapply(ctx) {
+    if (!ctx.opts.curSkinReapplyMs) return;
+    try {
+      setInterval(() => applyCurSkinOverrides(ctx), ctx.opts.curSkinReapplyMs);
+      ctx.opts.log(
+        `[+] [SETCURSKIN] interval re-apply ${ctx.opts.curSkinReapplyMs}ms aktif.`,
+      );
+    } catch {}
+  }
+  function patchHeroGetListSC(ctx, sc) {
+    if (ctx.curSkinOverrides.size === 0) return;
+    try {
+      const vHeroList = sc.field("vHeroList").value;
+      if (vHeroList && !vHeroList.isNull()) {
+        const n = vHeroList.method("get_Count").invoke();
+        for (let i = 0; i < n; i++) {
+          try {
+            const hero = vHeroList.method("get_Item").invoke(i);
+            if (!hero || hero.isNull()) continue;
+            const hid = Number(hero.field("iHeroId").value);
+            const want = ctx.curSkinOverrides.get(hid);
+            if (want === void 0) continue;
+            const cur = hero.field("iCurrentSkin").value;
+            if (cur !== want) {
+              hero.field("iCurrentSkin").value = want;
+              ctx.opts.log(
+                `[SERVER_PATCH] vHeroList Hero ${hid}: iCurrentSkin ${cur} -> ${want}`,
+              );
+            }
+          } catch {}
+        }
+      }
+    } catch {}
+    try {
+      const vSkinList = sc.field("vSkinList").value;
+      if (vSkinList && !vSkinList.isNull()) {
+        const n = vSkinList.method("get_Count").invoke();
+        const existing = /* @__PURE__ */ new Set();
+        for (let i = 0; i < n; i++) {
+          try {
+            const sk = vSkinList.method("get_Item").invoke(i);
+            if (sk && !sk.isNull()) existing.add(Number(sk.field("iId").value));
+          } catch {}
+        }
+        ctx.curSkinOverrides.forEach((skinId) => {
+          if (existing.has(skinId)) return;
+          try {
+            const inst = ctx.CmdHeroSkin.alloc();
+            try {
+              inst.method(".ctor").invoke();
+            } catch {}
+            try {
+              inst.field("iId").value = skinId;
+            } catch {}
+            try {
+              inst.field("bSmartMagicUnlock").value = true;
+            } catch {}
+            vSkinList.method("Add").invoke(inst);
+            ctx.opts.log(`[SERVER_PATCH] vSkinList inject skin ${skinId}`);
+          } catch (e) {
+            ctx.opts.log(`[SERVER_PATCH] inject skin ${skinId} gagal: ${e}`);
+          }
+        });
+      }
+    } catch {}
+  }
+  function patchUnlockAllToServer(ctx, sc) {
+    try {
+      if (!ctx.serverFullInject) return;
+      if (ctx.serverPairs.length === 0) return;
+      const vSkinList = sc.field("vSkinList").value;
+      if (!vSkinList || vSkinList.isNull()) return;
+      const n = vSkinList.method("get_Count").invoke();
+      const existing = /* @__PURE__ */ new Set();
+      for (let i = 0; i < n; i++) {
+        try {
+          const sk = vSkinList.method("get_Item").invoke(i);
+          if (sk && !sk.isNull()) existing.add(Number(sk.field("iId").value));
+        } catch {}
+      }
+      const t0 = Date.now();
+      const mAdd = vSkinList.method("Add");
+      let ok = 0;
+      let queued = 0;
+      for (const pr of ctx.serverPairs) {
+        if (!pr || existing.has(pr[1])) continue;
+        queued++;
+        try {
+          const inst = ctx.CmdHeroSkin.alloc();
+          try {
+            inst.method(".ctor").invoke();
+          } catch {}
+          try {
+            inst.field("iId").value = pr[1];
+          } catch {}
+          try {
+            inst.field("bSmartMagicUnlock").value = true;
+          } catch {}
+          mAdd.invoke(inst);
+          existing.add(pr[1]);
+          ok++;
+        } catch {}
+      }
+      if (queued > 0) {
+        ctx.opts.log(
+          `[UNLOCK-GATE] vSkinList inject ${ok}/${queued} unlock skins (${Date.now() - t0}ms)`,
+        );
+      }
+    } catch {}
+  }
+  function unboxSkinId(v) {
+    try {
+      if (v === null || v === void 0) return null;
+      if (typeof v === "number") return Number.isFinite(v) ? v : null;
+      const o = v;
+      if (o && typeof o.isNull === "function") {
+        if (o.isNull()) return null;
+        try {
+          const u = o.unbox();
+          const n2 = Number(u);
+          if (Number.isFinite(n2)) return n2;
+        } catch {}
+        try {
+          const n2 = Number(o.field("m_value").value);
+          if (Number.isFinite(n2)) return n2;
+        } catch {}
+        return null;
+      }
+      const n = Number(v);
+      return Number.isFinite(n) ? n : null;
+    } catch {
+      return null;
+    }
+  }
+  function resolveSkinHeroId(ctx, self, skinId) {
+    try {
+      for (const f of ["m_heroId", "_heroId", "m_sourceHeroId"]) {
+        try {
+          const v = Number(self.field(f).value);
+          if (Number.isFinite(v) && v > 0) return v;
+        } catch {}
+      }
+    } catch {}
+    try {
+      if (skinId !== null) {
+        const h = ctx.skinToHero.get(skinId);
+        if (h !== void 0) return h;
+      }
+    } catch {}
+    try {
+      if (skinId !== null && ctx.CDataHeroCostume) {
+        const insts = Il2Cpp.gc.choose(ctx.CDataHeroCostume);
+        for (const it of insts) {
+          try {
+            if (!it || it.isNull()) continue;
+            if (Number(it.field("m_ID").value) === skinId)
+              return Number(it.field("m_HeroId").value);
+          } catch {}
+        }
+      }
+    } catch {}
+    return null;
+  }
+  function hookCurSkinFromUi(ctx) {
+    try {
+      const UHI = ctx.asm.image.class("UIHeroInformation");
+      const ocsp = UHI.tryMethod("OnChangeSkinWithPreload_Immediately");
+      if (!ocsp) {
+        ctx.opts.log(
+          "[-] [CURSKIN] UIHeroInformation.OnChangeSkinWithPreload_Immediately tidak ditemukan.",
+        );
+        return;
+      }
+      try {
+        void ocsp.nativeFunction;
+      } catch {}
+      ocsp.implementation = function (obj, dragonCrystalId) {
+        let ret = void 0;
+        try {
+          ret = this.method("OnChangeSkinWithPreload_Immediately").invoke(
+            obj,
+            dragonCrystalId,
+          );
+        } catch (e) {
+          ctx.opts.log(`[-] [CURSKIN] original gagal: ${e}`);
+        }
+        try {
+          const skinId = unboxSkinId(obj);
+          const heroId = resolveSkinHeroId(ctx, this, skinId);
+          if (heroId !== null && skinId !== null) {
+            ctx.curSkinOverrides.set(heroId, skinId);
+            try {
+              rebuildUnlockSets(ctx);
+            } catch {}
+            try {
+              applyCurSkinOverrides(ctx);
+            } catch {}
+            try {
+              scheduleCurSkinSave(ctx);
+            } catch {}
+            ctx.opts.log(
+              `[CURSKIN] OnChangeSkin hero ${heroId} -> skin ${skinId} (m_curSkinId diset + jadwal simpan)`,
+            );
+          } else {
+            ctx.opts.log(
+              `[CURSKIN] OnChangeSkin terdeteksi tapi hero tak dikenali (skin=${skinId})`,
+            );
+          }
+        } catch (e) {
+          ctx.opts.log("[CURSKIN] hook gagal: " + e);
+        }
+        return ret;
+      };
+      ctx.opts.log(
+        "[+] [CURSKIN] UIHeroInformation.OnChangeSkinWithPreload_Immediately hook terpasang.",
+      );
+    } catch (e) {
+      ctx.opts.log("[!] [CURSKIN] hook gagal: " + e);
+    }
+  }
+  function patchServerSkin(ctx, heroId, skinId) {
+    try {
+      ctx.curSkinOverrides.set(heroId, skinId);
+      try {
+        rebuildUnlockSets(ctx);
+      } catch {}
+      try {
+        const Util = ctx.asm.image.class("HeroGetListCacheUtil");
+        const cache = Util.field("cacheObj").value;
+        if (cache && !cache.isNull()) {
+          const sc = cache.field("serverObj").value;
+          if (sc && !sc.isNull()) patchHeroGetListSC(ctx, sc);
+        }
+      } catch {}
+      try {
+        grantSkin(ctx, heroId, skinId);
+      } catch (e) {
+        ctx.opts.log("[SERVER_PATCH] grantSkin gagal: " + e);
+      }
+      applyCurSkinOverrides(ctx);
+      ctx.opts.log(
+        `[SERVER_PATCH] override disimpan: Hero ${heroId} -> ${skinId} (serverObj + m_heroInfos)`,
+      );
+    } catch (e) {
+      ctx.opts.log("[SERVER_PATCH] gagal: " + e);
+    }
+  }
+
   // src/ToolLeak/unlock-skin/ownership-gates.ts
   function hookBool0(ctx, cls, methodName, tag) {
     try {
