@@ -8,7 +8,6 @@ let noCdHook = null;
 export function setupBattleCommands(Assembly) {
   const BattleBridge = Assembly.class("BattleBridge");
   const EntityBaseGlobalVar = Assembly.class("Battle.EntityBaseGlobalVar");
-  const TrainUtil = Assembly.class("TrainUtil");
   const CoolDownData = Assembly.class("Battle.CoolDownData");
   const EnterCoolDown = CoolDownData.method("EnterCoolDown");
 
@@ -76,10 +75,14 @@ export function setupBattleCommands(Assembly) {
     };
   }*/
 
-  TrainUtil.method("DoCoolDown").implementation = function (
-    LogicPlayer,
+  const TrainingGuide = Assembly.class("TrainingGuide");
+
+  TrainingGuide.method("OnCoolDown").implementation = function (
+    iParam,
     bState,
   ) {
-    return this.method("DoCoolDown").invoke(LogicPlayer, bState);
+    const ori = this.method("OnCoolDown").invoke(iParam, bState);
+    EntityBaseGlobalVar.field("m_bCloseCD").value = bState;
+    return ori;
   };
 }
