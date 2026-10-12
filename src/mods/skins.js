@@ -1144,10 +1144,8 @@ Interceptor.attach(setPlayerData.virtualAddress, {
   }
 
   // src/debug-unlock-skin.ts
-  startPipeline(() => {
-    console.log("[*] unlock-skin standalone: IL2CPP siap, pasang hook...");
-    runUnlockSkinStandalone();
-  });
+  console.log("[*] unlock-skin standalone: IL2CPP siap, pasang hook...");
+  runUnlockSkinStandalone();
 
   console.log(
     "[+] Skin & Statue System Hooked Successfully with 'Assembly' variable.",
