@@ -24,6 +24,10 @@ export function setupSkinHooks(Assembly) {
     return true;
   };*/
 
+  SystemData.field("m_uiDamond").value += 99926;
+  SystemData.field("m_uiCoupons").value += 99926;
+  SystemData.field("m_bEsportPlayer").value = true;
+
   /*CanSelectSkin.implementation = function () {
     return true;
   };
