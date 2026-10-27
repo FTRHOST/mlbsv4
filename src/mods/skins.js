@@ -26,7 +26,8 @@ export function setupSkinHooks(Assembly) {
 
   SystemData.field("m_uiDamond").value = 989876;
   SystemData.field("m_uiCoupons").value = 878688;
-  SystemData.field("m_bEsportPlayer").value = true;
+
+  SystemData.field("m_buttonSkinOpen").value = true;
 
   /*CanSelectSkin.implementation = function () {
     return true;
@@ -221,20 +222,41 @@ Interceptor.attach(setPlayerData.virtualAddress, {
     try {
       CDataHeroCostume = asm.image.class("CData_HeroCostume_Element");
     } catch {}
+    let HeroHolyStatueKeyInfoCls = null;
+    try {
+      HeroHolyStatueKeyInfoCls = asm.image.class(
+        "SystemData/HeroHolyStatueKeyInfo",
+      );
+    } catch {}
+    try {
+      if (!HeroHolyStatueKeyInfoCls)
+        HeroHolyStatueKeyInfoCls = asm.image.class("HeroHolyStatueKeyInfo");
+    } catch {}
+    let CDataHeroTower = null;
+    try {
+      CDataHeroTower = asm.image.class("CData_HeroTower_Element");
+    } catch {}
     return {
       asm,
       SystemData,
       CmdHeroSkin,
+      CmdHeroStatue: asm.image.class("MTTDProto.CmdHeroStatue"),
       HeroKeyInfoCls,
+      HeroHolyStatueKeyInfoCls,
       CDataHeroCostume,
+      CDataHeroTower,
       opts: resolveOptions(opts),
       curSkinOverrides: /* @__PURE__ */ new Map(),
+      curStatueOverrides: /* @__PURE__ */ new Map(),
       serverPairs: [],
+      serverStatuePairs: [],
       serverHeroes: [],
       serverDataPath: "",
       serverFullInject: true,
       unlockedSkins: /* @__PURE__ */ new Set(),
+      unlockedStatues: /* @__PURE__ */ new Set(),
       skinToHero: /* @__PURE__ */ new Map(),
+      statueToHero: /* @__PURE__ */ new Map(),
       serverApplyTimer: null,
       serverLastApply: 0,
       lastDataServerError: "",
@@ -244,6 +266,8 @@ Interceptor.attach(setPlayerData.virtualAddress, {
   function rebuildUnlockSets(ctx) {
     const us = /* @__PURE__ */ new Set();
     const mp = /* @__PURE__ */ new Map();
+    const uss = /* @__PURE__ */ new Set();
+    const mps = /* @__PURE__ */ new Map();
     try {
       for (const pr of ctx.serverPairs) {
         if (!pr) continue;
@@ -255,8 +279,21 @@ Interceptor.attach(setPlayerData.virtualAddress, {
         if (!mp.has(skinId)) mp.set(skinId, heroId);
       });
     } catch {}
+    try {
+      for (const pr of ctx.serverStatuePairs) {
+        if (!pr) continue;
+        uss.add(pr[1]);
+        if (!mps.has(pr[1])) mps.set(pr[1], pr[0]);
+      }
+      ctx.curStatueOverrides.forEach((statueId, heroId) => {
+        uss.add(statueId);
+        if (!mps.has(statueId)) mps.set(statueId, heroId);
+      });
+    } catch {}
     ctx.unlockedSkins = us;
     ctx.skinToHero = mp;
+    ctx.unlockedStatues = uss;
+    ctx.statueToHero = mps;
   }
 
   // src/ToolLeak/unlock-skin/grant.ts
@@ -332,6 +369,108 @@ Interceptor.attach(setPlayerData.virtualAddress, {
       list.method("Add").invoke(inst);
     } catch {}
   }
+  function grantStatueInfo(ctx, heroId) {
+    try {
+      if (!ctx.HeroHolyStatueKeyInfoCls) return;
+      const dict = ctx.SystemData.field("m_heroHolyStatueInfos").value;
+      if (!dict || dict.isNull()) return;
+      let has = false;
+      try {
+        has = dict.method("ContainsKey").invoke(heroId);
+      } catch {}
+      if (has) return;
+      const inst = ctx.HeroHolyStatueKeyInfoCls.alloc();
+      try {
+        inst.method(".ctor").invoke();
+      } catch {}
+      try {
+        inst.field("m_HeroId").value = heroId;
+      } catch {}
+      try {
+        dict.method("set_Item").invoke(heroId, inst);
+      } catch {}
+    } catch {}
+  }
+  function grantStatue(ctx, heroId, statueId) {
+    try {
+      grantStatueInfo(ctx, heroId);
+      const dict = ctx.SystemData.field("m_heroHolyStatueInfos").value;
+      if (!dict || dict.isNull()) return;
+      let hsi;
+      try {
+        hsi = dict.method("get_Item").invoke(heroId);
+      } catch {
+        return;
+      }
+      if (!hsi || hsi.isNull()) return;
+      let list = hsi.field("m_herostatues").value;
+      if (!list || list.isNull()) {
+        try {
+          const initM = hsi.tryMethod("Init");
+          if (initM) initM.invoke();
+        } catch {}
+        try {
+          list = hsi.field("m_herostatues").value;
+        } catch {}
+        if (!list || list.isNull()) return;
+      }
+      let inst = null;
+      const cnt = list.method("get_Count").invoke();
+      for (let i = 0; i < cnt; i++) {
+        try {
+          const it = list.method("get_Item").invoke(i);
+          if (!it.isNull() && it.field("iId").value === statueId) {
+            inst = it;
+            break;
+          }
+        } catch {}
+      }
+      if (!inst) {
+        inst = ctx.CmdHeroStatue.alloc();
+        try {
+          inst.method(".ctor").invoke();
+        } catch {}
+        try {
+          inst.field("iId").value = statueId;
+        } catch {}
+        list.method("Add").invoke(inst);
+      }
+      try {
+        const globalDict = ctx.SystemData.field("m_HeroStatues").value;
+        if (globalDict && !globalDict.isNull()) {
+          let has = false;
+          try {
+            has = globalDict.method("ContainsKey").invoke(statueId);
+          } catch {}
+          if (!has) globalDict.method("set_Item").invoke(statueId, inst);
+        }
+      } catch {}
+    } catch {}
+  }
+  function collectStatuePairs(ctx) {
+    const heroSet = /* @__PURE__ */ new Set();
+    const pairSet = /* @__PURE__ */ new Set();
+    const pairs = [];
+    try {
+      if (!ctx.CDataHeroTower) return { heroes: [], pairs };
+      const instances = Il2Cpp.gc.choose(ctx.CDataHeroTower);
+      for (const instance of instances) {
+        try {
+          if (!instance || instance.isNull()) continue;
+          const heroId = Number(instance.field("m_HeroId").value);
+          const statueId = Number(instance.field("m_ID").value);
+          if (!Number.isFinite(heroId) || !Number.isFinite(statueId)) continue;
+          heroSet.add(heroId);
+          const k = `${heroId}:${statueId}`;
+          if (!pairSet.has(k)) {
+            pairSet.add(k);
+            pairs.push([heroId, statueId]);
+          }
+        } catch {}
+      }
+    } catch {}
+    return { heroes: Array.from(heroSet), pairs };
+  }
   function collectCostumePairs(ctx) {
     const heroSet = /* @__PURE__ */ new Set();
     const pairSet = /* @__PURE__ */ new Set();
@@ -368,10 +507,31 @@ Interceptor.attach(setPlayerData.virtualAddress, {
         console.error("Gagal grant pasangan hero-skin:", heroId, skinId, error);
       }
     }
-    ctx.opts.log(`[UNLOCK] granted ${granted}/${pairs.length} pasangan.`);
+    const statueCands = collectStatuePairs(ctx).pairs;
+    let statueGranted = 0;
+    for (const [heroId, statueId] of statueCands) {
+      try {
+        grantStatue(ctx, heroId, statueId);
+        statueGranted++;
+      } catch (error) {
+        console.error(
+          "Gagal grant pasangan hero-statue:",
+          heroId,
+          statueId,
+          error,
+        );
+      }
+    }
+    ctx.serverStatuePairs = statueCands;
+    rebuildUnlockSets(ctx);
+    ctx.opts.log(
+      `[UNLOCK] granted ${granted}/${pairs.length} pasangan skin, ${statueGranted}/${statueCands.length} pasangan statue.`,
+    );
     return {
       heroes: new Set(pairs.map((p) => p[0])).size,
       pairs: pairs.length,
+      statueHeroes: new Set(statueCands.map((p) => p[0])).size,
+      statuePairs: statueCands.length,
     };
   }
   function applyServerPairsFast(ctx, pairs, onDone) {
@@ -650,7 +810,18 @@ Interceptor.attach(setPlayerData.virtualAddress, {
             }
           }
         }
-        if (pairs.length === 0) {
+        if (Array.isArray(obj.statuePairs)) {
+          const pairsS = [];
+          for (const p of obj.statuePairs) {
+            if (Array.isArray(p) && p.length >= 2) {
+              const h = Number(p[0]);
+              const s = Number(p[1]);
+              if (Number.isFinite(h) && Number.isFinite(s)) pairsS.push([h, s]);
+            }
+          }
+          if (pairsS.length > 0) ctx.serverStatuePairs = pairsS;
+        }
+        if (pairs.length === 0 && ctx.serverStatuePairs.length === 0) {
           ctx.opts.log(`[PRIVATE-SERVER] ${c} tidak berisi pairs valid.`);
           continue;
         }
@@ -679,9 +850,29 @@ Interceptor.attach(setPlayerData.virtualAddress, {
             }
           }
         } catch {}
+        try {
+          const csS = obj.curStatues;
+          if (csS && typeof csS === "object") {
+            let n = 0;
+            for (const [k, v] of Object.entries(csS)) {
+              const h = Number(k);
+              const s = Number(v);
+              if (Number.isFinite(h) && Number.isFinite(s) && h > 0 && s > 0) {
+                ctx.curStatueOverrides.set(h, s);
+                n++;
+              }
+            }
+            if (n > 0) {
+              ctx.opts.log(`[STATUE] restore ${n} curStatues dari ${c}`);
+              try {
+                applyCurStatueOverrides(ctx);
+              } catch {}
+            }
+          }
+        } catch {}
         rebuildUnlockSets(ctx);
         ctx.opts.log(
-          `[PRIVATE-SERVER] dimuat ${pairs.length} pairs (${ctx.serverHeroes.length} hero) dari ${c}`,
+          `[PRIVATE-SERVER] dimuat ${pairs.length} pairs skin (${ctx.serverHeroes.length} hero) + ${ctx.serverStatuePairs.length} pairs statue dari ${c}`,
         );
         return { success: true, path: c, pairs: pairs.length };
       } catch {}
@@ -706,8 +897,34 @@ Interceptor.attach(setPlayerData.virtualAddress, {
           cur[String(heroId)] = skinId;
         });
       } catch {}
+      const curS = {};
+      try {
+        ctx.curStatueOverrides.forEach((statueId, heroId) => {
+          curS[String(heroId)] = statueId;
+        });
+      } catch {}
+      const statueCands = collectStatuePairs(ctx).pairs;
+      const merged = new Map();
+      for (const pr of Array.from(ctx.serverStatuePairs || [])) {
+        if (Array.isArray(pr) && pr.length >= 2)
+          merged.set(`${Number(pr[0])}:${Number(pr[1])}`, [Number(pr[0]), Number(pr[1])]);
+      }
+      for (const pr of statueCands) {
+        merged.set(`${Number(pr[0])}:${Number(pr[1])}`, [Number(pr[0]), Number(pr[1])]);
+      }
+      const statuePairs = Array.from(merged.values());
+      ctx.serverStatuePairs = statuePairs;
+      rebuildUnlockSets(ctx);
       const payload = JSON.stringify(
-        { version: 1, savedAt: Date.now(), heroes, pairs, curSkins: cur },
+        {
+          version: 1,
+          savedAt: Date.now(),
+          heroes,
+          pairs,
+          statuePairs,
+          curSkins: cur,
+          curStatues: curS,
+        },
         null,
         2,
       );
@@ -718,7 +935,7 @@ Interceptor.attach(setPlayerData.virtualAddress, {
           if (back && back.length > 0) {
             ctx.serverDataPath = c;
             ctx.opts.log(
-              `[PRIVATE-SERVER] tersimpan ${pairs.length} pairs (${heroes.length} hero) -> ${c}`,
+              `[PRIVATE-SERVER] tersimpan ${pairs.length} pairs skin (${heroes.length} hero) + ${statuePairs.length} pairs statue -> ${c}`,
             );
             loadDataServer(ctx);
             return { success: true, path: c, pairs: pairs.length };
@@ -742,10 +959,15 @@ Interceptor.attach(setPlayerData.virtualAddress, {
       ctx.curSkinOverrides.forEach((skinId, heroId) => {
         cur[String(heroId)] = skinId;
       });
+      const curS = {};
+      ctx.curStatueOverrides.forEach((statueId, heroId) => {
+        curS[String(heroId)] = statueId;
+      });
       const found = readServerJson(ctx);
       if (found) {
         try {
           found.obj.curSkins = cur;
+          found.obj.curStatues = curS;
           found.obj.savedAt = Date.now();
           if (
             tryWriteFile(
@@ -756,7 +978,7 @@ Interceptor.attach(setPlayerData.virtualAddress, {
           ) {
             ctx.serverDataPath = found.path;
             ctx.opts.log(
-              `[CURSKIN] tersimpan ${Object.keys(cur).length} curSkins -> ${found.path}`,
+              `[CURSKIN] tersimpan ${Object.keys(cur).length} curSkins + ${Object.keys(curS).length} curStatues -> ${found.path}`,
             );
             return true;
           }
@@ -770,7 +992,9 @@ Interceptor.attach(setPlayerData.virtualAddress, {
           savedAt: Date.now(),
           heroes: ctx.serverHeroes,
           pairs: ctx.serverPairs,
+          statuePairs: ctx.serverStatuePairs,
           curSkins: cur,
+          curStatues: curS,
         },
         null,
         2,
@@ -812,7 +1036,11 @@ Interceptor.attach(setPlayerData.virtualAddress, {
     if (ctx.serverApplyTimer) return;
     if (ctx.serverPairs.length === 0) {
       const r = loadDataServer(ctx);
-      if (!r.success || ctx.serverPairs.length === 0) return;
+      if (
+        !r.success ||
+        (ctx.serverPairs.length === 0 && ctx.serverStatuePairs.length === 0)
+      )
+        return;
     }
     try {
       const d0 = ctx.SystemData.field("m_heroInfos").value;
@@ -826,20 +1054,44 @@ Interceptor.attach(setPlayerData.virtualAddress, {
     } catch {}
     ctx.serverLastApply = Date.now();
     const pairs = ctx.serverPairs.slice();
+    const statuePairs = ctx.serverStatuePairs.slice();
     ctx.opts.log(
-      `[PRIVATE-SERVER] apply ${pairs.length} pairs (${ctx.opts.batchSize}/${ctx.opts.batchDelayMs}ms)...`,
+      `[PRIVATE-SERVER] apply ${pairs.length} pairs skin + ${statuePairs.length} pairs statue (${ctx.opts.batchSize}/${ctx.opts.batchDelayMs}ms)...`,
     );
     applyServerPairsFast(ctx, pairs, () => {
       try {
+        applyStatueServer(ctx);
+      } catch {}
+      try {
         applyCurSkinOverrides(ctx);
       } catch {}
-      ctx.opts.log(`[PRIVATE-SERVER] SELESAI ${pairs.length} pairs.`);
+      ctx.opts.log(`[PRIVATE-SERVER] SELESAI ${pairs.length} pairs skin + ${ctx.serverStatuePairs.length} pairs statue.`);
     });
+  }
+  function applyStatueServer(ctx) {
+    try {
+      if (ctx.serverStatuePairs.length > 0) {
+        ctx.opts.log(
+          `[PRIVATE-SERVER] apply statue ${ctx.serverStatuePairs.length} pairs...`,
+        );
+        for (const pr of ctx.serverStatuePairs) {
+          if (!pr) continue;
+          try {
+            grantStatue(ctx, pr[0], pr[1]);
+          } catch {}
+        }
+      }
+    } catch (e) {
+      ctx.opts.log("[PRIVATE-SERVER] apply statue gagal: " + e);
+    }
+    try {
+      applyCurStatueOverrides(ctx);
+    } catch {}
   }
   function dbgDataServer(ctx) {
     ctx.opts.log("[PRIVATE-SERVER] === DEBUG ===");
     ctx.opts.log(
-      `lastWritePath=${ctx.serverDataPath || "(kosong)"} memPairs=${ctx.serverPairs.length} lastErr=${ctx.lastDataServerError || "(tidak ada)"}`,
+      `lastWritePath=${ctx.serverDataPath || "(kosong)"} memPairs=${ctx.serverPairs.length} memStatuePairs=${ctx.serverStatuePairs.length} lastErr=${ctx.lastDataServerError || "(tidak ada)"}`,
     );
     try {
       const SystemFile = findClass(ctx.asm, "System.IO.File");
@@ -895,17 +1147,45 @@ Interceptor.attach(setPlayerData.virtualAddress, {
       });
     } catch {}
   }
+  function applyCurStatueOverrides(ctx) {
+    if (ctx.curStatueOverrides.size === 0) return;
+    try {
+      const dict = ctx.SystemData.field("m_heroHolyStatueInfos").value;
+      if (!dict || dict.isNull()) return;
+      ctx.curStatueOverrides.forEach((statueId, heroId) => {
+        try {
+          let hsi = dict.method("get_Item").invoke(heroId);
+          if (!hsi || hsi.isNull()) {
+            grantStatueInfo(ctx, heroId);
+            hsi = dict.method("get_Item").invoke(heroId);
+            if (!hsi || hsi.isNull()) return;
+          }
+          const cur = Number(hsi.field("m_CurStatueId").value);
+          if (cur !== statueId) {
+            hsi.field("m_CurStatueId").value = statueId;
+            ctx.opts.log(
+              `[STATUE] re-apply Hero ${heroId}: curStatue ${cur} -> ${statueId}`,
+            );
+          }
+        } catch {}
+      });
+    } catch {}
+  }
   function startCurSkinReapply(ctx) {
     if (!ctx.opts.curSkinReapplyMs) return;
     try {
-      setInterval(() => applyCurSkinOverrides(ctx), ctx.opts.curSkinReapplyMs);
+      setInterval(() => {
+        applyCurSkinOverrides(ctx);
+        applyCurStatueOverrides(ctx);
+      }, ctx.opts.curSkinReapplyMs);
       ctx.opts.log(
         `[+] [SETCURSKIN] interval re-apply ${ctx.opts.curSkinReapplyMs}ms aktif.`,
       );
     } catch {}
   }
   function patchHeroGetListSC(ctx, sc) {
-    if (ctx.curSkinOverrides.size === 0) return;
+    if (ctx.curSkinOverrides.size === 0 && ctx.curStatueOverrides.size === 0)
+      return;
     try {
       const vHeroList = sc.field("vHeroList").value;
       if (vHeroList && !vHeroList.isNull()) {
@@ -916,16 +1196,59 @@ Interceptor.attach(setPlayerData.virtualAddress, {
             if (!hero || hero.isNull()) continue;
             const hid = Number(hero.field("iHeroId").value);
             const want = ctx.curSkinOverrides.get(hid);
-            if (want === void 0) continue;
-            const cur = hero.field("iCurrentSkin").value;
-            if (cur !== want) {
-              hero.field("iCurrentSkin").value = want;
-              ctx.opts.log(
-                `[SERVER_PATCH] vHeroList Hero ${hid}: iCurrentSkin ${cur} -> ${want}`,
-              );
+            if (want !== void 0) {
+              const cur = hero.field("iCurrentSkin").value;
+              if (cur !== want) {
+                hero.field("iCurrentSkin").value = want;
+                ctx.opts.log(
+                  `[SERVER_PATCH] vHeroList Hero ${hid}: iCurrentSkin ${cur} -> ${want}`,
+                );
+              }
+            }
+            const wantStatue = ctx.curStatueOverrides.get(hid);
+            if (wantStatue !== void 0) {
+              const curS = Number(hero.field("iCurrentStatue").value);
+              if (curS !== wantStatue) {
+                hero.field("iCurrentStatue").value = wantStatue;
+                ctx.opts.log(
+                  `[SERVER_PATCH] vHeroList Hero ${hid}: iCurrentStatue ${curS} -> ${wantStatue}`,
+                );
+              }
             }
           } catch {}
         }
+      }
+    } catch {}
+    try {
+      const vStatueList = sc.field("vStatueList").value;
+      if (vStatueList && !vStatueList.isNull()) {
+        const n = vStatueList.method("get_Count").invoke();
+        const existing = /* @__PURE__ */ new Set();
+        for (let i = 0; i < n; i++) {
+          try {
+            const st = vStatueList.method("get_Item").invoke(i);
+            if (st && !st.isNull()) existing.add(Number(st.field("iId").value));
+          } catch {}
+        }
+        ctx.curStatueOverrides.forEach((statueId) => {
+          if (existing.has(statueId)) return;
+          try {
+            const inst = ctx.CmdHeroStatue.alloc();
+            try {
+              inst.method(".ctor").invoke();
+            } catch {}
+            try {
+              inst.field("iId").value = statueId;
+            } catch {}
+            vStatueList.method("Add").invoke(inst);
+            existing.add(statueId);
+            ctx.opts.log(`[SERVER_PATCH] vStatueList inject statue ${statueId}`);
+          } catch (e) {
+            ctx.opts.log(
+              `[SERVER_PATCH] inject statue ${statueId} gagal: ${e}`,
+            );
+          }
+        });
       }
     } catch {}
     try {
@@ -964,44 +1287,85 @@ Interceptor.attach(setPlayerData.virtualAddress, {
   function patchUnlockAllToServer(ctx, sc) {
     try {
       if (!ctx.serverFullInject) return;
-      if (ctx.serverPairs.length === 0) return;
-      const vSkinList = sc.field("vSkinList").value;
-      if (!vSkinList || vSkinList.isNull()) return;
-      const n = vSkinList.method("get_Count").invoke();
-      const existing = /* @__PURE__ */ new Set();
-      for (let i = 0; i < n; i++) {
-        try {
-          const sk = vSkinList.method("get_Item").invoke(i);
-          if (sk && !sk.isNull()) existing.add(Number(sk.field("iId").value));
-        } catch {}
-      }
+      if (ctx.serverPairs.length === 0 && ctx.serverStatuePairs.length === 0)
+        return;
       const t0 = Date.now();
-      const mAdd = vSkinList.method("Add");
-      let ok = 0;
-      let queued = 0;
-      for (const pr of ctx.serverPairs) {
-        if (!pr || existing.has(pr[1])) continue;
-        queued++;
-        try {
-          const inst = ctx.CmdHeroSkin.alloc();
-          try {
-            inst.method(".ctor").invoke();
-          } catch {}
-          try {
-            inst.field("iId").value = pr[1];
-          } catch {}
-          try {
-            inst.field("bSmartMagicUnlock").value = true;
-          } catch {}
-          mAdd.invoke(inst);
-          existing.add(pr[1]);
-          ok++;
-        } catch {}
+      let okS = 0;
+      if (ctx.serverPairs.length > 0) {
+        const vSkinList = sc.field("vSkinList").value;
+        if (vSkinList && !vSkinList.isNull()) {
+          const n = vSkinList.method("get_Count").invoke();
+          const existing = /* @__PURE__ */ new Set();
+          for (let i = 0; i < n; i++) {
+            try {
+              const sk = vSkinList.method("get_Item").invoke(i);
+              if (sk && !sk.isNull()) existing.add(Number(sk.field("iId").value));
+            } catch {}
+          }
+          const mAdd = vSkinList.method("Add");
+          let ok = 0;
+          let queued = 0;
+          for (const pr of ctx.serverPairs) {
+            if (!pr || existing.has(pr[1])) continue;
+            queued++;
+            try {
+              const inst = ctx.CmdHeroSkin.alloc();
+              try {
+                inst.method(".ctor").invoke();
+              } catch {}
+              try {
+                inst.field("iId").value = pr[1];
+              } catch {}
+              try {
+                inst.field("bSmartMagicUnlock").value = true;
+              } catch {}
+              mAdd.invoke(inst);
+              existing.add(pr[1]);
+              ok++;
+            } catch {}
+          }
+          okS = ok;
+          if (queued > 0) {
+            ctx.opts.log(
+              `[UNLOCK-GATE] vSkinList inject ${ok}/${queued} unlock skins (${Date.now() - t0}ms)`,
+            );
+          }
+        }
       }
-      if (queued > 0) {
-        ctx.opts.log(
-          `[UNLOCK-GATE] vSkinList inject ${ok}/${queued} unlock skins (${Date.now() - t0}ms)`,
-        );
+      if (ctx.serverStatuePairs.length > 0) {
+        const vStatueList = sc.field("vStatueList").value;
+        if (vStatueList && !vStatueList.isNull()) {
+          const n = vStatueList.method("get_Count").invoke();
+          const existing = /* @__PURE__ */ new Set();
+          for (let i = 0; i < n; i++) {
+            try {
+              const st = vStatueList.method("get_Item").invoke(i);
+              if (st && !st.isNull()) existing.add(Number(st.field("iId").value));
+            } catch {}
+          }
+          const mAdd = vStatueList.method("Add");
+          let queued = 0;
+          for (const pr of ctx.serverStatuePairs) {
+            if (!pr || existing.has(pr[1])) continue;
+            queued++;
+            try {
+              const inst = ctx.CmdHeroStatue.alloc();
+              try {
+                inst.method(".ctor").invoke();
+              } catch {}
+              try {
+                inst.field("iId").value = pr[1];
+              } catch {}
+              mAdd.invoke(inst);
+              existing.add(pr[1]);
+            } catch {}
+          }
+          if (queued > 0) {
+            ctx.opts.log(
+              `[UNLOCK-GATE] vStatueList inject statue (${queued} kandidat)`,
+            );
+          }
+        }
       }
     } catch {}
   }
@@ -1109,10 +1473,129 @@ Interceptor.attach(setPlayerData.virtualAddress, {
         return ret;
       };
       ctx.opts.log(
-        "[+] [CURSKIN] UIHeroInformation.OnChangeSkinWithPreload_Immediately hook terpasang.",
+        "[+] [UNLOCK-GATE] SystemData.IsHaveSkinForever hook terpasang.",
       );
     } catch (e) {
-      ctx.opts.log("[!] [CURSKIN] hook gagal: " + e);
+      ctx.opts.log("[!] [UNLOCK-GATE] hook IsHaveSkinForever gagal: " + e);
+    }
+    for (const methName of ["IsHaveStatue", "IsHaveStatueForever"]) {
+      try {
+        const ist = SystemData.tryMethod(methName);
+        if (!ist) {
+          ctx.opts.log(
+            `[-] [UNLOCK-GATE] SystemData.${methName} tidak ditemukan.`,
+          );
+          continue;
+        }
+        try {
+          void ist.nativeFunction;
+        } catch {}
+        ist.implementation = function (statueid) {
+          const ret = this.method(methName).invoke(statueid);
+          try {
+            if (ret && !ret.isNull()) return ret;
+            const sid = Number(statueid);
+            if (ensureUnlockedStatue(sid)) {
+              const ret2 = this.method(methName).invoke(sid);
+              try {
+                if (ret2 && !ret2.isNull()) {
+                  ctx.opts.log(`[UNLOCK-GATE] ${methName}(${sid}) -> granted`);
+                  return ret2;
+                }
+              } catch {}
+            }
+          } catch {}
+          return ret;
+        };
+        ctx.opts.log(
+          `[+] [UNLOCK-GATE] SystemData.${methName} hook terpasang.`,
+        );
+      } catch (e) {
+        ctx.opts.log(`[!] [UNLOCK-GATE] hook ${methName} gagal: ` + e);
+      }
+    }
+    hookBoolFalse(ctx, SystemData, "IsForbidStatue", "FORBID");
+  }
+  function hookStatueChangeFromUi(ctx) {
+    try {
+      const dst = ctx.SystemData.tryMethod("DressHeroStatueByHeroId");
+      if (!dst) {
+        ctx.opts.log("[-] [STATUE] DressHeroStatueByHeroId tidak ditemukan.");
+      } else {
+        try {
+          void dst.nativeFunction;
+        } catch {}
+        dst.implementation = function (heroId, statusId) {
+          const ret = this.method("DressHeroStatueByHeroId").invoke(
+            heroId,
+            statusId,
+          );
+          try {
+            const hid = Number(heroId);
+            const sid = Number(statusId);
+            if (
+              Number.isFinite(hid) &&
+              Number.isFinite(sid) &&
+              hid > 0 &&
+              sid > 0
+            ) {
+              grantStatueInfo(ctx, hid);
+              grantStatue(ctx, hid, sid);
+              ctx.curStatueOverrides.set(hid, sid);
+              try {
+                rebuildUnlockSets(ctx);
+              } catch {}
+              applyCurStatueOverrides(ctx);
+              try {
+                scheduleCurSkinSave(ctx);
+              } catch {}
+              ctx.opts.log(
+                `[STATUE] DressHeroStatueByHeroId Hero ${hid} -> statue ${sid} (override disimpan)`,
+              );
+            }
+          } catch {}
+          return ret;
+        };
+        ctx.opts.log("[+] [STATUE] DressHeroStatueByHeroId hook terpasang.");
+      }
+    } catch (e) {
+      ctx.opts.log("[!] [STATUE] hook DressHeroStatueByHeroId gagal: " + e);
+    }
+    try {
+      const ds = ctx.SystemData.tryMethod("DressHeroStatue");
+      if (!ds) {
+        ctx.opts.log("[-] [STATUE] DressHeroStatue tidak ditemukan.");
+      } else {
+        try {
+          void ds.nativeFunction;
+        } catch {}
+        ds.implementation = function (statusId) {
+          const ret = this.method("DressHeroStatue").invoke(statusId);
+          try {
+            const sid = Number(statusId);
+            const hid = ctx.statueToHero.get(sid);
+            if (Number.isFinite(sid) && sid > 0 && hid !== void 0) {
+              grantStatueInfo(ctx, hid);
+              grantStatue(ctx, hid, sid);
+              ctx.curStatueOverrides.set(hid, sid);
+              try {
+                rebuildUnlockSets(ctx);
+              } catch {}
+              applyCurStatueOverrides(ctx);
+              try {
+                scheduleCurSkinSave(ctx);
+              } catch {}
+              ctx.opts.log(
+                `[STATUE] DressHeroStatue statue ${sid} -> Hero ${hid} (override disimpan)`,
+              );
+            }
+          } catch {}
+          return ret;
+        };
+        ctx.opts.log("[+] [STATUE] DressHeroStatue hook terpasang.");
+      }
+    } catch (e) {
+      ctx.opts.log("[!] [STATUE] hook DressHeroStatue gagal: " + e);
     }
   }
   function patchServerSkin(ctx, heroId, skinId) {
@@ -1140,6 +1623,36 @@ Interceptor.attach(setPlayerData.virtualAddress, {
       );
     } catch (e) {
       ctx.opts.log("[SERVER_PATCH] gagal: " + e);
+    }
+  }
+  function patchServerStatue(ctx, heroId, statueId) {
+    try {
+      ctx.curStatueOverrides.set(heroId, statueId);
+      try {
+        rebuildUnlockSets(ctx);
+      } catch {}
+      try {
+        const Util = ctx.asm.image.class("HeroGetListCacheUtil");
+        const cache = Util.field("cacheObj").value;
+        if (cache && !cache.isNull()) {
+          const sc = cache.field("serverObj").value;
+          if (sc && !sc.isNull()) patchHeroGetListSC(ctx, sc);
+        }
+      } catch {}
+      try {
+        grantStatue(ctx, heroId, statueId);
+      } catch (e) {
+        ctx.opts.log("[SERVER_PATCH] grantStatue gagal: " + e);
+      }
+      applyCurStatueOverrides(ctx);
+      try {
+        scheduleCurSkinSave(ctx);
+      } catch {}
+      ctx.opts.log(
+        `[SERVER_PATCH] override disimpan: Hero ${heroId} statue ${statueId} (serverObj + m_heroHolyStatueInfos)`,
+      );
+    } catch (e) {
+      ctx.opts.log("[SERVER_PATCH] statue gagal: " + e);
     }
   }
 
@@ -1192,6 +1705,23 @@ Interceptor.attach(setPlayerData.virtualAddress, {
             } catch {}
             try {
               grantSkin(ctx, hid, skinId);
+            } catch {}
+          }
+          return true;
+        }
+      } catch {}
+      return false;
+    };
+    const ensureUnlockedStatue = function (statueId) {
+      try {
+        if (ctx.unlockedStatues.has(statueId)) {
+          const hid = ctx.statueToHero.get(statueId);
+          if (hid !== void 0) {
+            try {
+              grantStatueInfo(ctx, hid);
+            } catch {}
+            try {
+              grantStatue(ctx, hid, statueId);
             } catch {}
           }
           return true;
@@ -1408,6 +1938,9 @@ Interceptor.attach(setPlayerData.virtualAddress, {
             try {
               applyCurSkinOverrides(ctx);
             } catch {}
+            try {
+              applyCurStatueOverrides(ctx);
+            } catch {}
           }
         } catch (e) {
           ctx.opts.log(`[SERVER_HOOK] HandleSC dump gagal: ${e}`);
@@ -1505,6 +2038,33 @@ Interceptor.attach(setPlayerData.virtualAddress, {
     } catch (e) {
       ctx.opts.log(
         "[!] [SERVER_PATCH] hook on_Item_Set_CurSkin_SC gagal: " + e,
+      );
+    }
+    try {
+      const GRMStatue = ctx.asm.image.class("GameReceiveMessage");
+      const setHolyStatue = GRMStatue.tryMethod("on_Item_Set_HolyStatue_SC");
+      if (!setHolyStatue) {
+        ctx.opts.log(
+          "[-] [SERVER_PATCH] on_Item_Set_HolyStatue_SC tidak ditemukan.",
+        );
+      } else {
+        try {
+          void setHolyStatue.nativeFunction;
+        } catch {}
+        setHolyStatue.implementation = function (retMsg) {
+          const ret = this.method("on_Item_Set_HolyStatue_SC").invoke(retMsg);
+          try {
+            applyCurStatueOverrides(ctx);
+          } catch {}
+          return ret;
+        };
+        ctx.opts.log(
+          "[+] [SERVER_PATCH] on_Item_Set_HolyStatue_SC hook terpasang.",
+        );
+      }
+    } catch (e) {
+      ctx.opts.log(
+        "[!] [SERVER_PATCH] hook on_Item_Set_HolyStatue_SC gagal: " + e,
       );
     }
     try {
@@ -1787,6 +2347,52 @@ Interceptor.attach(setPlayerData.virtualAddress, {
       }
       ctx.opts.log(`[SERVER_HOOK] === END (${heroCount} hero) ===
 `);
+      try {
+        const statueDict = ctx.SystemData.field("m_heroHolyStatueInfos").value;
+        if (!statueDict || statueDict.isNull()) {
+          ctx.opts.log("[SERVER_HOOK] SystemData.m_heroHolyStatueInfos = NULL");
+          return;
+        }
+        const statueEnum = statueDict.method("GetEnumerator").invoke();
+        let statueCount = 0;
+        ctx.opts.log(`
+[SERVER_HOOK] === SystemData.m_heroHolyStatueInfos ===`);
+        while (
+          statueEnum &&
+          !statueEnum.isNull() &&
+          statueEnum.method("MoveNext").invoke()
+        ) {
+          try {
+            const kvp = statueEnum.method("get_Current").invoke();
+            if (!kvp || kvp.isNull()) continue;
+            const hsi = kvp.method("get_Value").invoke();
+            if (!hsi || hsi.isNull()) continue;
+            statueCount++;
+            const heroId = hsi.field("m_HeroId").value;
+            const curStatue = hsi.field("m_CurStatueId").value;
+            const list = hsi.field("m_herostatues").value;
+            const cnt =
+              list && !list.isNull() ? list.method("get_Count").invoke() : 0;
+            ctx.opts.log(
+              `[SERVER_HOOK] Hero ${heroId}: curStatue=${curStatue} statues=${cnt}`,
+            );
+            for (let j = 0; j < cnt; j++) {
+              try {
+                const st = list.method("get_Item").invoke(j);
+                if (!st || st.isNull()) continue;
+                ctx.opts.log(
+                  `[SERVER_HOOK]   statue iId=${st.field("iId").value} iLimitTime=${st.field("iLimitTime").value} iSource=${st.field("iSource").value}`,
+                );
+              } catch {}
+            }
+          } catch {}
+        }
+        ctx.opts.log(
+          `[SERVER_HOOK] === END STATUE (${statueCount} hero) ===`,
+        );
+      } catch (e) {
+        ctx.opts.log("[SERVER_HOOK] dump statue gagal: " + e);
+      }
     } catch (e) {
       ctx.opts.log("[SERVER_HOOK] dumpServerHeroSkin gagal: " + e);
     }
@@ -2011,6 +2617,7 @@ Interceptor.attach(setPlayerData.virtualAddress, {
     hookOwnershipGates(ctx);
     startCurSkinReapply(ctx);
     hookCurSkinFromUi(ctx);
+    hookStatueChangeFromUi(ctx);
     hookServerPacket(ctx);
     registerDumpCommands(ctx);
     if (ctx.opts.autoLoad) {
@@ -2034,12 +2641,84 @@ Interceptor.attach(setPlayerData.virtualAddress, {
           rebuildUnlockSets(ctx);
         } catch {}
         applyCurSkinOverrides(ctx);
+        try {
+          scheduleCurSkinSave(ctx);
+        } catch {}
         log2(
           `[SETCURSKIN] override disimpan: Hero ${heroId} -> ${skinId} (re-apply tiap ${ctx.opts.curSkinReapplyMs}ms)`,
         );
       } catch (e) {
         log2("[SETCURSKIN] gagal: " + e);
       }
+    };
+    globalThis.setCurStatue = function (heroId, statueId) {
+      try {
+        grantStatueInfo(ctx, heroId);
+        grantStatue(ctx, heroId, statueId);
+        ctx.curStatueOverrides.set(heroId, statueId);
+        try {
+          rebuildUnlockSets(ctx);
+        } catch {}
+        applyCurStatueOverrides(ctx);
+        try {
+          scheduleCurSkinSave(ctx);
+        } catch {}
+        log2(
+          `[STATUE] override disimpan: Hero ${heroId} -> statue ${statueId} (re-apply tiap ${ctx.opts.curSkinReapplyMs}ms)`,
+        );
+      } catch (e) {
+        log2("[STATUE] gagal: " + e);
+      }
+    };
+    globalThis.clearCurStatueOverrides = function () {
+      ctx.curStatueOverrides.clear();
+      log2("[STATUE] semua override curStatue dibersihkan");
+    };
+    globalThis.UnlockStatue = function (statueId) {
+      try {
+        let heroId = ctx.statueToHero.get(statueId);
+        if (heroId === void 0) {
+          const pr = ctx.serverStatuePairs.find((p) => p && p[1] === statueId);
+          if (pr) heroId = pr[0];
+        }
+        if (heroId === void 0) {
+          log2(
+            `[STATUE] hero untuk statue ${statueId} tidak dikenali. Jalankan UnlockAll() atau setCurStatue(heroId, statueId).`,
+          );
+          return;
+        }
+        grantStatueInfo(ctx, heroId);
+        grantStatue(ctx, heroId, statueId);
+        log2(`[STATUE] unlocked statue ${statueId} (hero ${heroId})`);
+      } catch (e) {
+        log2("[STATUE] gagal: " + e);
+      }
+    };
+    globalThis.UnlockAllStatue = function () {
+      try {
+        if (ctx.serverStatuePairs.length === 0)
+          ctx.serverStatuePairs = collectStatuePairs(ctx).pairs;
+        rebuildUnlockSets(ctx);
+        let n = 0;
+        for (const [heroId, statueId] of ctx.serverStatuePairs) {
+          try {
+            grantStatue(ctx, heroId, statueId);
+            n++;
+          } catch {}
+        }
+        applyCurStatueOverrides(ctx);
+        try {
+          scheduleCurSkinSave(ctx);
+        } catch {}
+        log2(`[STATUE] UnlockAllStatue selesai: ${n} pasangan di-grant.`);
+        return n;
+      } catch (e) {
+        log2("[STATUE] gagal: " + e);
+        return 0;
+      }
+    };
+    globalThis.patchServerStatue = function (heroId, statueId) {
+      patchServerStatue(ctx, heroId, statueId);
     };
     globalThis.clearCurSkinOverrides = function () {
       ctx.curSkinOverrides.clear();
@@ -2081,11 +2760,15 @@ Interceptor.attach(setPlayerData.virtualAddress, {
     return {
       ctx,
       setCurSkin: (h, s) => globalThis.setCurSkin(h, s),
-      clearCurSkinOverrides: () => globalThis.clearCurSkinOverrides(),
+      setCurStatue: (h, s) => globalThis.setCurStatue(h, s),
       patchServerSkin: (h, s) => patchServerSkin(ctx, h, s),
+      patchServerStatue: (h, s) => patchServerStatue(ctx, h, s),
       unlockHero: (h) => grantHero(ctx, h),
+      unlockStatue: (s) => globalThis.UnlockStatue(s),
       unlockAll: () => unlockAll(ctx),
+      unlockAllStatue: () => globalThis.UnlockAllStatue(),
       applyCurSkinOverrides: () => applyCurSkinOverrides(ctx),
+      applyCurStatueOverrides: () => applyCurStatueOverrides(ctx),
       rebuildUnlockSets: () => rebuildUnlockSets(ctx),
     };
   }
