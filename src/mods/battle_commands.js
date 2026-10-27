@@ -10,6 +10,7 @@ export function setupBattleCommands(Assembly) {
   const EntityBaseGlobalVar = Assembly.class("Battle.EntityBaseGlobalVar");
   const CoolDownData = Assembly.class("Battle.CoolDownData");
   const EnterCoolDown = CoolDownData.method("EnterCoolDown");
+  const UIMiniMapToolButton = Assembly.class("UIMiniMapToolButton");
 
   if (!BattleBridge || BattleBridge.handle.isNull()) return;
 
@@ -75,6 +76,8 @@ export function setupBattleCommands(Assembly) {
     };
   }*/
 
+  const instanceBattleBridge = Il2Cpp.gc.choose(BattleBridge)[0];
+
   const TrainingGuide = Assembly.class("TrainingGuide");
 
   TrainingGuide.method("OnCoolDown").implementation = function (
@@ -83,6 +86,7 @@ export function setupBattleCommands(Assembly) {
   ) {
     const ori = this.method("OnCoolDown").invoke(iParam, bState);
     EntityBaseGlobalVar.field("m_bCloseCD").value = bState;
+    instanceBattleBridge.method("HideHeroBlood").invoke(bState);
     return ori;
   };
 }

@@ -233,7 +233,7 @@ function executeSimpleHooks() {
   const Assembly = Il2Cpp.domain.assembly("Assembly-CSharp").image;
 
   const mlleakVer =
-    GIT_BRANCH === "testing" ? `MLLEAK TESTING (${GIT_HASH})` : "MLLEAK v.0.8";
+    GIT_BRANCH === "testing" ? `MLLEAK TESTING (${GIT_HASH})` : "MLLEAK v.0.9";
 
   // Setup StartGame delay hook first to wait for OTA/Auth readiness
   // setupGameStartDelay(Assembly);
