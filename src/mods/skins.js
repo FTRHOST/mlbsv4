@@ -236,6 +236,22 @@ Interceptor.attach(setPlayerData.virtualAddress, {
     try {
       CDataHeroTower = asm.image.class("CData_HeroTower_Element");
     } catch {}
+    let CDataBattleAniEmoji = null;
+    try {
+      CDataBattleAniEmoji = asm.image.class("CData_BattleAniEmoji_Element");
+    } catch {}
+    let CDataEmoji = null;
+    try {
+      CDataEmoji = asm.image.class("CData_Emoji_Element");
+    } catch {}
+    let CDataBattleAniEmojiObj = null;
+    try {
+      CDataBattleAniEmojiObj = asm.image.class("CData_BattleAniEmoji");
+    } catch {}
+    let CDataEmojiObj = null;
+    try {
+      CDataEmojiObj = asm.image.class("CData_Emoji");
+    } catch {}
     return {
       asm,
       SystemData,
@@ -245,16 +261,25 @@ Interceptor.attach(setPlayerData.virtualAddress, {
       HeroHolyStatueKeyInfoCls,
       CDataHeroCostume,
       CDataHeroTower,
+      CDataBattleAniEmoji,
+      CDataEmoji,
+      CDataBattleAniEmojiObj,
+      CDataEmojiObj,
+      CmdAniEmojiData: asm.image.class("MTTDProto.CmdAniEmojiData"),
       opts: resolveOptions(opts),
       curSkinOverrides: /* @__PURE__ */ new Map(),
       curStatueOverrides: /* @__PURE__ */ new Map(),
       serverPairs: [],
       serverStatuePairs: [],
+      serverEmojiIds: [],
       serverHeroes: [],
       serverDataPath: "",
       serverFullInject: true,
       unlockedSkins: /* @__PURE__ */ new Set(),
       unlockedStatues: /* @__PURE__ */ new Set(),
+      unlockedEmojiIds: /* @__PURE__ */ new Set(),
+      emojiFailLogged: /* @__PURE__ */ new Set(),
+      emojiCatalogIds: /* @__PURE__ */ new Set(),
       skinToHero: /* @__PURE__ */ new Map(),
       statueToHero: /* @__PURE__ */ new Map(),
       serverApplyTimer: null,
@@ -294,6 +319,11 @@ Interceptor.attach(setPlayerData.virtualAddress, {
     ctx.skinToHero = mp;
     ctx.unlockedStatues = uss;
     ctx.statueToHero = mps;
+    try {
+      const usE = new Set(ctx.unlockedEmojiIds || []);
+      for (const id of ctx.serverEmojiIds || []) usE.add(id);
+      ctx.unlockedEmojiIds = usE;
+    } catch {}
   }
 
   // src/ToolLeak/unlock-skin/grant.ts
@@ -471,6 +501,267 @@ Interceptor.attach(setPlayerData.virtualAddress, {
     } catch {}
     return { heroes: Array.from(heroSet), pairs };
   }
+  function isEmojiUnlocked(ctx, emojiId) {
+    try {
+      const list = ctx.SystemData.field("_aniEmojiDataList").value;
+      if (!list || list.isNull()) return false;
+      const cnt = list.method("get_Count").invoke();
+      for (let i = 0; i < cnt; i++) {
+        try {
+          const it = list.method("get_Item").invoke(i);
+          if (it && !it.isNull() && Number(it.field("iId").value) === emojiId)
+            return true;
+        } catch {}
+      }
+    } catch {}
+    return false;
+  }
+  function makeEmojiData(ctx, emojiId) {
+    const inst = ctx.CmdAniEmojiData.alloc();
+    try {
+      inst.method(".ctor").invoke();
+    } catch {}
+    try {
+      inst.field("iId").value = emojiId;
+    } catch {}
+    try {
+      inst.field("iLimitTime").value = 0;
+    } catch {}
+    try {
+      inst.field("iGetTime").value = 0;
+    } catch {}
+    return inst;
+  }
+  function grantEmoji(ctx, emojiId) {
+    let ok = false;
+    try {
+      if (!Number.isFinite(emojiId) || emojiId <= 0) return false;
+      if (isEmojiUnlocked(ctx, emojiId)) {
+        ok = true;
+      } else {
+        try {
+          const list = ctx.SystemData.field("_aniEmojiDataList").value;
+          if (list && !list.isNull()) {
+            const inst = makeEmojiData(ctx, emojiId);
+            list.method("Add").invoke(inst);
+          }
+        } catch {}
+        if (!isEmojiUnlocked(ctx, emojiId)) {
+          try {
+            ctx.SystemData.method("AddAniEmojiData").invoke(emojiId, 0, 0);
+          } catch (e) {
+            if (!ctx.emojiFailLogged.has(emojiId)) {
+              ctx.emojiFailLogged.add(emojiId);
+              ctx.opts.log(`[EMOJI] AddAniEmojiData(${emojiId}) gagal: ${e}`);
+            }
+          }
+          ok = isEmojiUnlocked(ctx, emojiId);
+        } else {
+          ok = true;
+        }
+      }
+    } catch (e) {
+      if (!ctx.emojiFailLogged.has(emojiId)) {
+        ctx.emojiFailLogged.add(emojiId);
+        ctx.opts.log(`[EMOJI] grant ${emojiId} gagal: ${e}`);
+      }
+      ok = isEmojiUnlocked(ctx, emojiId);
+    }
+    try {
+      if (ok) ctx.unlockedEmojiIds.add(emojiId);
+      if (!ctx.serverEmojiIds.includes(emojiId))
+        ctx.serverEmojiIds.push(emojiId);
+    } catch {}
+    return ok;
+  }
+  function enumerateSharedDictValues(value) {
+    const vals = [];
+    try {
+      if (!value || value.isNull()) return vals;
+      const getEnum = value.tryMethod("GetEnumerator");
+      if (getEnum) {
+        const e = getEnum.invoke();
+        while (e && !e.isNull() && e.method("MoveNext").invoke()) {
+          try {
+            const kvp = e.method("get_Current").invoke();
+            vals.push(kvp.method("get_Value").invoke());
+          } catch {}
+        }
+        return vals;
+      }
+      const getValues = value.tryMethod("get_Values");
+      if (getValues) {
+        const vc = getValues.invoke();
+        const e2 = vc.method("GetEnumerator").invoke();
+        while (e2 && !e2.isNull() && e2.method("MoveNext").invoke()) {
+          vals.push(e2.method("get_Current").invoke());
+        }
+      }
+    } catch {}
+    return vals;
+  }
+  function collectEmojiIdsFromTable(ctx, mgrCls, idField, pushId) {
+    try {
+      if (!mgrCls) return false;
+      let inst = mgrCls.field("m_Instance").value;
+      if (!inst || inst.isNull()) return false;
+      let data = null;
+      try {
+        const f = inst.tryField("m_Data");
+        if (f) data = f.value;
+      } catch {}
+      if (!data || data.isNull()) {
+        try {
+          const fw = inst.tryField("m_DataWriteTarget");
+          if (fw) data = fw.value;
+        } catch {}
+      }
+      if (!data || data.isNull()) return false;
+      const vals = enumerateSharedDictValues(data);
+      if (vals.length === 0) return false;
+      let n = 0;
+      for (const v of vals) {
+        try {
+          if (!v || v.isNull()) continue;
+          const id = Number(v.field(idField).value);
+          if (Number.isFinite(id) && id > 0) {
+            pushId(id);
+            n++;
+          }
+        } catch {}
+      }
+      if (n > 0)
+        ctx.opts.log(
+          `[EMOJI] katalog ${mgrCls.name}: ${n} elemen dari m_Data.`,
+        );
+      return n > 0;
+    } catch {
+      return false;
+    }
+  }
+  function hookEmojiCatalogCollect(ctx) {
+    const addId = function (id) {
+      try {
+        const n = Number(id);
+        if (Number.isFinite(n) && n > 0 && !ctx.emojiCatalogIds.has(n)) {
+          ctx.emojiCatalogIds.add(n);
+          ctx.opts.log(`[EMOJI] katalog + emoji ${n}`);
+        }
+      } catch {}
+    };
+    for (const spec of [
+      { cls: "CData_BattleAniEmoji", field: "m_ID" },
+      { cls: "CData_Emoji", field: "m_EmojiID" },
+    ]) {
+      try {
+        const clsC = ctx.asm.image.class(spec.cls);
+        const gm = clsC.tryMethod("GetValue_ByID");
+        if (gm) {
+          try {
+            void gm.nativeFunction;
+          } catch {}
+          gm.implementation = function (id) {
+            const ret = this.method("GetValue_ByID").invoke(id);
+            try {
+              addId(id);
+              if (ret && !ret.isNull()) addId(ret.field(spec.field).value);
+            } catch {}
+            return ret;
+          };
+          ctx.opts.log(`[+] [EMOJI] ${spec.cls}.GetValue_ByID hook terpasang.`);
+        }
+        const pm = clsC.tryMethod("ParseElement");
+        if (pm) {
+          try {
+            void pm.nativeFunction;
+          } catch {}
+          pm.implementation = function (bAddToMData) {
+            const ret = this.method("ParseElement").invoke(bAddToMData);
+            try {
+              if (ret && !ret.isNull()) {
+                try {
+                  addId(ret.field("m_ID").value);
+                } catch {}
+                try {
+                  addId(ret.field("m_EmojiID").value);
+                } catch {}
+              }
+            } catch {}
+            return ret;
+          };
+          ctx.opts.log(`[+] [EMOJI] ${spec.cls}.ParseElement hook terpasang.`);
+        }
+      } catch (e) {
+        ctx.opts.log(`[!] [EMOJI] hook ${spec.cls} gagal: ` + e);
+      }
+    }
+  }
+  function collectEmojiIds(ctx) {
+    const seen = /* @__PURE__ */ new Set();
+    const ids = [];
+    const pushId = function (id) {
+      if (Number.isFinite(id) && id > 0 && !seen.has(id)) {
+        seen.add(id);
+        ids.push(id);
+      }
+    };
+    for (const id of ctx.emojiCatalogIds || []) pushId(id);
+    for (const id of ctx.serverEmojiIds || []) pushId(id);
+    let cntBattle = 0;
+    try {
+      if (ctx.CDataBattleAniEmoji) {
+        const instances = Il2Cpp.gc.choose(ctx.CDataBattleAniEmoji);
+        for (const instance of instances) {
+          try {
+            if (!instance || instance.isNull()) continue;
+            const id = Number(instance.field("m_ID").value);
+            if (Number.isFinite(id) && id > 0) {
+              pushId(id);
+              cntBattle++;
+            }
+          } catch {}
+        }
+      }
+    } catch {}
+    if (cntBattle < 3 && ctx.CDataBattleAniEmojiObj)
+      collectEmojiIdsFromTable(
+        ctx,
+        ctx.CDataBattleAniEmojiObj,
+        "m_ID",
+        pushId,
+      );
+    let cntEmoji = 0;
+    try {
+      if (ctx.CDataEmoji) {
+        const instances = Il2Cpp.gc.choose(ctx.CDataEmoji);
+        for (const instance of instances) {
+          try {
+            if (!instance || instance.isNull()) continue;
+            const id = Number(instance.field("m_EmojiID").value);
+            if (Number.isFinite(id) && id > 0) {
+              pushId(id);
+              cntEmoji++;
+            }
+          } catch {}
+        }
+      }
+    } catch {}
+    if (cntEmoji < 3 && ctx.CDataEmojiObj)
+      collectEmojiIdsFromTable(ctx, ctx.CDataEmojiObj, "m_EmojiID", pushId);
+    return ids;
+  }
+  function applyEmojiServer(ctx) {
+    try {
+      if (ctx.serverEmojiIds.length === 0) return;
+      for (const emojiId of ctx.serverEmojiIds) {
+        try {
+          grantEmoji(ctx, emojiId);
+        } catch {}
+      }
+    } catch (e) {
+      ctx.opts.log("[PRIVATE-SERVER] apply emoji gagal: " + e);
+    }
+  }
   function collectCostumePairs(ctx) {
     const heroSet = /* @__PURE__ */ new Set();
     const pairSet = /* @__PURE__ */ new Set();
@@ -523,15 +814,24 @@ Interceptor.attach(setPlayerData.virtualAddress, {
       }
     }
     ctx.serverStatuePairs = statueCands;
+    const emojiCands = collectEmojiIds(ctx);
+    let emojiGranted = 0;
+    for (const emojiId of emojiCands) {
+      try {
+        if (grantEmoji(ctx, emojiId)) emojiGranted++;
+      } catch {}
+    }
+    ctx.serverEmojiIds = emojiCands;
     rebuildUnlockSets(ctx);
     ctx.opts.log(
-      `[UNLOCK] granted ${granted}/${pairs.length} pasangan skin, ${statueGranted}/${statueCands.length} pasangan statue.`,
+      `[UNLOCK] granted ${granted}/${pairs.length} pasangan skin, ${statueGranted}/${statueCands.length} pasangan statue, ${emojiGranted}/${emojiCands.length} emoji.`,
     );
     return {
       heroes: new Set(pairs.map((p) => p[0])).size,
       pairs: pairs.length,
       statueHeroes: new Set(statueCands.map((p) => p[0])).size,
       statuePairs: statueCands.length,
+      emojiIds: emojiCands.length,
     };
   }
   function applyServerPairsFast(ctx, pairs, onDone) {
@@ -821,7 +1121,17 @@ Interceptor.attach(setPlayerData.virtualAddress, {
           }
           if (pairsS.length > 0) ctx.serverStatuePairs = pairsS;
         }
-        if (pairs.length === 0 && ctx.serverStatuePairs.length === 0) {
+        if (Array.isArray(obj.emojiIds)) {
+          const ids = obj.emojiIds.map(Number).filter((id) => Number.isFinite(id) && id > 0);
+          if (ids.length > 0) {
+            ctx.serverEmojiIds = Array.from(new Set([...(ctx.serverEmojiIds || []), ...ids]));
+          }
+        }
+        if (
+          pairs.length === 0 &&
+          ctx.serverStatuePairs.length === 0 &&
+          ctx.serverEmojiIds.length === 0
+        ) {
           ctx.opts.log(`[PRIVATE-SERVER] ${c} tidak berisi pairs valid.`);
           continue;
         }
@@ -870,9 +1180,16 @@ Interceptor.attach(setPlayerData.virtualAddress, {
             }
           }
         } catch {}
+        try {
+          if (ctx.serverEmojiIds.length > 0) {
+            try {
+              applyEmojiServer(ctx);
+            } catch {}
+          }
+        } catch {}
         rebuildUnlockSets(ctx);
         ctx.opts.log(
-          `[PRIVATE-SERVER] dimuat ${pairs.length} pairs skin (${ctx.serverHeroes.length} hero) + ${ctx.serverStatuePairs.length} pairs statue dari ${c}`,
+          `[PRIVATE-SERVER] dimuat ${pairs.length} pairs skin (${ctx.serverHeroes.length} hero) + ${ctx.serverStatuePairs.length} pairs statue + ${ctx.serverEmojiIds.length} emoji dari ${c}`,
         );
         return { success: true, path: c, pairs: pairs.length };
       } catch {}
@@ -915,6 +1232,11 @@ Interceptor.attach(setPlayerData.virtualAddress, {
       const statuePairs = Array.from(merged.values());
       ctx.serverStatuePairs = statuePairs;
       rebuildUnlockSets(ctx);
+      const emojiCands = collectEmojiIds(ctx);
+      const emojiMerged = new Set(ctx.serverEmojiIds || []);
+      for (const id of emojiCands) emojiMerged.add(id);
+      ctx.serverEmojiIds = Array.from(emojiMerged);
+      rebuildUnlockSets(ctx);
       const payload = JSON.stringify(
         {
           version: 1,
@@ -922,6 +1244,7 @@ Interceptor.attach(setPlayerData.virtualAddress, {
           heroes,
           pairs,
           statuePairs,
+          emojiIds: ctx.serverEmojiIds,
           curSkins: cur,
           curStatues: curS,
         },
@@ -935,7 +1258,7 @@ Interceptor.attach(setPlayerData.virtualAddress, {
           if (back && back.length > 0) {
             ctx.serverDataPath = c;
             ctx.opts.log(
-              `[PRIVATE-SERVER] tersimpan ${pairs.length} pairs skin (${heroes.length} hero) + ${statuePairs.length} pairs statue -> ${c}`,
+              `[PRIVATE-SERVER] tersimpan ${pairs.length} pairs skin (${heroes.length} hero) + ${statuePairs.length} pairs statue + ${ctx.serverEmojiIds.length} emoji -> ${c}`,
             );
             loadDataServer(ctx);
             return { success: true, path: c, pairs: pairs.length };
@@ -993,6 +1316,7 @@ Interceptor.attach(setPlayerData.virtualAddress, {
           heroes: ctx.serverHeroes,
           pairs: ctx.serverPairs,
           statuePairs: ctx.serverStatuePairs,
+          emojiIds: ctx.serverEmojiIds,
           curSkins: cur,
           curStatues: curS,
         },
@@ -1085,13 +1409,16 @@ Interceptor.attach(setPlayerData.virtualAddress, {
       ctx.opts.log("[PRIVATE-SERVER] apply statue gagal: " + e);
     }
     try {
+      applyEmojiServer(ctx);
+    } catch {}
+    try {
       applyCurStatueOverrides(ctx);
     } catch {}
   }
   function dbgDataServer(ctx) {
     ctx.opts.log("[PRIVATE-SERVER] === DEBUG ===");
     ctx.opts.log(
-      `lastWritePath=${ctx.serverDataPath || "(kosong)"} memPairs=${ctx.serverPairs.length} memStatuePairs=${ctx.serverStatuePairs.length} lastErr=${ctx.lastDataServerError || "(tidak ada)"}`,
+      `lastWritePath=${ctx.serverDataPath || "(kosong)"} memPairs=${ctx.serverPairs.length} memStatuePairs=${ctx.serverStatuePairs.length} memEmojiIds=${ctx.serverEmojiIds.length} lastErr=${ctx.lastDataServerError || "(tidak ada)"}`,
     );
     try {
       const SystemFile = findClass(ctx.asm, "System.IO.File");
@@ -1177,6 +1504,7 @@ Interceptor.attach(setPlayerData.virtualAddress, {
       setInterval(() => {
         applyCurSkinOverrides(ctx);
         applyCurStatueOverrides(ctx);
+        applyEmojiServer(ctx);
       }, ctx.opts.curSkinReapplyMs);
       ctx.opts.log(
         `[+] [SETCURSKIN] interval re-apply ${ctx.opts.curSkinReapplyMs}ms aktif.`,
@@ -1941,6 +2269,9 @@ Interceptor.attach(setPlayerData.virtualAddress, {
             try {
               applyCurStatueOverrides(ctx);
             } catch {}
+            try {
+              applyEmojiServer(ctx);
+            } catch {}
           }
         } catch (e) {
           ctx.opts.log(`[SERVER_HOOK] HandleSC dump gagal: ${e}`);
@@ -2604,6 +2935,30 @@ Interceptor.attach(setPlayerData.virtualAddress, {
 [SKIN_ANALYZE] === SKIN ID ${skinid} STATUS ===`);
       checkDressSkinInHero(ctx, skinid);
     };
+    globalThis.dumpAniEmojiData = function () {
+      try {
+        const list = ctx.SystemData.field("_aniEmojiDataList").value;
+        if (!list || list.isNull()) {
+          ctx.opts.log("[EMOJI] SystemData._aniEmojiDataList = NULL");
+          return;
+        }
+        const cnt = list.method("get_Count").invoke();
+        ctx.opts.log(`
+[EMOJI] === OWNED ANI EMOJI (${cnt}) ===`);
+        for (let i = 0; i < cnt; i++) {
+          try {
+            const it = list.method("get_Item").invoke(i);
+            if (!it || it.isNull()) continue;
+            ctx.opts.log(
+              `[EMOJI]   iId=${it.field("iId").value} iLimitTime=${it.field("iLimitTime").value} iGetTime=${it.field("iGetTime").value}`,
+            );
+          } catch {}
+        }
+        ctx.opts.log("[EMOJI] === END ===");
+      } catch (e) {
+        ctx.opts.log("[EMOJI] dump gagal: " + e);
+      }
+    };
     void findClass;
   }
 
@@ -2619,6 +2974,7 @@ Interceptor.attach(setPlayerData.virtualAddress, {
     hookCurSkinFromUi(ctx);
     hookStatueChangeFromUi(ctx);
     hookServerPacket(ctx);
+    hookEmojiCatalogCollect(ctx);
     registerDumpCommands(ctx);
     if (ctx.opts.autoLoad) {
       try {
@@ -2717,6 +3073,56 @@ Interceptor.attach(setPlayerData.virtualAddress, {
         return 0;
       }
     };
+    globalThis.UnlockEmoji = function (emojiId) {
+      try {
+        const added = grantEmoji(ctx, Number(emojiId));
+        if (added) {
+          log2(`[EMOJI] unlocked emoji ${emojiId}`);
+          try {
+            scheduleCurSkinSave(ctx);
+          } catch {}
+        } else {
+          log2(`[EMOJI] emoji ${emojiId} sudah unlocked / invalid.`);
+        }
+        return added;
+      } catch (e) {
+        log2("[EMOJI] gagal: " + e);
+        return false;
+      }
+    };
+    globalThis.UnlockAllEmoji = function () {
+      try {
+        if (ctx.serverEmojiIds.length === 0)
+          ctx.serverEmojiIds = collectEmojiIds(ctx);
+        rebuildUnlockSets(ctx);
+        if (ctx.serverEmojiIds.length === 0) {
+          log2(
+            "[EMOJI] katalog masih kosong (tabel enum belum ke-load). Buka UI chat/emoji dulu, lalu ulangi UnlockAllEmoji().",
+          );
+          return 0;
+        }
+        let n = 0;
+        let ok = 0;
+        for (const emojiId of ctx.serverEmojiIds) {
+          try {
+            if (grantEmoji(ctx, emojiId)) {
+              n++;
+              ok++;
+            }
+          } catch {}
+        }
+        try {
+          scheduleCurSkinSave(ctx);
+        } catch {}
+        log2(
+          `[EMOJI] UnlockAllEmoji selesai: ${ok}/${ctx.serverEmojiIds.length} emoji (${n} baru di-grant).`,
+        );
+        return n;
+      } catch (e) {
+        log2("[EMOJI] gagal: " + e);
+        return 0;
+      }
+    };
     globalThis.patchServerStatue = function (heroId, statueId) {
       patchServerStatue(ctx, heroId, statueId);
     };
@@ -2767,6 +3173,8 @@ Interceptor.attach(setPlayerData.virtualAddress, {
       unlockStatue: (s) => globalThis.UnlockStatue(s),
       unlockAll: () => unlockAll(ctx),
       unlockAllStatue: () => globalThis.UnlockAllStatue(),
+      unlockEmoji: (e) => globalThis.UnlockEmoji(e),
+      unlockAllEmoji: () => globalThis.UnlockAllEmoji(),
       applyCurSkinOverrides: () => applyCurSkinOverrides(ctx),
       applyCurStatueOverrides: () => applyCurStatueOverrides(ctx),
       rebuildUnlockSets: () => rebuildUnlockSets(ctx),

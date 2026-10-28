@@ -1,16 +1,16 @@
 /** * Battle Command Line Mod Module */
+
 import { showGameNotification } from "../index";
 
-// Menyimpan ID string pesan terakhir agar tidak diproses dua kali
 let lastProcessedMessageRef = null;
 let noCdHook = null;
+let cachedBattleBridge = null; // Variabel untuk menyimpan instance secara permanen
 
 export function setupBattleCommands(Assembly) {
   const BattleBridge = Assembly.class("BattleBridge");
   const EntityBaseGlobalVar = Assembly.class("Battle.EntityBaseGlobalVar");
   const CoolDownData = Assembly.class("Battle.CoolDownData");
   const EnterCoolDown = CoolDownData.method("EnterCoolDown");
-  const UIMiniMapToolButton = Assembly.class("UIMiniMapToolButton");
 
   if (!BattleBridge || BattleBridge.handle.isNull()) return;
 
@@ -76,17 +76,31 @@ export function setupBattleCommands(Assembly) {
     };
   }*/
 
-  const instanceBattleBridge = Il2Cpp.gc.choose(BattleBridge)[0];
-
   const TrainingGuide = Assembly.class("TrainingGuide");
+  const OnCoolDownMethod = TrainingGuide.method("OnCoolDown");
+  const HideHeroBloodMethod = BattleBridge.method("HideHeroBlood");
 
-  TrainingGuide.method("OnCoolDown").implementation = function (
-    iParam,
-    bState,
-  ) {
+  OnCoolDownMethod.implementation = function (iParam, bState) {
     const ori = this.method("OnCoolDown").invoke(iParam, bState);
+
     EntityBaseGlobalVar.field("m_bCloseCD").value = bState;
-    instanceBattleBridge.method("HideHeroBlood").invoke(bState);
+
+    // OPTIMASI: Cek apakah instance sudah pernah diambil sebelumnya
+    if (!cachedBattleBridge || cachedBattleBridge.handle.isNull()) {
+      const instances = Il2Cpp.gc.choose(BattleBridge);
+      if (instances.length > 0) {
+        cachedBattleBridge = instances[0]; // Simpan ke cache
+        console.log(
+          "[Mod] Instance BattleBridge berhasil didapatkan dan disimpan.",
+        );
+      }
+    }
+
+    // Jika cache sudah terisi, langsung panggil tanpa scan ulang memori
+    if (cachedBattleBridge && !cachedBattleBridge.handle.isNull()) {
+      cachedBattleBridge.method("HideHeroBlood").invoke(bState);
+    }
+
     return ori;
   };
 }
