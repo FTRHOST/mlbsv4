@@ -78,7 +78,6 @@ export function setupBattleCommands(Assembly) {
 
   const TrainingGuide = Assembly.class("TrainingGuide");
   const OnCoolDownMethod = TrainingGuide.method("OnCoolDown");
-  const HideHeroBloodMethod = BattleBridge.method("HideHeroBlood");
 
   OnCoolDownMethod.implementation = function (iParam, bState) {
     const ori = this.method("OnCoolDown").invoke(iParam, bState);
@@ -102,5 +101,26 @@ export function setupBattleCommands(Assembly) {
     }
 
     return ori;
+  };
+
+  const UIMiniMapToolButton = Assembly.class("UIMiniMapToolButton");
+  const OnGMStake = UIMiniMapToolButton.method("OnGMStake");
+  OnGMStake.implementation = function (go) {
+    // OPTIMASI: Cek apakah instance sudah pernah diambil sebelumnya
+    if (!cachedBattleBridge || cachedBattleBridge.handle.isNull()) {
+      const instances = Il2Cpp.gc.choose(BattleBridge);
+      if (instances.length > 0) {
+        cachedBattleBridge = instances[0]; // Simpan ke cache
+        console.log(
+          "[Mod] Instance BattleBridge berhasil didapatkan dan disimpan.",
+        );
+      }
+    }
+
+    // Jika cache sudah terisi, langsung panggil tanpa scan ulang memori
+    if (cachedBattleBridge && !cachedBattleBridge.handle.isNull()) {
+      cachedBattleBridge.method("ToggleAllUIShow").invoke();
+    }
+    return this.method("OnGMStake").invoke(go);
   };
 }
