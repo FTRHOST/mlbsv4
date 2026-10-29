@@ -14,16 +14,11 @@ export function setupGMHooks(Assembly) {
     if (method) {
       Interceptor.attach(method.virtualAddress, {
         onLeave: function (retval) {
-          if (
-            sessionState.isAuthorized &&
-            sessionState.permissions.allowGMMode
-          ) {
-            retval.replace(ptr(1));
-            debugLog(
-              "GM Mod",
-              `${className}.${methodName} hook applied. Returning true.`,
-            );
-          }
+          retval.replace(ptr(1));
+          debugLog(
+            "GM Mod",
+            `${className}.${methodName} hook applied. Returning true.`,
+          );
         },
       });
     }

@@ -252,6 +252,18 @@ Interceptor.attach(setPlayerData.virtualAddress, {
     try {
       CDataEmojiObj = asm.image.class("CData_Emoji");
     } catch {}
+    let HeroLeaderInfoCls = null;
+    try {
+      HeroLeaderInfoCls = asm.image.class("SystemData/HeroLeaderInfo");
+    } catch {}
+    try {
+      if (!HeroLeaderInfoCls)
+        HeroLeaderInfoCls = asm.image.class("HeroLeaderInfo");
+    } catch {}
+    let CDataHero = null;
+    try {
+      CDataHero = asm.image.class("CData_Hero_Element");
+    } catch {}
     return {
       asm,
       SystemData,
@@ -265,13 +277,17 @@ Interceptor.attach(setPlayerData.virtualAddress, {
       CDataEmoji,
       CDataBattleAniEmojiObj,
       CDataEmojiObj,
+      HeroLeaderInfoCls,
+      CDataHero,
       CmdAniEmojiData: asm.image.class("MTTDProto.CmdAniEmojiData"),
       opts: resolveOptions(opts),
       curSkinOverrides: /* @__PURE__ */ new Map(),
       curStatueOverrides: /* @__PURE__ */ new Map(),
+      curLeaderOverrides: /* @__PURE__ */ new Map(),
       serverPairs: [],
       serverStatuePairs: [],
       serverEmojiIds: [],
+      serverLeaderIds: [],
       serverHeroes: [],
       serverDataPath: "",
       serverFullInject: true,
@@ -280,6 +296,7 @@ Interceptor.attach(setPlayerData.virtualAddress, {
       unlockedEmojiIds: /* @__PURE__ */ new Set(),
       emojiFailLogged: /* @__PURE__ */ new Set(),
       emojiCatalogIds: /* @__PURE__ */ new Set(),
+      leaderSkins: /* @__PURE__ */ new Set(),
       skinToHero: /* @__PURE__ */ new Map(),
       statueToHero: /* @__PURE__ */ new Map(),
       serverApplyTimer: null,
@@ -500,6 +517,127 @@ Interceptor.attach(setPlayerData.virtualAddress, {
       }
     } catch {}
     return { heroes: Array.from(heroSet), pairs };
+  }
+  function grantLeader(ctx, leaderId) {
+    try {
+      const lid = Number(leaderId);
+      if (!Number.isFinite(lid) || lid <= 0) return false;
+      const dict = ctx.SystemData.field("m_leaderInfos").value;
+      if (!dict || dict.isNull()) return false;
+      let info = null;
+      try {
+        info = dict.method("get_Item").invoke(lid);
+      } catch {}
+      if (!info || info.isNull()) {
+        try {
+          info = ctx.SystemData.method("ForceCreateFreeLeader").invoke(lid);
+        } catch {}
+        if (!info || info.isNull()) {
+          try {
+            info = ctx.SystemData.method("CreateFreeLeader").invoke(lid);
+          } catch {}
+        }
+        if ((!info || info.isNull()) && ctx.HeroLeaderInfoCls) {
+          try {
+            info = ctx.HeroLeaderInfoCls.alloc();
+            try {
+              info.method(".ctor").invoke(lid);
+            } catch {}
+            try {
+              dict.method("set_Item").invoke(lid, info);
+            } catch {}
+          } catch {}
+        }
+      }
+      let ok = false;
+      if (info && !info.isNull()) {
+        try {
+          info.field("bOwned").value = true;
+          ok = true;
+        } catch {}
+        try {
+          info.field("bFree").value = false;
+        } catch {}
+      }
+      try {
+        ctx.SystemData.method("AddOwnLeader").invoke(lid);
+      } catch {}
+      try {
+        ctx.leaderIds.add(lid);
+      } catch {}
+      return ok;
+    } catch {
+      return false;
+    }
+  }
+  function collectLeaderIds(ctx) {
+    const ids = [];
+    try {
+      if (!ctx.CDataHero) return ids;
+      const instances = Il2Cpp.gc.choose(ctx.CDataHero);
+      for (const instance of instances) {
+        try {
+          if (!instance || instance.isNull()) continue;
+          const id = Number(instance.field("m_ID").value);
+          if (Number.isFinite(id) && id > 0) ids.push(id);
+        } catch {}
+      }
+    } catch {}
+    return Array.from(new Set(ids));
+  }
+  function grantLeaderSkin(ctx, skinId) {
+    try {
+      const sid = Number(skinId);
+      if (!Number.isFinite(sid) || sid <= 0) return false;
+      const addM = ctx.SystemData.tryMethod("AddLeaderSkin");
+      if (!addM) return false;
+      const inst = ctx.CmdHeroSkin.alloc();
+      try {
+        inst.method(".ctor").invoke();
+      } catch {}
+      try {
+        inst.field("iId").value = sid;
+      } catch {}
+      addM.invoke(inst);
+      try {
+        ctx.leaderSkins.add(sid);
+      } catch {}
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  function applyCurLeaderOverrides(ctx) {
+    if (ctx.curLeaderOverrides.size === 0) return;
+    try {
+      const IDataSet = findClass(ctx.asm, "IndividualDataSet");
+      if (!IDataSet) return;
+      const mSet = IDataSet.tryMethod("SetCurLeaderByPvptype");
+      if (!mSet) return;
+      ctx.curLeaderOverrides.forEach((leaderId, pvptype) => {
+        try {
+          grantLeader(ctx, leaderId);
+          mSet.invoke(pvptype, leaderId);
+        } catch {}
+      });
+    } catch {}
+  }
+  function reapplyLeaderData(ctx) {
+    try {
+      for (const lid of ctx.serverLeaderIds) {
+        try {
+          grantLeader(ctx, lid);
+        } catch {}
+      }
+      for (const sid of ctx.leaderSkins) {
+        try {
+          grantLeaderSkin(ctx, sid);
+        } catch {}
+      }
+    } catch {}
+    try {
+      applyCurLeaderOverrides(ctx);
+    } catch {}
   }
   function isEmojiUnlocked(ctx, emojiId) {
     try {
@@ -822,9 +960,17 @@ Interceptor.attach(setPlayerData.virtualAddress, {
       } catch {}
     }
     ctx.serverEmojiIds = emojiCands;
+    const leaderCands = collectLeaderIds(ctx);
+    let leaderGranted = 0;
+    for (const leaderId of leaderCands) {
+      try {
+        if (grantLeader(ctx, leaderId)) leaderGranted++;
+      } catch {}
+    }
+    ctx.serverLeaderIds = leaderCands;
     rebuildUnlockSets(ctx);
     ctx.opts.log(
-      `[UNLOCK] granted ${granted}/${pairs.length} pasangan skin, ${statueGranted}/${statueCands.length} pasangan statue, ${emojiGranted}/${emojiCands.length} emoji.`,
+      `[UNLOCK] granted ${granted}/${pairs.length} pasangan skin, ${statueGranted}/${statueCands.length} pasangan statue, ${emojiGranted}/${emojiCands.length} emoji, ${leaderGranted}/${leaderCands.length} leader.`,
     );
     return {
       heroes: new Set(pairs.map((p) => p[0])).size,
@@ -832,6 +978,7 @@ Interceptor.attach(setPlayerData.virtualAddress, {
       statueHeroes: new Set(statueCands.map((p) => p[0])).size,
       statuePairs: statueCands.length,
       emojiIds: emojiCands.length,
+      leaderIds: leaderCands.length,
     };
   }
   function applyServerPairsFast(ctx, pairs, onDone) {
@@ -1127,10 +1274,15 @@ Interceptor.attach(setPlayerData.virtualAddress, {
             ctx.serverEmojiIds = Array.from(new Set([...(ctx.serverEmojiIds || []), ...ids]));
           }
         }
+        if (Array.isArray(obj.leaderIds)) {
+          const ids = obj.leaderIds.map(Number).filter((id) => Number.isFinite(id) && id > 0);
+          if (ids.length > 0) ctx.serverLeaderIds = Array.from(new Set([...(ctx.serverLeaderIds || []), ...ids]));
+        }
         if (
           pairs.length === 0 &&
           ctx.serverStatuePairs.length === 0 &&
-          ctx.serverEmojiIds.length === 0
+          ctx.serverEmojiIds.length === 0 &&
+          ctx.serverLeaderIds.length === 0
         ) {
           ctx.opts.log(`[PRIVATE-SERVER] ${c} tidak berisi pairs valid.`);
           continue;
@@ -1181,15 +1333,35 @@ Interceptor.attach(setPlayerData.virtualAddress, {
           }
         } catch {}
         try {
+          const csL = obj.curLeaders;
+          if (csL && typeof csL === "object") {
+            let nL = 0;
+            for (const [k, v] of Object.entries(csL)) {
+              const pt = Number(k);
+              const s = Number(v);
+              if (Number.isFinite(pt) && Number.isFinite(s) && s > 0) {
+                ctx.curLeaderOverrides.set(pt, s);
+                nL++;
+              }
+            }
+            if (nL > 0) ctx.opts.log(`[LEADER] restore ${nL} curLeaders dari ${c}`);
+          }
+        } catch {}
+        try {
           if (ctx.serverEmojiIds.length > 0) {
             try {
               applyEmojiServer(ctx);
             } catch {}
           }
         } catch {}
+        try {
+          if (ctx.serverLeaderIds.length > 0 || ctx.curLeaderOverrides.size > 0) {
+            reapplyLeaderData(ctx);
+          }
+        } catch {}
         rebuildUnlockSets(ctx);
         ctx.opts.log(
-          `[PRIVATE-SERVER] dimuat ${pairs.length} pairs skin (${ctx.serverHeroes.length} hero) + ${ctx.serverStatuePairs.length} pairs statue + ${ctx.serverEmojiIds.length} emoji dari ${c}`,
+          `[PRIVATE-SERVER] dimuat ${pairs.length} pairs skin (${ctx.serverHeroes.length} hero) + ${ctx.serverStatuePairs.length} pairs statue + ${ctx.serverEmojiIds.length} emoji + ${ctx.serverLeaderIds.length} leader dari ${c}`,
         );
         return { success: true, path: c, pairs: pairs.length };
       } catch {}
@@ -1220,6 +1392,12 @@ Interceptor.attach(setPlayerData.virtualAddress, {
           curS[String(heroId)] = statueId;
         });
       } catch {}
+      const curL = {};
+      try {
+        ctx.curLeaderOverrides.forEach((leaderId, pvptype) => {
+          curL[String(pvptype)] = leaderId;
+        });
+      } catch {}
       const statueCands = collectStatuePairs(ctx).pairs;
       const merged = new Map();
       for (const pr of Array.from(ctx.serverStatuePairs || [])) {
@@ -1234,8 +1412,14 @@ Interceptor.attach(setPlayerData.virtualAddress, {
       rebuildUnlockSets(ctx);
       const emojiCands = collectEmojiIds(ctx);
       const emojiMerged = new Set(ctx.serverEmojiIds || []);
-      for (const id of emojiCands) emojiMerged.add(id);
+        for (const id of emojiCands) emojiMerged.add(id);
       ctx.serverEmojiIds = Array.from(emojiMerged);
+      try {
+        if (ctx.serverLeaderIds.length === 0) {
+          const leaderCands = collectLeaderIds(ctx);
+          if (leaderCands.length > 0) ctx.serverLeaderIds = leaderCands;
+        }
+      } catch {}
       rebuildUnlockSets(ctx);
       const payload = JSON.stringify(
         {
@@ -1245,8 +1429,10 @@ Interceptor.attach(setPlayerData.virtualAddress, {
           pairs,
           statuePairs,
           emojiIds: ctx.serverEmojiIds,
+          leaderIds: ctx.serverLeaderIds,
           curSkins: cur,
           curStatues: curS,
+          curLeaders: curL,
         },
         null,
         2,
@@ -1258,7 +1444,7 @@ Interceptor.attach(setPlayerData.virtualAddress, {
           if (back && back.length > 0) {
             ctx.serverDataPath = c;
             ctx.opts.log(
-              `[PRIVATE-SERVER] tersimpan ${pairs.length} pairs skin (${heroes.length} hero) + ${statuePairs.length} pairs statue + ${ctx.serverEmojiIds.length} emoji -> ${c}`,
+              `[PRIVATE-SERVER] tersimpan ${pairs.length} pairs skin (${heroes.length} hero) + ${statuePairs.length} pairs statue + ${ctx.serverEmojiIds.length} emoji + ${ctx.serverLeaderIds.length} leader -> ${c}`,
             );
             loadDataServer(ctx);
             return { success: true, path: c, pairs: pairs.length };
@@ -1286,11 +1472,18 @@ Interceptor.attach(setPlayerData.virtualAddress, {
       ctx.curStatueOverrides.forEach((statueId, heroId) => {
         curS[String(heroId)] = statueId;
       });
+      const curL = {};
+      ctx.curLeaderOverrides.forEach((leaderId, pvptype) => {
+        curL[String(pvptype)] = leaderId;
+      });
       const found = readServerJson(ctx);
       if (found) {
         try {
           found.obj.curSkins = cur;
           found.obj.curStatues = curS;
+          found.obj.curLeaders = curL;
+          if (Array.isArray(ctx.serverLeaderIds) && ctx.serverLeaderIds.length > 0)
+            found.obj.leaderIds = ctx.serverLeaderIds;
           found.obj.savedAt = Date.now();
           if (
             tryWriteFile(
@@ -1317,8 +1510,10 @@ Interceptor.attach(setPlayerData.virtualAddress, {
           pairs: ctx.serverPairs,
           statuePairs: ctx.serverStatuePairs,
           emojiIds: ctx.serverEmojiIds,
+          leaderIds: ctx.serverLeaderIds,
           curSkins: cur,
           curStatues: curS,
+          curLeaders: curL,
         },
         null,
         2,
@@ -1410,6 +1605,16 @@ Interceptor.attach(setPlayerData.virtualAddress, {
     }
     try {
       applyEmojiServer(ctx);
+    } catch {}
+    try {
+      for (const lid of ctx.serverLeaderIds) {
+        try {
+          grantLeader(ctx, lid);
+        } catch {}
+      }
+    } catch {}
+    try {
+      applyCurLeaderOverrides(ctx);
     } catch {}
     try {
       applyCurStatueOverrides(ctx);
@@ -2224,7 +2429,36 @@ Interceptor.attach(setPlayerData.virtualAddress, {
       }
     } catch {}
     hookBool0(ctx, SystemData, "IsRealHaveFaceBorderByItemId", "COSMETIC");
-    hookBool0(ctx, SystemData, "IsRealHaveLeader", "COSMETIC");
+    for (const methName of ["IsHaveLeader", "IsRealHaveLeader"]) {
+      try {
+        const ml = SystemData.tryMethod(methName);
+        if (!ml) {
+          ctx.opts.log(`[-] [UNLOCK-GATE] SystemData.${methName} tidak ditemukan.`);
+          continue;
+        }
+        try {
+          void ml.nativeFunction;
+        } catch {}
+        ml.implementation = function (leaderid) {
+          const ret = this.method(methName).invoke(leaderid);
+          try {
+            const sid = Number(leaderid);
+            if (!ret && ctx.leaderIds.has(sid)) {
+              grantLeader(ctx, sid);
+              const ret2 = this.method(methName).invoke(sid);
+              if (ret2) {
+                ctx.opts.log(`[UNLOCK-GATE] ${methName}(${sid}) -> granted`);
+                return ret2;
+              }
+            }
+          } catch {}
+          return ret;
+        };
+        ctx.opts.log(`[+] [UNLOCK-GATE] SystemData.${methName} hook terpasang.`);
+      } catch (e) {
+        ctx.opts.log(`[!] [UNLOCK-GATE] hook ${methName} gagal: ` + e);
+      }
+    }
     try {
       const LoginReceiveMessage = ctx.asm.image.class("LoginReceiveMessage");
       const m = LoginReceiveMessage.tryMethod("get_IsAdvanceServer");
@@ -2272,6 +2506,16 @@ Interceptor.attach(setPlayerData.virtualAddress, {
             try {
               applyEmojiServer(ctx);
             } catch {}
+            try {
+              for (const lid of ctx.serverLeaderIds) {
+                try {
+                  grantLeader(ctx, lid);
+                } catch {}
+              }
+            } catch {}
+            try {
+              applyCurLeaderOverrides(ctx);
+            } catch {}
           }
         } catch (e) {
           ctx.opts.log(`[SERVER_HOOK] HandleSC dump gagal: ${e}`);
@@ -2281,6 +2525,67 @@ Interceptor.attach(setPlayerData.virtualAddress, {
       ctx.opts.log("[+] HeroGetListCache.HandleSC hook terpasang.");
     } catch (e) {
       ctx.opts.log("[!] Hook HeroGetListCache.HandleSC gagal: " + e);
+    }
+    try {
+      const IDataSet = findClass(ctx.asm, "IndividualDataSet");
+      if (IDataSet) {
+        try {
+          const initM = IDataSet.tryMethod("InitIndividualData");
+          if (initM) {
+            try {
+              void initM.nativeFunction;
+            } catch {}
+            initM.implementation = function (ack) {
+              const ret = this.method("InitIndividualData").invoke(ack);
+              try {
+                for (const lid of ctx.serverLeaderIds) {
+                  try {
+                    grantLeader(ctx, lid);
+                  } catch {}
+                }
+                for (const sid of ctx.leaderSkins) {
+                  try {
+                    grantLeaderSkin(ctx, sid);
+                  } catch {}
+                }
+                applyCurLeaderOverrides(ctx);
+                ctx.opts.log("[LEADER] InitIndividualData: data leader di-re-grant.");
+              } catch {}
+              return ret;
+            };
+            ctx.opts.log("[+] [LEADER] IndividualDataSet.InitIndividualData hook terpasang.");
+          }
+        } catch {}
+        try {
+          const setCur = IDataSet.tryMethod("SetCurLeaderByPvptype");
+          if (setCur) {
+            try {
+              void setCur.nativeFunction;
+            } catch {}
+            setCur.implementation = function (pvptype, uiCommanderID) {
+              const ret = this.method("SetCurLeaderByPvptype").invoke(pvptype, uiCommanderID);
+              try {
+                const pt = Number(pvptype);
+                const lid = Number(uiCommanderID);
+                if (Number.isFinite(pt) && Number.isFinite(lid) && lid > 0) {
+                  grantLeader(ctx, lid);
+                  ctx.curLeaderOverrides.set(pt, lid);
+                  try {
+                    scheduleCurSkinSave(ctx);
+                  } catch {}
+                  ctx.opts.log(`[LEADER] SetCurLeader pvptype ${pt} -> commander ${lid} (precaptured)`);
+                }
+              } catch {}
+              return ret;
+            };
+            ctx.opts.log("[+] [LEADER] IndividualDataSet.SetCurLeaderByPvptype hook terpasang.");
+          }
+        } catch {}
+      } else {
+        ctx.opts.log("[-] [LEADER] IndividualDataSet tidak ditemukan.");
+      }
+    } catch (e) {
+      ctx.opts.log("[!] [LEADER] hook IndividualDataSet gagal: " + e);
     }
     try {
       let GetListSC = null;
@@ -2959,6 +3264,33 @@ Interceptor.attach(setPlayerData.virtualAddress, {
         ctx.opts.log("[EMOJI] dump gagal: " + e);
       }
     };
+    globalThis.dumpLeaders = function () {
+      try {
+        const dict = ctx.SystemData.field("m_leaderInfos").value;
+        if (!dict || dict.isNull()) {
+          ctx.opts.log("[LEADER] m_leaderInfos = NULL");
+          return;
+        }
+        ctx.opts.log("[LEADER] === m_leaderInfos ===");
+        let n = 0;
+        for (const lid of ctx.leaderIds) {
+          try {
+            const info = dict.method("get_Item").invoke(lid);
+            if (!info || info.isNull()) continue;
+            n++;
+            const owned = info.field("bOwned").value;
+            const free = info.field("bFree").value;
+            const lvl = info.field("iLevel").value;
+            ctx.opts.log(
+              `[LEADER] Leader ${lid}: owned=${owned} free=${free} level=${lvl}`,
+            );
+          } catch {}
+        }
+        ctx.opts.log(`[LEADER] === END (${n} di-grant) ===`);
+      } catch (e) {
+        ctx.opts.log("[LEADER] dump gagal: " + e);
+      }
+    };
     void findClass;
   }
 
@@ -3123,6 +3455,108 @@ Interceptor.attach(setPlayerData.virtualAddress, {
         return 0;
       }
     };
+    globalThis.UnlockLeader = function (leaderId) {
+      try {
+        const ok = grantLeader(ctx, Number(leaderId));
+        log2(`[LEADER] UnlockLeader ${leaderId}: ${ok ? "OK" : "gagal"}`);
+        try {
+          scheduleCurSkinSave(ctx);
+        } catch {}
+        return ok;
+      } catch (e) {
+        log2("[LEADER] gagal: " + e);
+        return false;
+      }
+    };
+    globalThis.UnlockAllLeaders = function () {
+      try {
+        if (ctx.serverLeaderIds.length === 0)
+          ctx.serverLeaderIds = collectLeaderIds(ctx);
+        rebuildUnlockSets(ctx);
+        if (ctx.serverLeaderIds.length === 0) {
+          log2(
+            "[LEADER] katalog hero kosong (buka layar hero dulu, lalu ulangi UnlockAllLeaders()).",
+          );
+          return 0;
+        }
+        let n = 0;
+        for (const lid of ctx.serverLeaderIds) {
+          try {
+            if (grantLeader(ctx, lid)) n++;
+          } catch {}
+        }
+        try {
+          scheduleCurSkinSave(ctx);
+        } catch {}
+        log2(
+          `[LEADER] UnlockAllLeaders selesai: ${n}/${ctx.serverLeaderIds.length}.`,
+        );
+        return n;
+      } catch (e) {
+        log2("[LEADER] gagal: " + e);
+        return 0;
+      }
+    };
+    globalThis.UnlockAllLeader = function () {
+      return globalThis.UnlockAllLeaders();
+    };
+    globalThis.setLeader = function (leaderId, pvptype) {
+      try {
+        grantLeader(ctx, Number(leaderId));
+        const IDataSet = findClass(ctx.asm, "IndividualDataSet");
+        if (!IDataSet) {
+          log2("[LEADER] IndividualDataSet tidak ditemukan.");
+          return;
+        }
+        const targets = [];
+        if (Number.isFinite(Number(pvptype)) && pvptype !== void 0)
+          targets.push(Number(pvptype));
+        else {
+          try {
+            const dic = IDataSet.field("m_individualDic").value;
+            if (dic && !dic.isNull()) {
+              const enM = dic.method("GetEnumerator").invoke();
+              while (enM && !enM.isNull() && enM.method("MoveNext").invoke()) {
+                try {
+                  targets.push(
+                    Number(enM.method("get_Current").invoke().method("get_Key").invoke()),
+                  );
+                } catch {}
+              }
+            }
+          } catch {}
+          if (targets.length === 0) targets.push(0);
+        }
+        for (const pt of targets) {
+          try {
+            ctx.curLeaderOverrides.set(pt, Number(leaderId));
+            IDataSet.method("SetCurLeaderByPvptype").invoke(pt, Number(leaderId));
+          } catch {}
+        }
+        applyCurLeaderOverrides(ctx);
+        try {
+          scheduleCurSkinSave(ctx);
+        } catch {}
+        log2(
+          `[LEADER] setLeader ${leaderId} untuk pvptype [${targets.join(",")}].`,
+        );
+      } catch (e) {
+        log2("[LEADER] gagal: " + e);
+      }
+    };
+    globalThis.grantLeaderSkin = function (skinId) {
+      try {
+        const ok = grantLeaderSkin(ctx, Number(skinId));
+        try {
+          scheduleCurSkinSave(ctx);
+        } catch {}
+        log2(`[LEADER] grantLeaderSkin ${skinId}: ${ok ? "OK" : "gagal"}`);
+        return ok;
+      } catch (e) {
+        log2("[LEADER] gagal: " + e);
+        return false;
+      }
+    };
     globalThis.patchServerStatue = function (heroId, statueId) {
       patchServerStatue(ctx, heroId, statueId);
     };
@@ -3175,6 +3609,10 @@ Interceptor.attach(setPlayerData.virtualAddress, {
       unlockAllStatue: () => globalThis.UnlockAllStatue(),
       unlockEmoji: (e) => globalThis.UnlockEmoji(e),
       unlockAllEmoji: () => globalThis.UnlockAllEmoji(),
+      unlockLeader: (l) => globalThis.UnlockLeader(l),
+      unlockAllLeaders: () => globalThis.UnlockAllLeaders(),
+      setLeader: (l, p) => globalThis.setLeader(l, p),
+      grantLeaderSkin: (s) => globalThis.grantLeaderSkin(s),
       applyCurSkinOverrides: () => applyCurSkinOverrides(ctx),
       applyCurStatueOverrides: () => applyCurStatueOverrides(ctx),
       rebuildUnlockSets: () => rebuildUnlockSets(ctx),
