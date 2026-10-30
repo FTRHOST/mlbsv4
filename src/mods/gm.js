@@ -55,7 +55,6 @@ export function setupGMHooks(Assembly) {
         // 2. Daftar perubahan yang diinginkan (Key: Value)
         const replacements = {
           adjust: "sand",
-          // channel: "and_usa",
           //'version': '2.2.14.1230.1' // Contoh tambahan jika ingin sekalian ganti versi
         };
 
@@ -77,7 +76,6 @@ export function setupGMHooks(Assembly) {
 
           console.log("[Spoof] XML data modified and injected successfully:");
           console.log(" -> New adjust : " + replacements.adjust);
-          console.log(" -> New channel: " + replacements.channel);
         }
       } catch (e) {
         // Menggunakan console.error agar tidak memutus eksekusi script utama
