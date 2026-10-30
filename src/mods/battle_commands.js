@@ -123,4 +123,21 @@ export function setupBattleCommands(Assembly) {
     }
     return this.method("OnGMStake").invoke(go);
   };
+
+  globalThis.hideui = function () {
+    if (!cachedBattleBridge || cachedBattleBridge.handle.isNull()) {
+      const instances = Il2Cpp.gc.choose(BattleBridge);
+      if (instances.length > 0) {
+        cachedBattleBridge = instances[0]; // Simpan ke cache
+        console.log(
+          "[Mod] Instance BattleBridge berhasil didapatkan dan disimpan.",
+        );
+      }
+    }
+
+    // Jika cache sudah terisi, langsung panggil tanpa scan ulang memori
+    if (cachedBattleBridge && !cachedBattleBridge.handle.isNull()) {
+      cachedBattleBridge.method("ToggleAllUIShow").invoke();
+    }
+  };
 }
