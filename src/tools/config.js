@@ -24,9 +24,9 @@ export const CONFIG = {
       description: "VIP Access - Skins & Telemetry Enabled (No GM Mode)",
     },
     user: {
-      allowFreeSkin: true,
-      allowGMMode: true,
-      allowUnreleased: true,
+      allowFreeSkin: false,
+      allowGMMode: false,
+      allowUnreleased: false,
       allowTelemetry: false,
       description: "Regular User - Telemetry Only",
     },

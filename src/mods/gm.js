@@ -14,11 +14,16 @@ export function setupGMHooks(Assembly) {
     if (method) {
       Interceptor.attach(method.virtualAddress, {
         onLeave: function (retval) {
-          retval.replace(ptr(1));
-          debugLog(
-            "GM Mod",
-            `${className}.${methodName} hook applied. Returning true.`,
-          );
+          if (
+            sessionState.isAuthorized &&
+            sessionState.permissions.allowGMMode
+          ) {
+            retval.replace(ptr(1));
+            debugLog(
+              "GM Mod",
+              `${className}.${methodName} hook applied. Returning true.`,
+            );
+          }
         },
       });
     }
@@ -36,53 +41,25 @@ export function setupGMHooks(Assembly) {
   //
 
   const GameServerConfig = Assembly.class("GameServerConfig");
-  const loadVersionCompelte = GameServerConfig.method("loadVersionCompelte");
 
-  Interceptor.attach(loadVersionCompelte.virtualAddress, {
-    onEnter(args) {
-      // Berdasarkan log trace:
-      // args[0] = this (GameServerConfig)
-      // args[1] = strXmlData (String XML)
-      const xmlPtr = args[1];
+  GameServerConfig.method("loadRealVersionCompelte").implementation = function (
+    xml,
+  ) {
+    // console.log("berhasil");
+    // this.field("m_bGSDKSandBox").value = true;
+    this.field("m_bAdjustSandBox").value = true;
+    this.field("m_uiZoneID").value = 57001;
+    this.field("_curZoneId").value = 57001;
 
-      if (xmlPtr.isNull()) return;
-
-      try {
-        // 1. Ambil konten XML asli
-        const il2cppStr = new Il2Cpp.String(xmlPtr);
-        let xmlData = il2cppStr.content;
-
-        // 2. Daftar perubahan yang diinginkan (Key: Value)
-        const replacements = {
-          adjust: "sand",
-          //'version': '2.2.14.1230.1' // Contoh tambahan jika ingin sekalian ganti versi
-        };
-
-        let isModified = false;
-
-        // 3. Proses penggantian menggunakan Regex
-        for (const [key, newValue] of Object.entries(replacements)) {
-          const regex = new RegExp(`${key}="[^"]*"`, "g");
-          if (xmlData.match(regex)) {
-            xmlData = xmlData.replace(regex, `${key}="${newValue}"`);
-            isModified = true;
-          }
-        }
-
-        if (isModified) {
-          // 4. Alokasikan string baru di heap Unity dan timpa args[1]
-          // Menggunakan Il2Cpp.string() adalah cara paling aman di bridge terbaru
-          args[1] = Il2Cpp.string(xmlData);
-
-          console.log("[Spoof] XML data modified and injected successfully:");
-          console.log(" -> New adjust : " + replacements.adjust);
-        }
-      } catch (e) {
-        // Menggunakan console.error agar tidak memutus eksekusi script utama
-        console.error("[Error] Gagal memanipulasi XML: " + e.message);
-      }
-    },
-  });
+    /*this.field("m_strLogServerIP").value = Il2Cpp.string("119.81.89.27");
+      this.field("m_strLoginServerIP").value = Il2Cpp.string(
+        "login.ml.youngjoygame.com",
+      );
+      this.field("m_iLoginServerPort").value = 30021;*/
+    // const getver = this.field("m_strLogServerIP").value;
+    // console.log(`GetVer: ${getver}`);
+    return this.method("loadRealVersionCompelte").invoke(xml);
+  };
 
   // --- EXTENDED GM UI & PROFILER HOOKS ---
 
