@@ -1,20 +1,22 @@
 /** * Battle Command Line Mod Module */
 
 import { showGameNotification } from "../index";
+import { sessionState } from "../tools/config";
 
 let lastProcessedMessageRef = null;
 let noCdHook = null;
 let cachedBattleBridge = null; // Variabel untuk menyimpan instance secara permanen
 
 export function setupBattleCommands(Assembly) {
-  const BattleBridge = Assembly.class("BattleBridge");
-  const EntityBaseGlobalVar = Assembly.class("Battle.EntityBaseGlobalVar");
-  const CoolDownData = Assembly.class("Battle.CoolDownData");
-  const EnterCoolDown = CoolDownData.method("EnterCoolDown");
+  if (sessionState.isAuthorized && sessionState.permissions.allowGMMode) {
+    const BattleBridge = Assembly.class("BattleBridge");
+    const EntityBaseGlobalVar = Assembly.class("Battle.EntityBaseGlobalVar");
+    const CoolDownData = Assembly.class("Battle.CoolDownData");
+    const EnterCoolDown = CoolDownData.method("EnterCoolDown");
 
-  if (!BattleBridge || BattleBridge.handle.isNull()) return;
+    if (!BattleBridge || BattleBridge.handle.isNull()) return;
 
-  /* const ShowChatHistoryText = BattleBridge.method("ShowChatHistoryText");
+    /* const ShowChatHistoryText = BattleBridge.method("ShowChatHistoryText");
   if (ShowChatHistoryText) {
     ShowChatHistoryText.implementation = function (messageStr) {
       if (messageStr && !messageStr.handle.isNull()) {
@@ -76,68 +78,69 @@ export function setupBattleCommands(Assembly) {
     };
   }*/
 
-  const TrainingGuide = Assembly.class("TrainingGuide");
-  const OnCoolDownMethod = TrainingGuide.method("OnCoolDown");
+    const TrainingGuide = Assembly.class("TrainingGuide");
+    const OnCoolDownMethod = TrainingGuide.method("OnCoolDown");
 
-  OnCoolDownMethod.implementation = function (iParam, bState) {
-    const ori = this.method("OnCoolDown").invoke(iParam, bState);
+    OnCoolDownMethod.implementation = function (iParam, bState) {
+      const ori = this.method("OnCoolDown").invoke(iParam, bState);
 
-    EntityBaseGlobalVar.field("m_bCloseCD").value = bState;
+      EntityBaseGlobalVar.field("m_bCloseCD").value = bState;
 
-    // OPTIMASI: Cek apakah instance sudah pernah diambil sebelumnya
-    if (!cachedBattleBridge || cachedBattleBridge.handle.isNull()) {
-      const instances = Il2Cpp.gc.choose(BattleBridge);
-      if (instances.length > 0) {
-        cachedBattleBridge = instances[0]; // Simpan ke cache
-        console.log(
-          "[Mod] Instance BattleBridge berhasil didapatkan dan disimpan.",
-        );
+      // OPTIMASI: Cek apakah instance sudah pernah diambil sebelumnya
+      if (!cachedBattleBridge || cachedBattleBridge.handle.isNull()) {
+        const instances = Il2Cpp.gc.choose(BattleBridge);
+        if (instances.length > 0) {
+          cachedBattleBridge = instances[0]; // Simpan ke cache
+          console.log(
+            "[Mod] Instance BattleBridge berhasil didapatkan dan disimpan.",
+          );
+        }
       }
-    }
 
-    // Jika cache sudah terisi, langsung panggil tanpa scan ulang memori
-    if (cachedBattleBridge && !cachedBattleBridge.handle.isNull()) {
-      cachedBattleBridge.method("HideHeroBlood").invoke(bState);
-    }
-
-    return ori;
-  };
-
-  const UIMiniMapToolButton = Assembly.class("UIMiniMapToolButton");
-  const OnGMStake = UIMiniMapToolButton.method("OnGMStake");
-  OnGMStake.implementation = function (go) {
-    // OPTIMASI: Cek apakah instance sudah pernah diambil sebelumnya
-    if (!cachedBattleBridge || cachedBattleBridge.handle.isNull()) {
-      const instances = Il2Cpp.gc.choose(BattleBridge);
-      if (instances.length > 0) {
-        cachedBattleBridge = instances[0]; // Simpan ke cache
-        console.log(
-          "[Mod] Instance BattleBridge berhasil didapatkan dan disimpan.",
-        );
+      // Jika cache sudah terisi, langsung panggil tanpa scan ulang memori
+      if (cachedBattleBridge && !cachedBattleBridge.handle.isNull()) {
+        cachedBattleBridge.method("HideHeroBlood").invoke(bState);
       }
-    }
 
-    // Jika cache sudah terisi, langsung panggil tanpa scan ulang memori
-    if (cachedBattleBridge && !cachedBattleBridge.handle.isNull()) {
-      cachedBattleBridge.method("ToggleAllUIShow").invoke();
-    }
-    return this.method("OnGMStake").invoke(go);
-  };
+      return ori;
+    };
 
-  globalThis.hideui = function () {
-    if (!cachedBattleBridge || cachedBattleBridge.handle.isNull()) {
-      const instances = Il2Cpp.gc.choose(BattleBridge);
-      if (instances.length > 0) {
-        cachedBattleBridge = instances[0]; // Simpan ke cache
-        console.log(
-          "[Mod] Instance BattleBridge berhasil didapatkan dan disimpan.",
-        );
+    const UIMiniMapToolButton = Assembly.class("UIMiniMapToolButton");
+    const OnGMStake = UIMiniMapToolButton.method("OnGMStake");
+    OnGMStake.implementation = function (go) {
+      // OPTIMASI: Cek apakah instance sudah pernah diambil sebelumnya
+      if (!cachedBattleBridge || cachedBattleBridge.handle.isNull()) {
+        const instances = Il2Cpp.gc.choose(BattleBridge);
+        if (instances.length > 0) {
+          cachedBattleBridge = instances[0]; // Simpan ke cache
+          console.log(
+            "[Mod] Instance BattleBridge berhasil didapatkan dan disimpan.",
+          );
+        }
       }
-    }
 
-    // Jika cache sudah terisi, langsung panggil tanpa scan ulang memori
-    if (cachedBattleBridge && !cachedBattleBridge.handle.isNull()) {
-      cachedBattleBridge.method("ToggleAllUIShow").invoke();
-    }
-  };
+      // Jika cache sudah terisi, langsung panggil tanpa scan ulang memori
+      if (cachedBattleBridge && !cachedBattleBridge.handle.isNull()) {
+        cachedBattleBridge.method("ToggleAllUIShow").invoke();
+      }
+      return this.method("OnGMStake").invoke(go);
+    };
+
+    globalThis.hideui = function () {
+      if (!cachedBattleBridge || cachedBattleBridge.handle.isNull()) {
+        const instances = Il2Cpp.gc.choose(BattleBridge);
+        if (instances.length > 0) {
+          cachedBattleBridge = instances[0]; // Simpan ke cache
+          console.log(
+            "[Mod] Instance BattleBridge berhasil didapatkan dan disimpan.",
+          );
+        }
+      }
+
+      // Jika cache sudah terisi, langsung panggil tanpa scan ulang memori
+      if (cachedBattleBridge && !cachedBattleBridge.handle.isNull()) {
+        cachedBattleBridge.method("ToggleAllUIShow").invoke();
+      }
+    };
+  }
 }
