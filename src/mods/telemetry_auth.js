@@ -2,9 +2,7 @@
  * Telemetry Hook Module
  */
 
-import { sessionState } from "../tools/config";
 import { debugLog } from "../tools/utils";
-import { sendRoomData, sendBattleStats } from "../tools/telemetry";
 import { verifyUserWithRestApiAsync } from "../tools/auth";
 import { loadAuthCache } from "../tools/cache";
 
